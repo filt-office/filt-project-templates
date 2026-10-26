@@ -462,9 +462,10 @@ body.filt-menu-open .filt-project-mount .img-section {
     --overview-title-font-size: 12px;
     --overview-row-height: 35px;
     position: relative !important;
-    width: calc(100% + 8px) !important;
-    max-width: calc(100% + 8px) !important;
-    margin-left: -8px !important;
+    /* Full-bleed: project-template.js measures the host page's side offset (e.g. Imweb widget padding). */
+    width: var(--bleed-width, 100%) !important;
+    max-width: none !important;
+    margin-left: calc(-1 * var(--bleed-left, 0px)) !important;
     padding-top: 40px;
     height: auto !important;
     min-height: 100dvh;

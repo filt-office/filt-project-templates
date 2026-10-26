@@ -12,6 +12,8 @@
   }
 
   const templateBase = new URL(".", script.src);
+  // Uploaded assets are stored as paths relative to the template (e.g. assets/<id>/x.jpg).
+  const resolveAsset = (src) => (src ? new URL(src, templateBase).href : "");
   const addLink = (key, href) => {
     const existing = document.querySelector(`link[data-filt-template="${key}"]`);
     if (existing) return existing.sheet ? Promise.resolve() : new Promise((resolve, reject) => {
@@ -128,7 +130,7 @@
     section.setAttribute("aria-label", "Project images");
     (Array.isArray(images) ? images : []).forEach((image) => {
       const img = document.createElement("img");
-      img.src = image.src;
+      img.src = resolveAsset(image.src);
       img.alt = image.alt || "";
       img.className = ["portrait", "landscape", "drawing"].includes(image.class) ? image.class : "landscape";
       img.dataset.fit = ["auto", "contain", "cover"].includes(image.fit) ? image.fit : "auto";
@@ -156,7 +158,7 @@
     slides.className = "mobile-drawing-slides";
     drawings.forEach((drawing) => {
       const image = document.createElement("img");
-      image.src = drawing.src;
+      image.src = resolveAsset(drawing.src);
       image.alt = drawing.alt || drawing.title || "";
       image.dataset.title = drawing.title || "";
       image.dataset.coordinate = drawing.coordinate === false ? "off" : "on";
@@ -181,7 +183,7 @@
       ? document.createElement("img")
       : null;
     if (coordinateImage) {
-      coordinateImage.src = drawingData.coordinateSrc;
+      coordinateImage.src = resolveAsset(drawingData.coordinateSrc);
       coordinateImage.alt = "";
       coordinateImage.setAttribute("aria-hidden", "true");
       coordinateInfo.append(coordinateImage);
@@ -193,7 +195,7 @@
       ? document.createElement("img")
       : null;
     if (scaleImage) {
-      scaleImage.src = drawingData.scaleSrc;
+      scaleImage.src = resolveAsset(drawingData.scaleSrc);
       scaleImage.alt = "";
       scaleImage.setAttribute("aria-hidden", "true");
       scaleInfo.append(scaleImage);
@@ -377,7 +379,13 @@
     sideSection.className = "side-section";
     const text = document.createElement("div");
     text.className = "text-content";
-    text.innerHTML = project.descriptionHtml || "";
+    // Parse inertly so relative image paths never load against the host page's URL.
+    const description = document.createElement("template");
+    description.innerHTML = project.descriptionHtml || "";
+    description.content.querySelectorAll("img[src]").forEach((image) => {
+      image.setAttribute("src", resolveAsset(image.getAttribute("src")));
+    });
+    text.append(description.content);
     const overview = createOverview(project.overview);
     if (includeToolbar) sideSection.append(createToolbar());
     sideSection.append(overview, text);
@@ -404,6 +412,15 @@
     return { main, imageSection, sideSection, overview };
   };
 
+  // Lets the mobile layout span the full viewport whatever padding the host page puts around the mount.
+  const updateBleed = () => {
+    // Remove the margin currently applied (only set inside the mobile media query) to get the host offset.
+    const appliedMargin = parseFloat(getComputedStyle(mount).marginLeft) || 0;
+    const naturalLeft = mount.getBoundingClientRect().left - appliedMargin;
+    mount.style.setProperty("--bleed-left", `${Math.max(0, naturalLeft)}px`);
+    mount.style.setProperty("--bleed-width", `${document.documentElement.clientWidth}px`);
+  };
+
   const render = (project) => {
     if (!project || !Array.isArray(project.images) || !project.overview) {
       throw new Error("Project JSON is missing images or overview data.");
@@ -421,6 +438,8 @@
     const desktop = renderDesktop(project, desktopImages);
     const mobile = renderMobile(project, mobileImages);
     mount.append(desktop.main, mobile.main);
+    updateBleed();
+    window.addEventListener("resize", updateBleed);
 
     [desktop, mobile].forEach(({ sideSection, overview }) => {
       const updateOverviewHeight = () => {
@@ -438,7 +457,8 @@
 
   Promise.all([
     templateStylesReady,
-    fetch(new URL(`projects/${encodeURIComponent(projectId)}.json`, templateBase)).then((response) => {
+    // data-project-src lets the builder preview unsaved data; production uses projects/<id>.json.
+    fetch(script.dataset.projectSrc || new URL(`projects/${encodeURIComponent(projectId)}.json`, templateBase)).then((response) => {
       if (!response.ok) throw new Error(`Project data request failed (${response.status}).`);
       return response.json();
     })
