@@ -1,0 +1,422 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "architecture",
+      "label": "ARCHITECTURE"
+    },
+    {
+      "id": "interior",
+      "label": "INTERIOR"
+    },
+    {
+      "id": "furniture",
+      "label": "FURNITURE"
+    },
+    {
+      "id": "rawtech",
+      "label": "RAW TECH"
+    }
+  ],
+  "works": [
+    {
+      "id": "d-project",
+      "category": "architecture",
+      "nameKo": "D 프로젝트",
+      "nameEn": "D Project",
+      "year": "2026-",
+      "program": "Factory",
+      "location": "Anseong",
+      "status": "In Progress",
+      "thumb": "https://cdn.imweb.me/thumbnail/20260810/14ea8b53ed786.jpg",
+      "cardThumb": "",
+      "mobileShape": "tall",
+      "link": "/D_project",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 1
+    },
+    {
+      "id": "tempin-office",
+      "category": "architecture",
+      "nameKo": "템프인 오피스",
+      "nameEn": "Tempin Office",
+      "year": "2024-2025",
+      "program": "Office",
+      "location": "Seoul",
+      "status": "Built",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251224/0c684dbe95d4c.jpg",
+      "cardThumb": "",
+      "mobileShape": "tall",
+      "link": "/tempin_office",
+      "projectId": "tempin",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 3
+    },
+    {
+      "id": "yaein-healing-center",
+      "category": "architecture",
+      "nameKo": "예인교회 힐링센터",
+      "nameEn": "Yaein Healing Center",
+      "year": "2024-2025",
+      "program": "Religious",
+      "location": "Suwon",
+      "status": "Built",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251226/cbebd9cf00b13.jpg",
+      "cardThumb": "https://cdn.imweb.me/thumbnail/20251224/f14e562a9c873.jpg",
+      "mobileShape": "square",
+      "link": "/yaeinchurch_healing_center",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 4
+    },
+    {
+      "id": "sejongno-church-annex",
+      "category": "architecture",
+      "nameKo": "세종로 성당 신관",
+      "nameEn": "Sejongno Church Annex",
+      "year": "2023-2025",
+      "program": "Religious",
+      "location": "Seoul",
+      "status": "Built",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251224/93e28a3287d35.jpg",
+      "cardThumb": "",
+      "mobileShape": "tall",
+      "link": "/sejongno_church_annex",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 5
+    },
+    {
+      "id": "yeonmujang-szf",
+      "category": "architecture",
+      "nameKo": "연무장 SZF",
+      "nameEn": "Yeonmujang SZF",
+      "year": "2024-2025",
+      "program": "Commercial",
+      "location": "Seoul",
+      "status": "Built",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251228/a872ef432d7e0.jpg",
+      "cardThumb": "https://cdn.imweb.me/thumbnail/20251224/3ecadc9466943.jpg",
+      "mobileShape": "square",
+      "link": "/yeonmujang_SZF",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 6
+    },
+    {
+      "id": "nonhyun-dong-pjt",
+      "category": "architecture",
+      "nameKo": "논현동 PJT.",
+      "nameEn": "Nonhyun-dong PJT.",
+      "year": "2024",
+      "program": "Office",
+      "location": "Seoul",
+      "status": "Proposal",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251224/5ed332907b0ad.png",
+      "cardThumb": "",
+      "mobileShape": "square",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 7
+    },
+    {
+      "id": "yeonmujang-gil-x",
+      "category": "architecture",
+      "nameKo": "연무장길 X",
+      "nameEn": "Yeonmujang-gil X",
+      "year": "2025",
+      "program": "Commercial",
+      "location": "Seoul",
+      "status": "Proposal",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251224/e26a96f6e3b64.png",
+      "cardThumb": "",
+      "mobileShape": "square",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 8
+    },
+    {
+      "id": "cheongdam-dong-pjt",
+      "category": "architecture",
+      "nameKo": "청담동 PJT.",
+      "nameEn": "Cheongdam-dong PJT.",
+      "year": "2024",
+      "program": "Commercial",
+      "location": "Seoul",
+      "status": "In Progress",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251224/10a6d2aa18f28.png",
+      "cardThumb": "",
+      "mobileShape": "square",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 9
+    },
+    {
+      "id": "yeonmujang-gil-y",
+      "category": "architecture",
+      "nameKo": "연무장길 Y",
+      "nameEn": "Yeonmujang-gil Y",
+      "year": "2025",
+      "program": "Commercial",
+      "location": "Seoul",
+      "status": "Proposal",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251224/c51d898738c50.png",
+      "cardThumb": "",
+      "mobileShape": "square",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 10
+    },
+    {
+      "id": "yaein-church-remodeling",
+      "category": "interior",
+      "nameKo": "예인교회 본당 리모델링",
+      "nameEn": "Yaein Church Remodeling",
+      "year": "2026",
+      "program": "Religious",
+      "location": "Suwon",
+      "status": "In Progress",
+      "thumb": "https://cdn.imweb.me/thumbnail/20260810/b260daa845481.jpg",
+      "cardThumb": "",
+      "mobileShape": "tall",
+      "link": "/Yaein_Church_Renovation",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 2
+    },
+    {
+      "id": "adamo-studio",
+      "category": "interior",
+      "nameKo": "아다모 스튜디오",
+      "nameEn": "Adamo Studio",
+      "year": "2025",
+      "program": "Retail",
+      "location": "Seoul",
+      "status": "Built",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251224/0aab4127b9bb9.jpg",
+      "cardThumb": "",
+      "mobileShape": "square",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 11
+    },
+    {
+      "id": "ichon-dongbu-centreville",
+      "category": "interior",
+      "nameKo": "이촌동부 센트레빌",
+      "nameEn": "Ichon Dongbu Centreville",
+      "year": "2024",
+      "program": "Residential",
+      "location": "Seoul",
+      "status": "Built",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251224/b8816139b05fb.jpg",
+      "cardThumb": "",
+      "mobileShape": "",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": false
+      },
+      "galleryOrder": 12
+    },
+    {
+      "id": "hajung-dong-office",
+      "category": "interior",
+      "nameKo": "하중동 사무소",
+      "nameEn": "Hajung-dong Office",
+      "year": "2023",
+      "program": "Office",
+      "location": "Seoul",
+      "status": "Built",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251224/2ef0695ae03f0.jpg",
+      "cardThumb": "",
+      "mobileShape": "square",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 13
+    },
+    {
+      "id": "shinwon-miju-apt",
+      "category": "interior",
+      "nameKo": "신원미주 아파트",
+      "nameEn": "Shinwon Miju Apt",
+      "year": "2025",
+      "program": "Residential",
+      "location": "Suwon",
+      "status": "Built",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251231/eb8ae171cb737.jpg",
+      "cardThumb": "",
+      "mobileShape": "",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": false
+      },
+      "galleryOrder": 14
+    },
+    {
+      "id": "botanic-vet-clinic",
+      "category": "interior",
+      "nameKo": "보타닉 동물병원",
+      "nameEn": "Botanic Vet Clinic",
+      "year": "2023",
+      "program": "Clinic",
+      "location": "Seoul",
+      "status": "Built",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251224/8c88a6d415214.jpg",
+      "cardThumb": "",
+      "mobileShape": "square",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 15
+    },
+    {
+      "id": "desk-module-a",
+      "category": "furniture",
+      "nameKo": "데스크 모듈 A",
+      "nameEn": "Desk Module A",
+      "year": "2023",
+      "program": "Furniture",
+      "location": "-",
+      "status": "Built",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251224/3786166f1b5fa.png",
+      "cardThumb": "",
+      "mobileShape": "square",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 16
+    },
+    {
+      "id": "adaptive-partition-system",
+      "category": "rawtech",
+      "nameKo": "가변적 파티션 시스템",
+      "nameEn": "Adaptive Partition System",
+      "year": "2025",
+      "program": "System",
+      "location": "Seoul",
+      "status": "Implemented",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251231/de80a902d921b.png",
+      "cardThumb": "",
+      "mobileShape": "",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": false
+      },
+      "galleryOrder": 17
+    },
+    {
+      "id": "acoustic-panel-system",
+      "category": "rawtech",
+      "nameKo": "어쿠스틱 패널 시스템",
+      "nameEn": "Acoustic Panel System",
+      "year": "2025",
+      "program": "System",
+      "location": "Suwon",
+      "status": "Implemented",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251231/5bc525d62e356.png",
+      "cardThumb": "",
+      "mobileShape": "",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": false
+      },
+      "galleryOrder": 18
+    },
+    {
+      "id": "window-detail",
+      "category": "rawtech",
+      "nameKo": "윈도우 디테일",
+      "nameEn": "Window Detail",
+      "year": "2024-2025",
+      "program": "Facade",
+      "location": "Seoul",
+      "status": "Built",
+      "thumb": "https://cdn.imweb.me/thumbnail/20251224/abc66b69c1ba3.jpg",
+      "cardThumb": "",
+      "mobileShape": "square",
+      "link": "",
+      "projectId": "",
+      "show": {
+        "list": true,
+        "gallery": true,
+        "mobile": true
+      },
+      "galleryOrder": 19
+    }
+  ]
+}
