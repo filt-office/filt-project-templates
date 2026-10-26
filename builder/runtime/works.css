@@ -1,0 +1,394 @@
+/* ------------------------------
+    FILT Works list / gallery
+    Ported from works-list-pc, works-gallery-pc and works-list-mobile.html.
+    Everything is scoped under .filt-works so the Imweb page is untouched.
+------------------------------ */
+.filt-works {
+  --accent: #BD005E;
+  --bg-color: #fff;
+  --panel-hide-width: 210px;
+  --m-top: 65px;
+  --m-gap: 25px;
+  --m-ratio: 120%;
+  --m-title-gap: 2px;
+  font-family: "Suit", "Pretendard Variable", "Noto Sans KR", sans-serif !important;
+  font-weight: 300 !important;
+  letter-spacing: 0.4px;
+  color: #000;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.filt-works[data-view="gallery"] {
+  --m-top: 70px;
+  --m-gap: 20px;
+  --m-ratio: 125%;
+  --m-title-gap: 5px;
+}
+
+.filt-works *,
+.filt-works *::before,
+.filt-works *::after {
+  box-sizing: border-box;
+}
+
+.filt-works .works-mobile { display: none; }
+
+/* ========== PC: shared frame (left content 75%, right panel 25%) ========== */
+.filt-works .works-desktop {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 75% 25%;
+  background: var(--bg-color);
+  transition: none;
+}
+
+/* ========== PC list ========== */
+.filt-works .left-container {
+  display: grid;
+  grid-template-rows: 30vh 20vh auto auto;
+  height: 100vh;
+  padding-left: 30px;
+  padding-top: 120px;
+  background: var(--bg-color);
+  transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1),
+              margin-left 0.45s cubic-bezier(0.33, 1, 0.68, 1),
+              width 0.45s cubic-bezier(0.33, 1, 0.68, 1);
+  will-change: transform, width;
+}
+
+/* Common menu open: shift only the left column (the right preview stays). */
+body.menu-open .filt-works .left-container {
+  transform: translateX(var(--panel-hide-width));
+  width: calc(100% - var(--panel-hide-width));
+}
+
+.filt-works .sec {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  color: #000;
+  line-height: 1.7;
+}
+
+.filt-works .sec__header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding-left: 20px !important;
+  border-bottom: 0.5px solid #000;
+  background: var(--bg-color);
+}
+
+.filt-works .title {
+  display: block;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  font-size: 16px;
+  font-weight: 500;
+  font-style: normal;
+  letter-spacing: 0.4px;
+  line-height: 1.2;
+  text-indent: 0;
+  text-decoration: none;
+}
+
+.filt-works .sec__list {
+  height: 100%;
+  padding-top: 6px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.filt-works .sec__list::-webkit-scrollbar { display: none; }
+
+.filt-works .item {
+  display: grid;
+  grid-template-columns: 1.5fr 1.5fr 0.7fr 0.7fr 0.7fr 0.7fr;
+  column-gap: 15px;
+  margin-left: 20px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 300;
+  letter-spacing: 0.4px;
+  line-height: 1.6;
+  cursor: pointer;
+  transition: color .2s ease;
+}
+.filt-works .item:hover { color: var(--accent); }
+
+.filt-works .preview {
+  position: relative;
+  z-index: 30000;
+  width: 100%;
+  min-width: 0;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: none;
+  border-left: 0.5px solid #000;
+  background: var(--bg-color);
+  box-shadow: none;
+  outline: none;
+}
+
+.filt-works .thumbnail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.filt-works .thumbnail img {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  object-fit: contain;
+  object-position: center;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.filt-works .thumbnail img.show { opacity: 1; }
+
+/* ========== PC: list / gallery switch buttons ========== */
+.filt-works .view-toolbar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: 80px;
+  border: none;
+  background: transparent;
+  pointer-events: none;
+}
+
+.filt-works .view-btns {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  left: auto;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 0;
+  padding: 0;
+  background: none;
+  pointer-events: auto;
+}
+
+.filt-works .view-btns a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+}
+
+.filt-works .view-btns svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.filt-works .view-btns a:hover svg { transform: scale(1.1); opacity: 0.7; }
+
+/* ========== PC gallery ========== */
+.filt-works .left {
+  display: flex;
+  z-index: 4000;
+  min-height: 0;
+  height: 100vh;
+  padding-left: 30px;
+  background: var(--bg-color);
+  transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1);
+  will-change: transform;
+}
+
+body.menu-open .filt-works .left {
+  transform: translateX(var(--panel-hide-width));
+}
+
+.filt-works .sec__gallery {
+  width: 100%;
+  height: 100%;
+  padding-bottom: 120px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.filt-works .sec__gallery::-webkit-scrollbar { display: none; }
+
+.filt-works .gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 100%;
+  padding-top: 120px;
+  padding-left: 40px;
+}
+
+.filt-works .gallery-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform .3s ease, opacity .3s ease;
+}
+
+.filt-works .gallery-item img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  transition: transform .3s ease;
+}
+.filt-works .gallery-item:hover img { opacity: 0.9; }
+
+.filt-works .caption {
+  width: 100%;
+  /* 1em bottom is the browser's default <p> margin the original layout relied on. */
+  margin: 6px 0 1em;
+  color: #000;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.filt-works .right {
+  position: relative;
+  z-index: 3000;
+  height: 100vh;
+  background: var(--bg-color);
+}
+
+/* ========== Mobile (list and gallery share the card grid) ========== */
+@media (max-width: 768px) {
+  .filt-works .works-desktop { display: none; }
+  .filt-works .works-mobile { display: block; }
+
+  .filt-works .mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 5000;
+    width: 100%;
+    height: 40px;
+    border-bottom: 0.7px solid #000;
+    background: transparent;
+  }
+
+  .filt-works .category-filter {
+    position: fixed;
+    top: 40px;
+    left: 0;
+    z-index: 4000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 25px;
+    padding: 0 8px;
+    border-bottom: 0.7px solid #000;
+    background: transparent;
+  }
+
+  .filt-works .category-filter button {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #000;
+    font-family: inherit;
+    font-size: 1.2rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .filt-works .category-filter button.active {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Full viewport width regardless of the host page's side padding. */
+  .filt-works .mobile-page {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    max-width: none;
+    margin: 0 calc(50% - 50vw);
+    padding: var(--m-top) 0 0;
+  }
+
+  .filt-works .works-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    row-gap: var(--m-gap);
+    width: 100%;
+    margin: 0;
+  }
+
+  .filt-works .works-item {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .filt-works .works-item[hidden] { display: none; }
+
+  .filt-works .works-thumb {
+    position: relative;
+    width: 100%;
+    margin: 0;
+    padding: var(--m-ratio) 0 0;
+    overflow: hidden;
+    border-top: 0.7px solid #000;
+    border-bottom: 0.7px solid #000;
+  }
+
+  .filt-works .works-thumb img {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .filt-works .works-title {
+    display: block;
+    margin: var(--m-title-gap) 0 0;
+    padding: 0;
+    color: #000;
+    font-size: 1.2rem !important;
+    font-weight: 300;
+    letter-spacing: 0;
+    line-height: 1.4;
+  }
+}

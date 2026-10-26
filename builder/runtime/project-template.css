@@ -1,0 +1,776 @@
+/* ------------------------------
+    📌1. 기본 설정
+------------------------------ */
+.filt-project-mount {
+  --accent: #BD005E;
+  --bg-color: #fff;
+  --panel-width: clamp(300px, 28vw, 430px);
+  --panel-hide-width: 210px;
+  --panel-padding: clamp(12px, 1vw, 18px);
+  --body-text-size: clamp(11px, 0.82vw, 12px);
+  --caption-size: clamp(8px, 0.6vw, 8px);
+  --overview-font-size: clamp(8px, 0.7vw, 10px);
+  --overview-title-font-size: clamp(9px, 0.7vw, 10px);
+  --overview-row-height: clamp(24px, 2.4vw, 35px);
+}
+
+.filt-project-mount {
+  font-family: "Suit","Pretendard Variable", "Noto Sans KR", sans-serif !important;
+  font-weight: 300 !important;
+  letter-spacing: 0.4px;
+  color: #000;
+  background: var(--bg-color);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.filt-project-mount {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+}
+
+/* ------------------------------
+    📌2. 본문 레이아웃
+ - 좌측(이미지), 우측(텍스트, 표)
+------------------------------ */
+.filt-project-mount .page-container {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+}
+
+.filt-project-mount .mobile-project-layout {
+  display: none;
+}
+
+/* ========== 중앙 이미지 구역 ========== */
+.filt-project-mount .img-section {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0px;
+  right: var(--panel-width);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  transition: left 0.4s ease, right 0.4s ease;
+  transform-origin: center center;
+  z-index: 1;
+  background: var(--bg-color);
+  scroll-snap-type: y proximity;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.filt-project-mount .img-section img {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  flex: 0 0 100% !important;
+  box-sizing: border-box !important;
+  background: #f5f5f5;
+}
+
+.filt-project-mount .img-section img[data-rotation="90"],
+.filt-project-mount .img-section img[data-rotation="270"] {
+  width: var(--rotate-width, 100vh) !important;
+  height: var(--rotate-height, calc(100vw - var(--panel-width))) !important;
+  flex: none !important;
+  object-fit: contain !important;
+}
+.filt-project-mount .img-section img[data-rotation="90"] { transform: rotate(90deg); }
+.filt-project-mount .img-section img[data-rotation="180"] { transform: rotate(180deg); }
+.filt-project-mount .img-section img[data-rotation="270"] { transform: rotate(270deg); }
+
+.filt-project-mount img.landscape {
+  object-fit: cover !important;
+}
+
+.filt-project-mount img.portrait {
+  object-fit: contain !important;
+}
+
+.filt-project-mount .img-section.portrait-mode img.landscape {
+  object-fit: contain !important;
+}
+
+.filt-project-mount .img-section.portrait-mode img.portrait {
+  object-fit: cover !important;
+}
+
+.filt-project-mount .img-section img[data-fit="contain"] {
+  object-fit: contain !important;
+}
+
+.filt-project-mount .img-section img[data-fit="cover"] {
+  object-fit: cover !important;
+}
+
+.filt-project-mount .mobile-drawing-section {
+  display: none;
+}
+
+.filt-project-mount img.drawing {
+  min-height: 100vh !important;
+  object-fit: contain !important;
+  background: #fff;
+}
+
+.filt-project-mount hr {
+  border: none;
+  border-top: 0.2px solid #000;
+  width: 100%;
+  height: 0;
+  margin: 0;
+  transform: scaleY(0.5);
+}
+
+/* ========== 우측 구역 ========== */
+.filt-project-mount .side-section {
+  position: absolute !important;
+  right: 0;
+  top: 0;
+  width: var(--panel-width) !important;
+  bottom: 0 !important;
+  height: auto !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+  background: var(--bg-color);
+  border-left: 0.5px solid #000 !important;
+  z-index: 1000 !important;
+}
+
+/* == 뷰 전환 == */
+.filt-project-mount .view-toolbar {
+  height: 40px;
+  background: var(--bg-color);
+  border-bottom: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.filt-project-mount .view-btns {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  z-index: 5000;
+}
+
+.filt-project-mount .view-btns button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.filt-project-mount .view-btns button:focus,
+.filt-project-mount .view-btns button:active {
+  outline: none;
+  background: none;
+}
+
+.filt-project-mount .integrated-view-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  outline: none;
+  transition: opacity 0.2s ease;
+}
+
+.filt-project-mount .icon-back {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: #000;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.filt-project-mount .integrated-view-btn:hover .icon-back {
+  transform: translateX(-3px);
+  opacity: 0.7;
+}
+
+.filt-project-mount .icon-list {
+  width: 18px;
+  height: 18px;
+  display: block;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.filt-project-mount .integrated-view-btn:hover .icon-list {
+  transform: scale(1.1);
+  opacity: 0.7;
+}
+
+/* 1. 텍스트 섹션 */
+.filt-project-mount .side-section .text-content {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: var(--overview-height, 210px) !important;
+  overflow-y: auto !important;
+  padding: var(--panel-padding) !important;
+  padding-top: 40px !important;
+  background: var(--bg-color);
+  z-index: 2 !important;
+  border-bottom: 0.5px solid #000;
+}
+
+.filt-project-mount .side-section .text-content,
+.filt-project-mount .side-section .text-content * {
+  color: #000 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+  font-size: var(--body-text-size) !important;
+  line-height: 1.8 !important;
+}
+
+.filt-project-mount .side-section .text-content p {
+  margin: 0 !important;
+  font-weight: 500 !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+/* 2. 캡션 및 이미지 영역 */
+.filt-project-mount .side-figure {
+  margin: 8px 0 14px 0;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.filt-project-mount .side-single-img {
+  display: block;
+  width: min(300px, 100%);
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.filt-project-mount .side-caption {
+  margin-top: 6px;
+  font-size: var(--caption-size);
+  line-height: 1.2;
+  letter-spacing: 0.3px;
+  opacity: 0.75;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 3. 하단 표 영역 (프로젝트 개요): 화면 맨 바닥에 210px 높이로 고정 */
+.filt-project-mount .side-section .fixed-table {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: auto !important;
+  max-height: 210px;
+  overflow-y: auto !important;
+  background: #fff !important;
+  z-index: 2 !important;
+  border-top: none !important;
+}
+
+.filt-project-mount .fixed-table table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border-top: 0 !important;
+}
+
+.filt-project-mount .fixed-table th, .filt-project-mount .fixed-table td {
+  height: var(--overview-row-height) !important;
+  padding: 2px 5px;
+  font-size: var(--overview-font-size);
+  box-sizing: border-box;
+  border-bottom: 0.5px solid #000 !important;
+}
+
+.filt-project-mount .fixed-table th {
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: left;
+  vertical-align: top;
+}
+
+.filt-project-mount .fixed-table td {
+  font-weight: 400;
+  text-align: right;
+  vertical-align: top;
+  border-right: 0.5px solid #000 !important;
+}
+
+.filt-project-mount .fixed-table tr:first-child th,
+.filt-project-mount .fixed-table tr:first-child td {
+  border-top: 0 !important;
+}
+
+/* 프로젝트 타이틀 셀 (2행 높이) */
+.filt-project-mount .fixed-table .project-title-cell {
+  height: calc(var(--overview-row-height) * 2);
+  padding-top: 5px;
+  text-align: left !important;
+  vertical-align: top !important;
+  border-right: 0.5px solid #000;
+}
+
+.filt-project-mount .project-title-en {
+  font-weight: 700;
+  font-size: var(--overview-title-font-size);
+  line-height: 1.3;
+}
+.filt-project-mount .project-subtitle {
+  display: block;
+  font-weight: 400;
+  font-size: var(--overview-font-size);
+  margin-top: 2px;
+}
+
+/* Chrome, Safari 스크롤바 숨기기 */
+.filt-project-mount .img-section::-webkit-scrollbar,
+.filt-project-mount .side-section::-webkit-scrollbar,
+.filt-project-mount .text-content::-webkit-scrollbar,
+.filt-project-mount .fixed-table::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.filt-project-mount #buildingareaCell, .filt-project-mount #totalAreaCell {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* 공통 메뉴 유지 + 이전 모델의 "꽉 찬 느낌" 보강 */
+#filt-common-menu-v2 .side-panel {
+  left: -210px;
+  width: 240px;
+  background: transparent !important;
+  border-right: 1px solid #000;
+  box-shadow: none;
+}
+#filt-common-menu-v2 .side-panel.open {
+  left: 0;
+}
+#filt-common-menu-v2 .logo-btn {
+  width: 240px;
+  height: 410px;
+  transform: translateY(0);
+}
+#filt-common-menu-v2 .logo-btn svg {
+  stroke-width: 5;
+}
+#filt-common-menu-v2 .office-name {
+  top: 330px;
+  left: 20px;
+}
+#filt-common-menu-v2 .office-name p {
+  margin: 0;
+  line-height: 1;
+}
+#filt-common-menu-v2 .panel-menu {
+  top: 420px;
+  left: 20px;
+}
+#filt-common-menu-v2 .panel-menu a {
+  font-size: 12px;
+  line-height: 1.6;
+  letter-spacing: 0.3px;
+}
+#filt-common-menu-v2 .panel-footer {
+  height: 35px;
+  border-top: 1px solid #000;
+}
+#filt-common-menu-v2 .vert {
+  height: 410px;
+  width: 10px;
+  left: 230px;
+  top: 0;
+}
+#filt-common-menu-v2 .divider-top {
+  top: 410px;
+  width: 240px;
+}
+#filt-common-menu-v2 .filt-home-button--desktop {
+  left: 20px;
+  top: 20px;
+}
+
+body.filt-menu-open .filt-project-mount .img-section {
+  left: 240px;
+}
+
+@media (max-width: 768px) {
+  .filt-project-mount::before {
+    position: fixed;
+    top: 39.5px;
+    right: 0;
+    left: 0;
+    z-index: 999991;
+    border-bottom: 0.5px solid #000;
+    content: "";
+    pointer-events: none;
+  }
+
+  #filt-common-menu-v2 .filt-home-button--mobile {
+    display: block !important;
+    position: fixed !important;
+    top: 8px !important;
+    left: 14px !important;
+    width: 29px !important;
+    height: 24px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 91.67 76.67'%3E%3Cg fill='none' stroke='%23000' stroke-width='8.33'%3E%3Cpath d='M14.17 0v76.67M10 4.17h27.5M0 34.17h8.33M20 34.17h13.33M33.33 34.17h13.33M58.33 34.17h13.33M71.67 34.17h20M52.5 0v76.67M75 40v36.67M75 0v28.33M33.33 40v36.67M69.17 72.5H48.34'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat !important;
+    box-shadow: none !important;
+    z-index: 999993 !important;
+  }
+
+  .filt-project-mount {
+    --panel-width: 100vw;
+    --panel-padding: 12px;
+    --body-text-size: 13.5px;
+    --caption-size: clamp(9px, 2.4vw, 10px);
+    --overview-font-size: 10px;
+    --overview-title-font-size: 12px;
+    --overview-row-height: 35px;
+    position: relative !important;
+    /* Full-bleed: project-template.js measures the host page's side offset (e.g. Imweb widget padding). */
+    width: var(--bleed-width, 100%) !important;
+    max-width: none !important;
+    margin-left: calc(-1 * var(--bleed-left, 0px)) !important;
+    padding-top: 40px;
+    height: auto !important;
+    min-height: 100dvh;
+    overflow: visible !important;
+  }
+
+  .filt-project-mount .page-container {
+    display: flex;
+    flex-direction: column;
+    height: auto !important;
+    min-height: 100dvh;
+    overflow: visible !important;
+  }
+
+  .filt-project-mount .desktop-project-layout {
+    display: none !important;
+  }
+
+  .filt-project-mount .mobile-project-layout {
+    display: flex;
+  }
+
+  .filt-project-mount .img-section {
+    position: relative;
+    inset: auto;
+    left: 0 !important;
+    width: 100%;
+    height: 66.5vh;
+    height: 66.5dvh;
+    flex: 0 0 66.5vh;
+    flex: 0 0 66.5dvh;
+    flex-direction: row;
+    align-items: stretch;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory;
+    scroll-snap-stop: always;
+    touch-action: pan-x pan-y;
+    background: #fff;
+  }
+
+  .filt-project-mount .img-section img {
+    width: 100% !important;
+    height: 100% !important;
+    flex: 0 0 100% !important;
+    object-fit: contain !important;
+    background: #fff;
+    scroll-snap-align: start;
+  }
+
+  .filt-project-mount .img-section hr {
+    display: none;
+  }
+
+  .filt-project-mount .img-section img[data-rotation="90"],
+  .filt-project-mount .img-section img[data-rotation="270"] {
+    flex: none !important;
+  }
+
+  .filt-project-mount img.drawing {
+    min-height: 100% !important;
+  }
+
+  .filt-project-mount .side-section {
+    position: relative !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    flex: 0 0 auto;
+    overflow: visible !important;
+    border: 0 !important;
+  }
+
+  .filt-project-mount .view-toolbar {
+    display: none;
+  }
+
+  .filt-project-mount .side-section .fixed-table {
+    position: relative !important;
+    inset: auto !important;
+    order: 1;
+    width: 100% !important;
+    margin-left: 0 !important;
+    max-height: none;
+    height: auto !important;
+    overflow: visible !important;
+    border-top: 0.5px solid #000 !important;
+  }
+
+  .filt-project-mount .fixed-table::after {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    border-left: 0.5px solid #000;
+    content: "";
+    pointer-events: none;
+  }
+
+  .filt-project-mount .fixed-table table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-top: 0 !important;
+    font-size: 1rem;
+    letter-spacing: 0.4px;
+  }
+
+  .filt-project-mount .fixed-table th,
+  .filt-project-mount .fixed-table td {
+    height: var(--overview-row-height) !important;
+    padding: 3px 5px;
+    font-size: var(--overview-font-size);
+    line-height: 1.6;
+    border: 0 !important;
+    box-shadow: inset 0 -0.5px 0 #000;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  .filt-project-mount .fixed-table th {
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .filt-project-mount .fixed-table td {
+    text-align: right;
+    vertical-align: bottom;
+  }
+
+  .filt-project-mount .fixed-table tr:first-child > th:nth-of-type(2),
+  .filt-project-mount .fixed-table tr:nth-child(2) > th:first-child,
+  .filt-project-mount .fixed-table tr:nth-child(n + 3) > th:nth-child(3) {
+    box-shadow: inset 0 -0.5px 0 #000;
+  }
+
+  .filt-project-mount .fixed-table .project-title-cell {
+    height: calc(var(--overview-row-height) * 2) !important;
+    padding-top: 3px;
+    text-align: left !important;
+    vertical-align: top !important;
+    box-shadow: inset 0 -0.5px 0 #000;
+  }
+
+  .filt-project-mount .fixed-table tr:first-child th,
+  .filt-project-mount .fixed-table tr:nth-child(2) th,
+  .filt-project-mount .fixed-table tr:nth-child(n + 3) th {
+    box-shadow: inset 0 -0.5px 0 #000;
+  }
+
+  .filt-project-mount .project-title-en,
+  .filt-project-mount .project-subtitle {
+    font-size: var(--overview-title-font-size);
+  }
+
+  .filt-project-mount .project-title-en {
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .filt-project-mount .project-subtitle {
+    line-height: 1.6;
+  }
+
+  .filt-project-mount .side-section .text-content {
+    position: relative !important;
+    inset: auto !important;
+    bottom: auto !important;
+    order: 2;
+    overflow: visible !important;
+    padding: 12px 18px 18px !important;
+    border-bottom: 0;
+    font-size: var(--body-text-size) !important;
+    line-height: 1.5 !important;
+  }
+
+  .filt-project-mount .side-section .text-content,
+  .filt-project-mount .side-section .text-content * {
+    font-size: var(--body-text-size) !important;
+    line-height: 1.5 !important;
+  }
+
+  .filt-project-mount .side-section .text-content br {
+    display: inline !important;
+  }
+
+  .filt-project-mount .side-section .side-figure {
+    margin: 8px 0 14px;
+    padding: 0;
+  }
+
+  .filt-project-mount .side-section .side-single-img {
+    width: 100%;
+    height: auto;
+  }
+
+  .filt-project-mount .side-section .side-caption {
+    margin-top: 6px;
+    font-size: var(--caption-size) !important;
+    line-height: 1.25 !important;
+    white-space: normal;
+  }
+
+  .filt-project-mount .mobile-drawing-section {
+    display: block;
+    width: 100%;
+    border-top: 0.5px solid #000;
+    background: #fff;
+  }
+
+  .filt-project-mount .mobile-drawing-slider {
+    position: relative;
+    width: 100%;
+    height: 90vh;
+    height: 90dvh;
+    overflow: hidden;
+    background: #fff;
+    touch-action: pan-y;
+  }
+
+  .filt-project-mount .mobile-drawing-slides {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .filt-project-mount .mobile-drawing-slides img {
+    display: block;
+    flex: 0 0 100%;
+    min-width: 100%;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    background: #fff;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .filt-project-mount .mobile-drawing-click-zone {
+    position: absolute;
+    top: 0;
+    width: 20%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .filt-project-mount .mobile-drawing-click-zone.left {
+    left: 0;
+  }
+
+  .filt-project-mount .mobile-drawing-click-zone.right {
+    right: 0;
+  }
+
+  .filt-project-mount .mobile-drawing-info {
+    display: grid;
+    grid-template-columns: 10% 50% 40%;
+    width: 100%;
+    height: 40px;
+    box-sizing: border-box;
+    border-top: 0.5px solid #000;
+    background: #fff;
+  }
+
+  .filt-project-mount .mobile-drawing-info > div {
+    position: relative;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 5px;
+    overflow: hidden;
+  }
+
+  .filt-project-mount .mobile-drawing-info-coordinate,
+  .filt-project-mount .mobile-drawing-info-scale {
+    border-right: 0.5px solid #000;
+  }
+
+  .filt-project-mount .mobile-drawing-info-coordinate img,
+  .filt-project-mount .mobile-drawing-info-scale img {
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    max-width: none;
+    max-height: none;
+    display: block;
+    pointer-events: none;
+  }
+
+  .filt-project-mount .mobile-drawing-info-title {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  .filt-project-mount .mobile-drawing-info-title span {
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+  }
+}

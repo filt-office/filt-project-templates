@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FILT. BUILDER</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/suit-font@1.0.0/dist/suit.min.css">
+  <style>
+    :root {
+      --line: #d9d9d9;
+      --muted: #777;
+      --bg: #f4f4f2;
+      --danger: #c62828;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      font: 13px/1.5 "SUIT", system-ui, sans-serif;
+      color: #111;
+      background: var(--bg);
+    }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button {
+      padding: 5px 10px;
+      border: 1px solid #111;
+      border-radius: 0;
+      background: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button:hover { background: #111; color: #fff; }
+    button.primary { background: #111; color: #fff; }
+    button.primary:hover { background: #333; }
+    button.icon { padding: 2px 7px; border-color: var(--line); }
+    button.icon:hover { border-color: #111; }
+    button.small { padding: 1px 6px; font-size: 11px; border-color: var(--line); }
+    button.small:hover { border-color: #111; }
+    button.danger:hover { background: var(--danger); border-color: var(--danger); }
+    button:disabled { opacity: .4; cursor: default; pointer-events: none; }
+    input[type="text"], input[type="number"], select, textarea {
+      width: 100%;
+      padding: 5px 7px;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: #fff;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #111; }
+    textarea { resize: vertical; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+
+    header.bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-bottom: 1px solid #111;
+      background: #fff;
+    }
+    header.bar h1 { margin: 0 10px 0 0; font-size: 15px; letter-spacing: .04em; }
+    header.bar select { width: auto; min-width: 180px; }
+    .tabs { display: flex; }
+    .tabs a { padding: 4px 12px; border: 1px solid #111; color: inherit; text-decoration: none; }
+    .tabs a + a { border-left: 0; }
+    .tabs a.active { background: #111; color: #fff; }
+    .badges { display: flex; gap: 4px; }
+    .badge { padding: 1px 6px; border: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+    .badge.on { border-color: #111; color: #111; }
+    .spacer { flex: 1; }
+    .dirty { color: var(--danger); font-size: 12px; visibility: hidden; }
+    .dirty.show { visibility: visible; }
+
+    .layout { display: grid; grid-template-columns: minmax(400px, 480px) 1fr; min-height: 0; }
+    .editor { overflow-y: auto; border-right: 1px solid #111; background: #fff; }
+    details { border-bottom: 1px solid var(--line); }
+    summary {
+      padding: 10px 14px;
+      font-weight: 700;
+      letter-spacing: .03em;
+      cursor: pointer;
+      user-select: none;
+    }
+    summary small { margin-left: 6px; font-weight: 400; color: var(--muted); }
+    .section-body { display: grid; gap: 10px; padding: 0 14px 14px; }
+    .stack { display: grid; gap: 10px; }
+    label.field { display: grid; gap: 3px; }
+    label.field > span { font-size: 11px; color: var(--muted); }
+    .row { display: flex; gap: 6px; align-items: center; }
+    .row > * { min-width: 0; }
+    .grow { flex: 1; }
+    .hint { margin: 0; font-size: 11px; color: var(--muted); }
+    .row > .hint { flex: none; white-space: nowrap; }
+
+    .item {
+      display: grid;
+      gap: 6px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      background: #fafafa;
+    }
+    .item-head { display: flex; align-items: center; gap: 4px; }
+    .item-head .index { width: 30px; color: var(--muted); font-size: 11px; }
+    .item-head .title { flex: 1; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .field-item { grid-template-columns: 1fr 1.4fr; align-items: start; }
+    .field-item .item-head { grid-column: 1 / -1; }
+    .three { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 5px; }
+
+    .devices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .device {
+      display: grid;
+      gap: 4px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .device.off .thumb, .device.off .path { opacity: .35; }
+    .device-head { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; }
+    .device-head label { display: flex; align-items: center; gap: 3px; font-weight: 400; }
+    .device-actions { display: flex; flex-wrap: wrap; gap: 3px; }
+    .path { overflow: hidden; font-size: 10px; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+    .thumb {
+      position: relative;
+      height: 96px;
+      border: 1px solid var(--line);
+      background: #eee center / contain no-repeat;
+    }
+    .thumb.broken { background-image: none !important; }
+    .thumb.broken::after { content: "이미지 없음"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 11px; }
+    .thumb.small { width: 64px; height: 40px; flex: none; }
+    .tag { padding: 0 5px; border: 1px solid #111; font-size: 10px; }
+
+    .dropzone {
+      display: grid;
+      place-items: center;
+      min-height: 64px;
+      padding: 10px;
+      border: 1px dashed #999;
+      color: var(--muted);
+      text-align: center;
+      cursor: pointer;
+    }
+    .dropzone.over { border-color: #111; color: #111; background: #f0f0f0; }
+    .description { min-height: 260px; }
+
+    .preview { display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; }
+    .preview-bar { display: flex; gap: 6px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: #fff; }
+    .preview-bar button.active { background: #111; color: #fff; }
+    .preview-bar .size { color: var(--muted); font-size: 12px; }
+    .stage { position: relative; overflow: hidden; }
+    .stage-inner { position: absolute; top: 12px; left: 50%; transform-origin: top center; box-shadow: 0 0 0 1px #111, 0 6px 24px rgba(0,0,0,.12); background: #fff; }
+    .stage iframe { display: block; border: 0; width: 100%; height: 100%; background: #fff; }
+
+    .toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 10;
+      max-width: 420px;
+      padding: 10px 14px;
+      background: #111;
+      color: #fff;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .2s, transform .2s;
+      pointer-events: none;
+      white-space: pre-line;
+    }
+    .toast.show { opacity: 1; transform: none; }
+    .toast.error { background: var(--danger); }
+    .empty { display: grid; place-items: center; height: 100%; color: var(--muted); }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; grid-template-rows: 1fr 60vh; }
+      .editor { border-right: 0; border-bottom: 1px solid #111; }
+    }
+  </style>
+</head>
+<body>
+  <header class="bar">
+    <h1>FILT. BUILDER</h1>
+    <nav class="tabs">
+      <a href="works.html">WORKS 목록</a>
+      <a href="./" class="active">프로젝트 상세</a>
+    </nav>
+    <select id="projectSelect" aria-label="프로젝트 선택"></select>
+    <button id="newProject">+ 새 프로젝트</button>
+    <div class="badges" title="저장 위치">
+      <span class="badge" id="badgeDraft">drafts</span>
+      <span class="badge" id="badgeRuntime">runtime</span>
+    </div>
+    <span class="dirty" id="dirty">● 저장 안 됨</span>
+    <span class="spacer"></span>
+    <button id="saveDraft" title="Ctrl+S">임시저장</button>
+    <button id="saveRuntime" class="primary">게시용 저장</button>
+    <span id="account" class="row"></span>
+  </header>
+
+  <div class="layout">
+    <main class="editor" id="editor">
+      <div class="empty">프로젝트를 불러오는 중…</div>
+    </main>
+    <section class="preview" aria-label="미리보기">
+      <div class="preview-bar">
+        <button data-device="desktop">PC</button>
+        <button data-device="mobile">모바일</button>
+        <span class="size" id="previewSize"></span>
+        <span class="spacer"></span>
+        <button id="reloadPreview">새로고침</button>
+      </div>
+      <div class="stage" id="stage">
+        <div class="stage-inner" id="stageInner"><iframe id="previewFrame" title="프로젝트 미리보기"></iframe></div>
+      </div>
+    </section>
+  </div>
+  <input type="file" id="filePicker" accept="image/*" hidden>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="store.js"></script>
+  <script>
+  (() => {
+    "use strict";
+
+    const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
+    const VIEWPORTS = { desktop: { width: 1440, height: 900 }, mobile: { width: 390, height: 844 } };
+    const KINDS = [["photo:landscape", "사진 · 가로"], ["photo:portrait", "사진 · 세로"], ["drawing", "도면"]];
+    const FITS = ["auto", "contain", "cover"];
+    const ROTATIONS = [0, 90, 180, 270];
+    const DEFAULT_FIELDS = [
+      "STATUS", "YEAR", "LOCATION", "PROGRAM", "NUMBER OF FLOORS", "PROJECT TYPE",
+      "BUILDING AREA", "TOTAL FLOOR AREA", "CLIENT", "CONSTRUCTION", "PHOTOGRAPHER", "COWORK",
+    ];
+    // Asset folders, matching the company's PC / MOB convention.
+    const PC = "PC";
+    const MOB = "MOB";
+    const DEVICE_LABEL = { [PC]: "PC", [MOB]: "모바일" };
+    const SLOT_KEY = { [PC]: "pc", [MOB]: "mob" };
+    const HIDE_KEY = { [PC]: "hidePc", [MOB]: "hideMob" };
+
+    const $ = (selector) => document.querySelector(selector);
+    const editor = $("#editor");
+    const frame = $("#previewFrame");
+
+    let projects = [];
+    let project = null;
+    let saved = { draft: false, runtime: false };
+    let dirty = false;
+    let viewport = new URLSearchParams(location.search).get("device") === "mobile" ? "mobile" : "desktop";
+    let previewUrl = null;
+    let previewTimer = null;
+
+    // ---------- helpers ----------
+
+    const h = (tag, props = {}, ...children) => {
+      const el = document.createElement(tag);
+      for (const [key, value] of Object.entries(props)) {
+        if (value === undefined || value === null || value === false) continue;
+        if (key === "class") el.className = value;
+        else if (key === "dataset") Object.assign(el.dataset, value);
+        else if (key.startsWith("on")) el.addEventListener(key.slice(2), value);
+        else if (key in el && key !== "list") el[key] = value;
+        else el.setAttribute(key, value === true ? "" : value);
+      }
+      el.append(...children.flat().filter((child) => child !== null && child !== undefined && child !== false));
+      return el;
+    };
+
+    let toastTimer;
+    const toast = (message, isError = false) => {
+      const el = $("#toast");
+      el.textContent = message;
+      el.classList.toggle("error", isError);
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), isError ? 6000 : 2600);
+    };
+
+    const store = window.FiltStore;
+    const { isExternal } = store;
+
+    const move = (list, index, delta) => {
+      const target = index + delta;
+      if (target < 0 || target >= list.length) return false;
+      [list[index], list[target]] = [list[target], list[index]];
+      return true;
+    };
+
+    const markDirty = () => {
+      dirty = true;
+      $("#dirty").classList.add("show");
+      schedulePreview();
+    };
+
+    const setClean = () => {
+      dirty = false;
+      $("#dirty").classList.remove("show");
+    };
+
+    // ---------- data model ----------
+    // project.gallery is the builder's source of truth: one slot per image, holding a PC and a
+    // MOB version. compile() turns it into what project-template.js reads:
+    //   images                 → PC gallery (photos + drawings)
+    //   mobile.images          → mobile gallery (photos)
+    //   mobile.drawings.images → mobile drawing slider (drawings)
+
+    const newSlot = (fields = {}) => ({
+      type: "photo",
+      orientation: "landscape",
+      alt: "",
+      fit: "auto",
+      rotation: 0,
+      title: "",
+      coordinate: true,
+      pc: "",
+      mob: "",
+      hidePc: false,
+      hideMob: false,
+      ...fields,
+    });
+
+    // Builds slots from older JSON that only has images / mobile.* (e.g. Tempin).
+    const deriveGallery = (data) => {
+      const pcImages = Array.isArray(data.desktop?.images) ? data.desktop.images : (data.images || []);
+      const mobileImages = Array.isArray(data.mobile?.images) ? data.mobile.images : null;
+      const mobileDrawings = data.mobile?.drawings?.images || [];
+      const slots = [];
+      const usedMobile = new Set();
+      let drawingIndex = 0;
+      for (const image of pcImages) {
+        const common = { alt: image.alt || "", fit: image.fit || "auto", rotation: Number(image.rotation) || 0, pc: image.src || "" };
+        if (image.class === "drawing") {
+          const drawing = mobileDrawings[drawingIndex++];
+          slots.push(newSlot({
+            ...common,
+            type: "drawing",
+            mob: drawing?.src || "",
+            hideMob: !drawing,
+            title: drawing?.title || "",
+            coordinate: drawing?.coordinate !== false,
+          }));
+        } else {
+          const match = mobileImages ? mobileImages.find((candidate) => candidate.src === image.src) : image;
+          if (match && mobileImages) usedMobile.add(match);
+          slots.push(newSlot({
+            ...common,
+            orientation: image.class === "portrait" ? "portrait" : "landscape",
+            mob: match?.src || "",
+            hideMob: !match,
+          }));
+        }
+      }
+      mobileDrawings.slice(drawingIndex).forEach((drawing) => slots.push(newSlot({
+        type: "drawing",
+        mob: drawing.src || "",
+        alt: drawing.alt || "",
+        title: drawing.title || "",
+        coordinate: drawing.coordinate !== false,
+        hidePc: true,
+      })));
+      (mobileImages || []).filter((image) => !usedMobile.has(image)).forEach((image) => slots.push(newSlot({
+        orientation: image.class === "portrait" ? "portrait" : "landscape",
+        alt: image.alt || "",
+        fit: image.fit || "auto",
+        rotation: Number(image.rotation) || 0,
+        mob: image.src || "",
+        hidePc: true,
+      })));
+      return slots;
+    };
+
+    const showsOn = (slot, device) => !slot[HIDE_KEY[device]] && Boolean(slot[SLOT_KEY[device]]);
+
+    const compile = (source) => {
+      const out = JSON.parse(JSON.stringify(source));
+      const gallery = out.gallery || [];
+      const galleryImage = (slot, src) => ({
+        src,
+        class: slot.type === "drawing" ? "drawing" : slot.orientation,
+        alt: slot.alt || "",
+        fit: slot.fit || "auto",
+        rotation: Number(slot.rotation) || 0,
+      });
+      out.images = gallery.filter((slot) => showsOn(slot, PC)).map((slot) => galleryImage(slot, slot.pc));
+      if (out.desktop) delete out.desktop.images;
+      out.mobile ||= {};
+      out.mobile.images = gallery
+        .filter((slot) => slot.type === "photo" && showsOn(slot, MOB))
+        .map((slot) => galleryImage(slot, slot.mob));
+      out.mobile.drawings ||= {};
+      out.mobile.drawings.images = gallery
+        .filter((slot) => slot.type === "drawing" && showsOn(slot, MOB))
+        .map((slot) => ({
+          src: slot.mob,
+          title: slot.title || "",
+          alt: slot.alt || slot.title || "",
+          ...(slot.coordinate === false ? { coordinate: false } : {}),
+        }));
+      return out;
+    };
+
+    const ensureShape = (data) => {
+      data.overview ||= {};
+      data.overview.fields = Array.isArray(data.overview.fields) ? data.overview.fields : [];
+      data.mobile ||= {};
+      data.mobile.drawings ||= {};
+      data.descriptionHtml ??= "";
+      if (!Array.isArray(data.gallery)) data.gallery = deriveGallery(data);
+      data.gallery = data.gallery.map((slot) => newSlot(slot));
+      return data;
+    };
+
+    const blankProject = (id) => ({
+      id,
+      title: "",
+      overview: {
+        titleEn: "",
+        subtitle: "",
+        fields: DEFAULT_FIELDS.map((label) => ({ label, value: "" })),
+      },
+      descriptionHtml: "",
+      gallery: [],
+      mobile: { drawings: { coordinateSrc: "", scaleSrc: "" } },
+    });
+
+    // ---------- upload ----------
+
+    const detectKind = (file) => new Promise((resolve) => {
+      if (/svg/.test(file.type) || /\.svg$/i.test(file.name)) return resolve({ type: "drawing" });
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        resolve({ type: "photo", orientation: img.naturalHeight > img.naturalWidth ? "portrait" : "landscape" });
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = () => { resolve({ type: "photo", orientation: "landscape" }); URL.revokeObjectURL(url); };
+      img.src = url;
+    });
+
+    const ensureSaved = async () => {
+      if (!saved.draft && !saved.runtime) await saveProject("draft", { quiet: true });
+    };
+
+    // device: "both" | PC | MOB. Resolves to { PC?: src, MOB?: src }.
+    const upload = async (file, device) => {
+      await ensureSaved();
+      return store.upload(project.id, device, file);
+    };
+
+    const uploadMany = async (files, device, onEach) => {
+      const list = Array.from(files).filter((file) => file.type.startsWith("image/") || /\.svg$/i.test(file.name));
+      if (!list.length) return;
+      toast(`업로드 중… (${list.length}개)`);
+      let done = 0;
+      for (const file of list) {
+        try {
+          if (file.size > 5 * 1024 * 1024) toast(`${file.name}: ${(file.size / 1048576).toFixed(1)}MB — 용량이 커서 페이지가 느려질 수 있어요.`);
+          await onEach(file, await upload(file, device));
+          done += 1;
+        } catch (error) {
+          toast(`${file.name}: ${error.message}`, true);
+        }
+      }
+      if (done) toast(`${done}개 업로드 완료`);
+    };
+
+    const pickFile = () => new Promise((resolve) => {
+      const picker = $("#filePicker");
+      picker.value = "";
+      picker.onchange = () => resolve(picker.files[0] || null);
+      picker.click();
+    });
+
+    // Copies one device's image to the other ("PC와 같게" / "모바일과 같게").
+    const copyAcross = async (src, toDevice) => {
+      if (!src || isExternal(src)) return src;
+      await ensureSaved();
+      return store.copyAsset(project.id, src, toDevice);
+    };
+
+    const setThumb = async (thumb, src) => {
+      thumb.classList.remove("broken");
+      thumb.style.backgroundImage = "";
+      const url = src ? await store.assetUrl(src) : "";
+      if (!url) { thumb.classList.add("broken"); return; }
+      thumb.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`;
+      const probe = new Image();
+      probe.onerror = () => thumb.classList.add("broken");
+      probe.src = url;
+    };
+
+    // ---------- form pieces ----------
+
+    const section = (title, note, body, open = true) => h("details", { open },
+      h("summary", {}, title, note ? h("small", {}, note) : null),
+      h("div", { class: "section-body" }, body),
+    );
+
+    const textField = (label, getValue, setValue, props = {}) => h("label", { class: "field" },
+      h("span", {}, label),
+      h(props.multiline ? "textarea" : "input", {
+        type: props.multiline ? undefined : "text",
+        rows: props.rows,
+        class: props.mono ? "mono" : undefined,
+        placeholder: props.placeholder,
+        value: getValue() ?? "",
+        oninput: (event) => { setValue(event.target.value); markDirty(); },
+      }),
+    );
+
+    const select = (options, value, onChange) => h("select", {
+      onchange: (event) => { onChange(event.target.value); markDirty(); },
+    }, options.map(([optionValue, label]) => h("option", { value: optionValue, selected: String(optionValue) === String(value) }, label)));
+
+    const listControls = (list, index, rerender, label) => [
+      h("button", { type: "button", class: "icon", title: "위로", disabled: index === 0, onclick: () => { move(list, index, -1); rerender(); markDirty(); } }, "↑"),
+      h("button", { type: "button", class: "icon", title: "아래로", disabled: index === list.length - 1, onclick: () => { move(list, index, 1); rerender(); markDirty(); } }, "↓"),
+      h("button", {
+        type: "button",
+        class: "icon danger",
+        title: "삭제",
+        onclick: () => {
+          if (!confirm(`${label || "항목"}을(를) 삭제할까요?\n(업로드된 파일은 폴더에 남습니다)`)) return;
+          list.splice(index, 1);
+          rerender();
+          markDirty();
+        },
+      }, "✕"),
+    ];
+
+    // URL/path input with an upload button; used for single-device assets (방위표, 축척 바).
+    const srcInput = (getValue, setValue, device) => {
+      const thumb = h("div", { class: "thumb small" });
+      setThumb(thumb, getValue());
+      const input = h("input", {
+        type: "text",
+        class: "mono grow",
+        value: getValue() || "",
+        placeholder: "https://… 또는 업로드",
+        oninput: () => { setValue(input.value.trim()); setThumb(thumb, input.value.trim()); markDirty(); },
+      });
+      const button = h("button", {
+        type: "button",
+        class: "icon",
+        onclick: async () => {
+          const file = await pickFile();
+          if (!file) return;
+          await uploadMany([file], device, (_, src) => {
+            input.value = src[device];
+            setValue(src[device]);
+            setThumb(thumb, src[device]);
+            markDirty();
+          });
+        },
+      }, "업로드");
+      return h("div", { class: "row" }, thumb, input, button);
+    };
+
+    const dropzone = (label, onFiles) => {
+      const zone = h("div", { class: "dropzone", tabIndex: 0 }, label);
+      const picker = h("input", { type: "file", accept: "image/*", multiple: true, hidden: true, onchange: () => onFiles(picker.files) });
+      zone.addEventListener("click", () => { picker.value = ""; picker.click(); });
+      zone.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); zone.click(); } });
+      zone.addEventListener("dragover", (event) => { event.preventDefault(); zone.classList.add("over"); });
+      zone.addEventListener("dragleave", () => zone.classList.remove("over"));
+      zone.addEventListener("drop", (event) => { event.preventDefault(); zone.classList.remove("over"); onFiles(event.dataTransfer.files); });
+      return h("div", {}, zone, picker);
+    };
+
+    // ---------- sections ----------
+
+    const basicSection = () => section("기본 정보", null, [
+      h("label", { class: "field" }, h("span", {}, "프로젝트 ID (아임웹 위젯의 data-project-id)"),
+        h("input", { type: "text", class: "mono", value: project.id, readOnly: true })),
+      textField("브라우저 탭 제목", () => project.title, (value) => { project.title = value; }, {
+        placeholder: `${project.overview.titleEn || "PROJECT"} | PROJECT INFO`,
+      }),
+    ]);
+
+    const overviewSection = () => {
+      const list = h("div", { class: "stack" });
+      const fields = project.overview.fields;
+      const render = () => {
+        list.replaceChildren(...fields.map((field, index) => h("div", { class: "item field-item" },
+          h("div", { class: "item-head" },
+            h("span", { class: "index" }, String(index + 1)),
+            h("span", { class: "title" }, field.label || "(이름 없음)"),
+            listControls(fields, index, render, field.label)),
+          h("input", { type: "text", value: field.label || "", placeholder: "항목명", oninput: (event) => { field.label = event.target.value; markDirty(); } }),
+          h("div", { class: "stack", style: "gap:5px" },
+            h("textarea", {
+              rows: String(field.value || "").split("\n").length,
+              value: field.value || "",
+              placeholder: "값 (줄바꿈 가능)",
+              oninput: (event) => {
+                field.value = event.target.value;
+                event.target.rows = field.value.split("\n").length;
+                markDirty();
+              },
+            }),
+            /AREA/i.test(field.label || "") || field.areaM2 !== undefined
+              ? h("label", { class: "row", title: "숫자를 넣으면 클릭 시 ㎡ ↔ 평 전환" },
+                h("span", { class: "hint" }, "㎡ 숫자"),
+                h("input", {
+                  type: "number",
+                  step: "0.01",
+                  value: field.areaM2 ?? "",
+                  oninput: (event) => {
+                    if (event.target.value === "") delete field.areaM2;
+                    else field.areaM2 = Number(event.target.value);
+                    markDirty();
+                  },
+                }))
+              : null),
+        )));
+      };
+      render();
+      return section("개요표", "첫 두 항목은 제목 옆, 나머지는 2개씩 한 줄", [
+        textField("영문 제목", () => project.overview.titleEn, (value) => { project.overview.titleEn = value; }),
+        textField("부제 (한글)", () => project.overview.subtitle, (value) => { project.overview.subtitle = value; }),
+        list,
+        h("button", { type: "button", onclick: () => { fields.push({ label: "", value: "" }); render(); markDirty(); } }, "+ 항목 추가"),
+      ]);
+    };
+
+    // One device column (PC or 모바일) inside a gallery slot.
+    const deviceCard = (slot, device, refresh) => {
+      const other = device === PC ? MOB : PC;
+      const key = SLOT_KEY[device];
+      const hideKey = HIDE_KEY[device];
+      const thumb = h("div", { class: "thumb" });
+      setThumb(thumb, slot[key]);
+      const card = h("div", { class: `device${slot[hideKey] ? " off" : ""}` },
+        h("div", { class: "device-head" },
+          h("span", {}, DEVICE_LABEL[device]),
+          h("label", { title: `${DEVICE_LABEL[device]}에 표시` },
+            h("input", {
+              type: "checkbox",
+              checked: !slot[hideKey],
+              onchange: (event) => { slot[hideKey] = !event.target.checked; refresh(true); markDirty(); },
+            }), "표시")),
+        thumb,
+        h("div", { class: "path mono", title: slot[key] || "" }, slot[key] || "—"),
+        h("div", { class: "device-actions" },
+          h("button", {
+            type: "button",
+            class: "small",
+            title: `${DEVICE_LABEL[device]} 이미지만 교체`,
+            onclick: async () => {
+              const file = await pickFile();
+              if (!file) return;
+              await uploadMany([file], device, (_, src) => { slot[key] = src[device]; refresh(true); markDirty(); });
+            },
+          }, "교체"),
+          h("button", {
+            type: "button",
+            class: "small",
+            onclick: () => {
+              const src = prompt(`${DEVICE_LABEL[device]} 이미지 URL`, isExternal(slot[key]) ? slot[key] : "");
+              if (!src) return;
+              slot[key] = src.trim();
+              refresh(true);
+              markDirty();
+            },
+          }, "URL"),
+          h("button", {
+            type: "button",
+            class: "small",
+            disabled: !slot[SLOT_KEY[other]] || slot[SLOT_KEY[other]] === slot[key],
+            title: `${DEVICE_LABEL[other]} 이미지를 ${device} 폴더로 복사`,
+            onclick: async () => {
+              try {
+                slot[key] = await copyAcross(slot[SLOT_KEY[other]], device);
+                refresh(true);
+                markDirty();
+              } catch (error) {
+                toast(error.message, true);
+              }
+            },
+          }, other === PC ? "PC와 같게" : "모바일과 같게")),
+      );
+      return card;
+    };
+
+    const slotItem = (gallery, slot, index, renderList) => {
+      const item = h("div", { class: "item" });
+      const kindValue = slot.type === "drawing" ? "drawing" : `photo:${slot.orientation}`;
+      const render = (full = false) => {
+        if (full) return renderList();
+        item.replaceChildren(...[
+          h("div", { class: "item-head" },
+            h("span", { class: "index" }, `#${String(index + 1).padStart(2, "0")}`),
+            h("span", { class: "title" }, slot.title || slot.alt || slot.pc || slot.mob || "(빈 이미지)"),
+            listControls(gallery, index, renderList, `#${index + 1} 이미지`)),
+          h("div", { class: "three" },
+            select(KINDS, kindValue, (value) => {
+              const [type, orientation] = value.split(":");
+              slot.type = type;
+              if (orientation) slot.orientation = orientation;
+              render();
+            }),
+            select(FITS.map((value) => [value, `맞춤: ${value}`]), slot.fit, (value) => { slot.fit = value; }),
+            select(ROTATIONS.map((value) => [value, `회전 ${value}°`]), slot.rotation, (value) => { slot.rotation = Number(value); })),
+          h("div", { class: "devices" }, deviceCard(slot, PC, render), deviceCard(slot, MOB, render)),
+          slot.type === "drawing"
+            ? h("div", { class: "row" },
+              h("input", { type: "text", class: "grow", value: slot.title, placeholder: "도면 제목 (모바일 슬라이더, 예: 1F PLAN)", oninput: (event) => { slot.title = event.target.value; markDirty(); } }),
+              h("label", { class: "row", title: "모바일 도면에 방위표 표시" },
+                h("input", { type: "checkbox", checked: slot.coordinate !== false, onchange: (event) => { slot.coordinate = event.target.checked; markDirty(); } }),
+                "방위표"))
+            : null,
+          h("input", { type: "text", value: slot.alt, placeholder: "대체 텍스트 (예: #01 Exterior - Daytime View)", oninput: (event) => { slot.alt = event.target.value; markDirty(); } }),
+          slot.type === "drawing" ? h("p", { class: "hint" }, "도면: PC는 갤러리, 모바일은 하단 도면 슬라이더에 들어갑니다.") : null,
+        ].filter(Boolean));
+      };
+      render();
+      return item;
+    };
+
+    const gallerySection = () => {
+      const gallery = project.gallery;
+      const list = h("div", { class: "stack" });
+      const countLabel = h("small", {});
+      const renderList = () => {
+        list.replaceChildren(...gallery.map((slot, index) => slotItem(gallery, slot, index, renderList)));
+        const pcCount = gallery.filter((slot) => showsOn(slot, PC)).length;
+        const mobCount = gallery.filter((slot) => showsOn(slot, MOB)).length;
+        countLabel.textContent = `${gallery.length}개 · PC ${pcCount} / 모바일 ${mobCount}`;
+      };
+      const details = section("이미지", null, [
+        h("p", { class: "hint" }, "한 번 올리면 PC/ 와 MOB/ 폴더에 함께 저장되고 양쪽에 표시됩니다. 필요하면 기기별로 교체하거나 숨기세요."),
+        list,
+        dropzone("이미지를 끌어다 놓거나 클릭해서 업로드 (여러 장 가능, SVG는 도면으로 분류)", (files) => uploadMany(files, "both", async (file, src) => {
+          const kind = await detectKind(file);
+          const number = String(gallery.length + 1).padStart(2, "0");
+          gallery.push(newSlot({
+            ...kind,
+            pc: src[PC],
+            mob: src[MOB],
+            title: kind.type === "drawing" ? file.name.replace(/\.[^.]+$/, "") : "",
+            alt: `#${number} ${project.overview.titleEn || project.id}`,
+          }));
+          renderList();
+          markDirty();
+        })),
+        h("button", {
+          type: "button",
+          onclick: () => {
+            const src = (prompt("이미지 URL (PC·모바일 공통)") || "").trim();
+            if (!src) return;
+            gallery.push(newSlot({ pc: src, mob: src }));
+            renderList();
+            markDirty();
+          },
+        }, "+ URL로 추가"),
+      ]);
+      details.querySelector("summary").append(countLabel);
+      renderList();
+      return details;
+    };
+
+    const descriptionSection = () => {
+      const area = h("textarea", {
+        class: "mono description",
+        value: project.descriptionHtml,
+        spellcheck: false,
+        oninput: () => { project.descriptionHtml = area.value; markDirty(); },
+      });
+      const insert = (snippet) => {
+        const start = area.selectionStart ?? area.value.length;
+        area.setRangeText(snippet, start, area.selectionEnd ?? start, "end");
+        area.focus();
+        project.descriptionHtml = area.value;
+        markDirty();
+      };
+      const figure = (src, caption) => `\n<figure class="side-figure">\n  <img class="side-single-img" src="${src}" alt="${caption.replace(/"/g, "&quot;")}">\n  <figcaption class="side-caption">${caption}</figcaption>\n</figure>\n`;
+      return section("설명", "HTML · PC·모바일 공통", [
+        h("div", { class: "row" },
+          h("button", { type: "button", onclick: () => insert("\n<br><br>\n") }, "문단 구분"),
+          h("button", {
+            type: "button",
+            onclick: async () => {
+              const file = await pickFile();
+              if (!file) return;
+              await uploadMany([file], PC, (_, src) => insert(figure(src[PC], prompt("캡션을 입력하세요 (예: *리노베이션 전 모습)") || "")));
+            },
+          }, "보조 이미지 업로드"),
+          h("button", {
+            type: "button",
+            onclick: () => {
+              const src = prompt("보조 이미지 URL");
+              if (src) insert(figure(src.trim(), prompt("캡션") || ""));
+            },
+          }, "보조 이미지 URL")),
+        area,
+        h("p", { class: "hint" }, "문단 사이는 <br><br>, 보조 이미지는 <figure class=\"side-figure\"> 형식입니다. 설명은 PC·모바일이 같은 내용을 쓰므로 보조 이미지는 PC/ 폴더에 저장됩니다."),
+      ]);
+    };
+
+    const mobileSection = () => {
+      const drawings = project.mobile.drawings;
+      return section("모바일 도면 설정", "MOB/", [
+        h("p", { class: "hint" }, "도면 이미지는 위 '이미지'에서 종류를 '도면'으로 지정하세요. 여기서는 모바일 도면 위에 겹치는 표시만 설정합니다."),
+        h("label", { class: "field" }, h("span", {}, "방위표 이미지"), srcInput(() => drawings.coordinateSrc, (value) => { drawings.coordinateSrc = value; }, MOB)),
+        h("label", { class: "field" }, h("span", {}, "축척 바 이미지"), srcInput(() => drawings.scaleSrc, (value) => { drawings.scaleSrc = value; }, MOB)),
+      ], false);
+    };
+
+    const jsonSection = () => {
+      const area = h("textarea", { class: "mono", rows: 14, spellcheck: false });
+      const details = section("JSON", "저장되는 내용", [
+        h("p", { class: "hint" }, "gallery가 기준이고, images · mobile.images · mobile.drawings.images는 저장할 때 gallery에서 자동으로 만들어집니다."),
+        area,
+        h("div", { class: "row" },
+          h("button", { type: "button", onclick: () => { area.value = JSON.stringify(compile(project), null, 2); } }, "현재 값 불러오기"),
+          h("button", {
+            type: "button",
+            onclick: () => {
+              try {
+                const next = JSON.parse(area.value);
+                next.id = project.id;
+                project = ensureShape(next);
+                renderEditor();
+                markDirty();
+                toast("JSON을 적용했습니다.");
+              } catch (error) {
+                toast(`JSON 오류: ${error.message}`, true);
+              }
+            },
+          }, "적용")),
+      ], false);
+      details.addEventListener("toggle", () => { if (details.open) area.value = JSON.stringify(compile(project), null, 2); });
+      return details;
+    };
+
+    const renderEditor = () => {
+      editor.replaceChildren(
+        basicSection(),
+        overviewSection(),
+        gallerySection(),
+        descriptionSection(),
+        mobileSection(),
+        jsonSection(),
+      );
+      updateBadges();
+      schedulePreview(0);
+    };
+
+    // ---------- preview ----------
+
+    const layoutStage = () => {
+      const stage = $("#stage");
+      const inner = $("#stageInner");
+      const size = VIEWPORTS[viewport];
+      const availableWidth = stage.clientWidth - 24;
+      const availableHeight = stage.clientHeight - 24;
+      const scale = Math.min(1, availableWidth / size.width);
+      const height = viewport === "mobile" ? Math.min(size.height, availableHeight / scale) : availableHeight / scale;
+      inner.style.width = `${size.width}px`;
+      inner.style.height = `${height}px`;
+      inner.style.transform = `translateX(-50%) scale(${scale})`;
+      $("#previewSize").textContent = `${size.width}px · ${Math.round(scale * 100)}%`;
+      document.querySelectorAll("[data-device]").forEach((button) => button.classList.toggle("active", button.dataset.device === viewport));
+    };
+
+    // Uploaded images are relative paths; swap them for URLs this browser can load (blob: on GitHub Pages).
+    const resolveAssets = async (out) => {
+      const resolve = (src) => store.assetUrl(src);
+      const fix = async (list) => Promise.all((list || []).map(async (item) => { item.src = await resolve(item.src); }));
+      await Promise.all([fix(out.images), fix(out.mobile?.images), fix(out.mobile?.drawings?.images)]);
+      const drawings = out.mobile?.drawings;
+      if (drawings) {
+        drawings.coordinateSrc = await resolve(drawings.coordinateSrc);
+        drawings.scaleSrc = await resolve(drawings.scaleSrc);
+      }
+      const srcs = [...(out.descriptionHtml || "").matchAll(/src="([^"]+)"/g)].map((match) => match[1]).filter((src) => !isExternal(src));
+      for (const src of new Set(srcs)) out.descriptionHtml = out.descriptionHtml.split(`src="${src}"`).join(`src="${await resolve(src)}"`);
+      return out;
+    };
+
+    let previewToken = 0;
+    const renderPreview = async () => {
+      if (!project) return;
+      const token = ++previewToken;
+      const data = await resolveAssets(compile(project));
+      if (token !== previewToken) return;
+      const nextUrl = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: "application/json" }));
+      const templateSrc = store.runtimeUrl("project-template.js");
+      frame.srcdoc = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0}</style></head><body><div data-filt-project="preview"></div><script src="${templateSrc}" data-project-id="preview" data-project-src="${nextUrl}"><\/script></body></html>`;
+      if (previewUrl) setTimeout(URL.revokeObjectURL.bind(URL, previewUrl), 5000);
+      previewUrl = nextUrl;
+    };
+
+    const schedulePreview = (delay = 500) => {
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(renderPreview, delay);
+    };
+
+    document.querySelectorAll("[data-device]").forEach((button) => button.addEventListener("click", () => {
+      viewport = button.dataset.device;
+      layoutStage();
+    }));
+    $("#reloadPreview").addEventListener("click", renderPreview);
+    new ResizeObserver(layoutStage).observe($("#stage"));
+
+    // ---------- load / save ----------
+
+    const updateBadges = () => {
+      $("#badgeDraft").classList.toggle("on", saved.draft);
+      $("#badgeRuntime").classList.toggle("on", saved.runtime);
+    };
+
+    const refreshList = async (selectId) => {
+      projects = await store.listProjects();
+      const selectEl = $("#projectSelect");
+      selectEl.replaceChildren(...projects.map((entry) => h("option", { value: entry.id, selected: entry.id === selectId },
+        `${entry.id}${entry.runtime ? "" : " (draft)"}`)));
+      const current = projects.find((entry) => entry.id === selectId);
+      if (current) saved = { draft: current.draft, runtime: current.runtime };
+      updateBadges();
+    };
+
+    const confirmDiscard = () => !dirty || confirm("저장하지 않은 변경 사항이 있습니다. 버리고 이동할까요?");
+
+    const setUrl = (id) => {
+      const params = new URLSearchParams(location.search);
+      params.set("id", id);
+      history.replaceState(null, "", `?${params}`);
+    };
+
+    const loadProject = async (id) => {
+      const { project: data } = await store.getProject(id);
+      project = ensureShape(data);
+      project.id = id;
+      await refreshList(id);
+      setUrl(id);
+      renderEditor();
+      setClean();
+    };
+
+    const saveProject = async (target, { quiet = false } = {}) => {
+      if (!project) return;
+      if (target === "runtime" && !confirm(
+        "게시용으로 저장할까요?\n\n다음에 '게시'를 누르면 공개 페이지에 반영됩니다.",
+      )) return;
+      const result = await store.saveProject(project.id, target, compile(project));
+      await refreshList(project.id);
+      setClean();
+      if (!quiet) toast(`저장했습니다: ${result.path}`);
+    };
+
+    const guarded = (fn) => async (...args) => {
+      try { await fn(...args); } catch (error) { toast(error.message, true); }
+    };
+
+    $("#saveDraft").addEventListener("click", guarded(() => saveProject("draft")));
+    $("#saveRuntime").addEventListener("click", guarded(() => saveProject("runtime")));
+    $("#projectSelect").addEventListener("change", guarded(async (event) => {
+      if (!confirmDiscard()) { event.target.value = project?.id || ""; return; }
+      await loadProject(event.target.value);
+    }));
+    $("#newProject").addEventListener("click", guarded(async () => {
+      if (!confirmDiscard()) return;
+      const id = (prompt("새 프로젝트 ID (영문 소문자, 숫자, 하이픈 — 예: seongsu-house)") || "").trim().toLowerCase();
+      if (!id) return;
+      if (!ID_RE.test(id) || id === "works") throw new Error("ID는 영문 소문자, 숫자, 하이픈만 쓸 수 있습니다. ('works'는 사용 불가)");
+      if (projects.some((entry) => entry.id === id)) throw new Error(`"${id}"는 이미 있습니다.`);
+      project = ensureShape(blankProject(id));
+      saved = { draft: false, runtime: false };
+      await saveProject("draft", { quiet: true });
+      setUrl(id);
+      renderEditor();
+      toast(`"${id}" 프로젝트를 drafts에 만들었습니다.`);
+    }));
+
+    document.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        guarded(() => saveProject("draft"))();
+      }
+    });
+    window.addEventListener("beforeunload", (event) => {
+      if (dirty) { event.preventDefault(); event.returnValue = ""; }
+    });
+
+    guarded(async () => {
+      layoutStage();
+      await store.ready();
+      store.mountHeader($("#account"));
+      await refreshList();
+      const wanted = new URLSearchParams(location.search).get("id");
+      const first = projects.find((entry) => entry.id === wanted) || projects[0];
+      if (first) await loadProject(first.id);
+      else editor.replaceChildren(h("div", { class: "empty" }, "프로젝트가 없습니다. '+ 새 프로젝트'로 시작하세요."));
+    })();
+  })();
+  </script>
+</body>
+</html>
