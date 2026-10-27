@@ -10,7 +10,7 @@
   const script = document.currentScript;
   if (!script) return;
 
-  const REPO = "filtehwa/filt-project-templates";
+  const REPO = "filt-office/filt-project-templates";
   const ENTRIES = { project: "project-template.js", works: "works.js" };
   const entry = ENTRIES[script.dataset.template] || ENTRIES.project;
 

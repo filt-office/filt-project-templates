@@ -5,10 +5,10 @@
 (() => {
   "use strict";
 
-  const OWNER = "filtehwa";
+  const OWNER = "filt-office";
   const REPO = "filt-project-templates-editor";
   const BRANCH = "main";
-  const PUBLIC_REPO = "filtehwa/filt-project-templates";
+  const PUBLIC_REPO = "filt-office/filt-project-templates";
   const TOKEN_KEY = "filt-builder-token";
   const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
   const DEVICES = ["PC", "MOB"];
@@ -371,11 +371,13 @@
       <h2>FILT. BUILDER 로그인</h2>
       <p>GitHub 계정의 <b>로그인 키(토큰)</b>로 접속합니다. 처음 한 번만 하면 이 브라우저에 저장됩니다.</p>
       <ol>
-        <li><a href="https://github.com/settings/tokens/new?description=FILT%20builder&scopes=repo" target="_blank" rel="noopener">GitHub 토큰 만들기 페이지</a>를 엽니다 (회사 GitHub 계정으로 로그인).</li>
-        <li>Expiration(만료)은 90일 정도로 정하고, <b>repo</b> 항목이 체크된 상태로 맨 아래 <b>Generate token</b>을 누릅니다.</li>
-        <li>나온 <code>ghp_…</code> 키를 복사해 아래에 붙여넣습니다.</li>
+        <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub 토큰 만들기 페이지</a>를 엽니다 (회사 GitHub 계정으로 로그인).</li>
+        <li>Token name: <b>FILT builder</b> · Expiration: <b>No expiration</b>(또는 원하는 기간)</li>
+        <li>Resource owner: <b>${OWNER}</b> · Repository access: <b>Only select repositories</b> → <b>${REPO}</b></li>
+        <li>Permissions → Repository permissions에서 <b>Contents</b>와 <b>Actions</b>를 <b>Read and write</b>로 바꿉니다.</li>
+        <li>맨 아래 <b>Generate token</b>을 누르고, 나온 <code>github_pat_…</code> 키를 아래에 붙여넣습니다.</li>
       </ol>
-      <input type="password" placeholder="ghp_…" autocomplete="off" spellcheck="false">
+      <input type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
       <div class="fs-error"></div>
       <div class="fs-row"><button class="fs-primary">로그인</button></div>
       <p class="fs-muted">키는 이 브라우저에만 저장됩니다. 공용 PC에서는 사용 후 로그아웃하세요.</p>
