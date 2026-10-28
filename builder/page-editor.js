@@ -51,7 +51,14 @@
     .pe-sheet td.mid input { min-width: 160px; }
     .pe-sheet td.short input { min-width: 90px; }
     .thumb-box { display: flex; align-items: center; gap: 4px; padding: 0 4px; }
-    .thumb { flex: none; width: 46px; height: 28px; border: 1px solid var(--line); background: #eee center / cover no-repeat; }
+    .thumb { position: relative; flex: none; width: 56px; height: 28px; border: 1px dashed #b5b5b5; background: #f4f4f2 center / cover no-repeat; cursor: pointer; }
+    .thumb.empty::after { content: "+"; position: absolute; inset: 0; display: grid; place-items: center; color: #999; font-size: 15px; }
+    .thumb.filled { border-style: solid; border-color: var(--line); }
+    .thumb:hover, .thumb:focus-visible, .thumb.drop { border: 1px solid #111; outline: none; }
+    .thumb.busy { opacity: .45; pointer-events: none; }
+    .thumb .x { position: absolute; top: -1px; right: -1px; display: none; width: 14px; height: 14px; padding: 0; border: 0; background: #111; color: #fff; font-size: 9px; line-height: 14px; }
+    .thumb:hover .x { display: block; }
+    .thumb .x:hover { background: var(--danger); }
 
     .pe-preview { display: grid; grid-template-rows: auto 1fr; min-height: 0; background: var(--bg); }
     .pe-preview-bar { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: #fff; }
@@ -133,7 +140,43 @@
       picker.click();
     });
     const upload = async (file) => (await store.upload(ASSET_FOLDER, "PC", file)).PC;
-    const cssUrl = (url) => `url("${url.replace(/"/g, "%22")}")`;
+    const imageSlot = (src, { upload, clear, resolve }) => {
+      const box = h("div", {
+        class: `thumb ${src ? "filled" : "empty"}`,
+        tabindex: 0,
+        role: "button",
+        title: src ? `${src}
+클릭하거나 파일을 끌어다 놓으면 교체` : "클릭하거나 파일을 끌어다 놓아 업로드",
+      });
+      if (src) resolve(src).then((url) => { if (url) box.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`; });
+      const run = async (file) => {
+        if (!file) return;
+        box.classList.add("busy");
+        try {
+          toast("업로드 중…");
+          await upload(file);
+          toast("업로드 완료");
+        } catch (error) {
+          box.classList.remove("busy");
+          toast(error.message, true);
+        }
+      };
+      const pick = () => {
+        const picker = h("input", { type: "file", accept: "image/*", onchange: () => run(picker.files[0]) });
+        picker.click();
+      };
+      box.addEventListener("click", (event) => { if (!event.target.closest(".x")) pick(); });
+      box.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); pick(); } });
+      box.addEventListener("dragover", (event) => { event.preventDefault(); box.classList.add("drop"); });
+      box.addEventListener("dragleave", () => box.classList.remove("drop"));
+      box.addEventListener("drop", (event) => {
+        event.preventDefault();
+        box.classList.remove("drop");
+        run(event.dataTransfer.files[0]);
+      });
+      if (src) box.append(h("button", { class: "x", title: "이미지 빼기", onclick: () => { if (confirm("이미지를 뺄까요?")) clear(); } }, "✕"));
+      return box;
+    };
 
     const ctx = {
       data: { version: 1 },
@@ -165,39 +208,12 @@
         },
       }),
       // Thumbnail with upload / URL buttons for obj[key].
-      image: (obj, key) => {
-        const box = h("div", { class: "thumb", title: obj[key] || "" });
-        if (obj[key]) store.assetUrl(obj[key]).then((url) => { if (url) box.style.backgroundImage = cssUrl(url); });
-        return h("div", { class: "thumb-box" },
-          box,
-          h("button", {
-            class: "small",
-            onclick: async () => {
-              const [file] = await pickFiles();
-              if (!file) return;
-              try {
-                toast("업로드 중…");
-                obj[key] = await upload(file);
-                ctx.rerender();
-                markDirty();
-                toast("업로드 완료");
-              } catch (error) {
-                toast(error.message, true);
-              }
-            },
-          }, "업로드"),
-          h("button", {
-            class: "small",
-            onclick: () => {
-              const value = prompt("이미지 URL (비우면 삭제)", obj[key] || "");
-              if (value === null) return;
-              if (value.trim()) obj[key] = value.trim();
-              else delete obj[key];
-              ctx.rerender();
-              markDirty();
-            },
-          }, "URL"));
-      },
+      // Image placeholder for obj[key]: click or drop a file to upload, ✕ to clear.
+      image: (obj, key) => h("div", { class: "thumb-box" }, imageSlot(obj[key], {
+        resolve: store.assetUrl,
+        upload: async (file) => { obj[key] = await upload(file); ctx.rerender(); markDirty(); },
+        clear: () => { delete obj[key]; ctx.rerender(); markDirty(); },
+      })),
       // ↑ ↓ ✕ buttons for list[index].
       rowActions: (list, index, label = "이 행") => [
         h("button", { class: "small", title: "위로", disabled: index === 0, onclick: () => ctx.move(list, index, -1) }, "↑"),

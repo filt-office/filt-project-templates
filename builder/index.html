@@ -104,14 +104,14 @@
     td.mono input { font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
     td.thumb-cell { padding: 0 4px; }
     .thumb-box { display: flex; align-items: center; gap: 4px; }
-    .thumb {
-      flex: none;
-      width: 46px;
-      height: 28px;
-      border: 1px solid var(--line);
-      background: #eee center / cover no-repeat;
-    }
-    .thumb.empty { background-image: none !important; }
+    .thumb { position: relative; flex: none; width: 56px; height: 28px; border: 1px dashed #b5b5b5; background: #f4f4f2 center / cover no-repeat; cursor: pointer; }
+    .thumb.empty::after { content: "+"; position: absolute; inset: 0; display: grid; place-items: center; color: #999; font-size: 15px; }
+    .thumb.filled { border-style: solid; border-color: var(--line); }
+    .thumb:hover, .thumb:focus-visible, .thumb.drop { border: 1px solid #111; outline: none; }
+    .thumb.busy { opacity: .45; pointer-events: none; }
+    .thumb .x { position: absolute; top: -1px; right: -1px; display: none; width: 14px; height: 14px; padding: 0; border: 0; background: #111; color: #fff; font-size: 9px; line-height: 14px; }
+    .thumb:hover .x { display: block; }
+    .thumb .x:hover { background: var(--danger); }
     td.detail { padding: 0 4px; }
     .detail-box { display: flex; align-items: center; gap: 4px; }
     .detail-box select { width: 120px; height: 26px; border: 1px solid var(--line); }
@@ -228,7 +228,6 @@
     </div>
     <div class="stage" id="stage"><div class="stage-inner" id="stageInner"><iframe id="previewFrame" title="Works 미리보기"></iframe></div></div>
   </section>
-  <input type="file" id="filePicker" accept="image/*" hidden>
   <div id="thumbPopup"></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -323,13 +322,6 @@
 
     // ---------- thumbnails ----------
 
-    const pickFile = () => new Promise((resolve) => {
-      const picker = $("#filePicker");
-      picker.value = "";
-      picker.onchange = () => resolve(picker.files[0] || null);
-      picker.click();
-    });
-
     const uploadThumb = async (file) => {
       // Thumbnails follow the PC/MOB rule: saved to both folders, the PC path is stored.
       return (await store.upload("works", "both", file)).PC;
@@ -345,42 +337,54 @@
     };
     const hidePopup = () => { popup.style.display = "none"; };
 
+    // Image placeholder: click or drop a file to upload, ✕ to clear.
+    const imageSlot = (src, { upload, clear, resolve }) => {
+      const box = h("div", {
+        class: `thumb ${src ? "filled" : "empty"}`,
+        tabindex: 0,
+        role: "button",
+        title: src ? `${src}
+클릭하거나 파일을 끌어다 놓으면 교체` : "클릭하거나 파일을 끌어다 놓아 업로드",
+      });
+      if (src) resolve(src).then((url) => { if (url) box.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`; });
+      const run = async (file) => {
+        if (!file) return;
+        box.classList.add("busy");
+        try {
+          toast("업로드 중…");
+          await upload(file);
+          toast("업로드 완료");
+        } catch (error) {
+          box.classList.remove("busy");
+          toast(error.message, true);
+        }
+      };
+      const pick = () => {
+        const picker = h("input", { type: "file", accept: "image/*", onchange: () => run(picker.files[0]) });
+        picker.click();
+      };
+      box.addEventListener("click", (event) => { if (!event.target.closest(".x")) pick(); });
+      box.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); pick(); } });
+      box.addEventListener("dragover", (event) => { event.preventDefault(); box.classList.add("drop"); });
+      box.addEventListener("dragleave", () => box.classList.remove("drop"));
+      box.addEventListener("drop", (event) => {
+        event.preventDefault();
+        box.classList.remove("drop");
+        run(event.dataTransfer.files[0]);
+      });
+      if (src) box.append(h("button", { class: "x", title: "이미지 빼기", onclick: () => { if (confirm("이미지를 뺄까요?")) clear(); } }, "✕"));
+      return box;
+    };
+
     const thumbCell = (work, key) => {
-      const box = h("div", { class: `thumb${work[key] ? "" : " empty"}` });
-      if (work[key]) store.assetUrl(work[key]).then((url) => { if (url) box.style.backgroundImage = cssUrl(url); });
+      const box = imageSlot(work[key], {
+        resolve: store.assetUrl,
+        upload: async (file) => { work[key] = await uploadThumb(file); render(); markDirty(); },
+        clear: () => { work[key] = ""; render(); markDirty(); },
+      });
       box.addEventListener("mousemove", (event) => showPopup(work[key], event));
       box.addEventListener("mouseleave", hidePopup);
-      return h("td", { class: "thumb-cell" }, h("div", { class: "thumb-box" },
-        box,
-        h("button", {
-          class: "small",
-          title: "업로드 (PC/ · MOB/ 폴더에 저장)",
-          onclick: async () => {
-            const file = await pickFile();
-            if (!file) return;
-            try {
-              toast("업로드 중…");
-              work[key] = await uploadThumb(file);
-              render();
-              markDirty();
-              toast("업로드 완료");
-            } catch (error) {
-              toast(error.message, true);
-            }
-          },
-        }, "업로드"),
-        h("button", {
-          class: "small",
-          title: work[key] || "",
-          onclick: () => {
-            const value = prompt("이미지 URL (비우면 삭제)", work[key] || "");
-            if (value === null) return;
-            work[key] = value.trim();
-            render();
-            markDirty();
-          },
-        }, "URL"),
-      ));
+      return h("td", { class: "thumb-cell" }, h("div", { class: "thumb-box" }, box));
     };
 
     // ---------- detail page link ----------
