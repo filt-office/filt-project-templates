@@ -142,34 +142,38 @@
     return section;
   };
 
-  // Generated drawing overlays use the drawing's own coordinate space (its SVG viewBox), so they
-  // scale with it. Drawings are exported from Illustrator artboards in pt, so at 1:N one metre is
-  // 72 / 0.0254 / N units (1:50 → 56.7).
+  // Generated overlays are drawn in screen pixels at 80% of the info strip's height. The scale bar's
+  // length still follows the drawing: drawings are exported from Illustrator artboards in pt, so at
+  // 1:N one metre is 72 / 0.0254 / N viewBox units (1:50 → 56.7), times the drawing's display scale.
   const UNITS_PER_METER = 72 / 0.0254;
-  const svgElement = (width, height, body) => {
+  const svgElement = (viewBox, width, height, body) => {
     const template = document.createElement("template");
-    template.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" aria-hidden="true" fill="none" stroke="#000" stroke-width=".5">${body}</svg>`;
+    template.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="${width}" height="${height}" aria-hidden="true" fill="none" stroke="#000" stroke-width=".6">${body}</svg>`;
     return template.content.firstElementChild;
   };
   const formatNumber = (value) => String(Number(value.toFixed(2)));
 
-  const northArrow = (width, height, degrees) => {
-    const radius = 14.88;
-    return svgElement(width, height, `<g transform="translate(30 ${height - 30}) rotate(${degrees})">`
-      + `<circle r="${radius}"/><path d="M0 ${-radius}L1 0H-1Z" fill="#000"/>`
-      + `<text y="${-radius - 3}" fill="#000" stroke="none" font-size="12" text-anchor="middle">N</text></g>`);
-  };
+  // Drawn in a 32-unit box: circle, needle to the rim, and N beyond it, all turned together.
+  const northArrow = (size, degrees) => svgElement("-16 -16 32 32", size, size,
+    `<g transform="rotate(${degrees})"><circle r="8"/><path d="M0 -8L.9 0H-.9Z" fill="#000"/>`
+    + `<text y="-10.4" fill="#000" stroke="none" font-size="6" text-anchor="middle">N</text></g>`);
 
-  // Same shape as the hand-made bars: an outline stepping between 0, 1/5, 2/5 and the full length.
-  const scaleBar = (width, height, scale) => {
-    const unit = UNITS_PER_METER / scale;
-    const length = [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => meters * unit <= 300) || 1;
+  // Same shape as the hand-made bars: an outline stepping between 0, 1/5, 2/5 and the full length,
+  // which is the longest round length that stays within 300 viewBox units.
+  const scaleBar = (scale, pixelsPerUnit, height) => {
+    const unitsPerMeter = UNITS_PER_METER / scale;
+    const length = [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => meters * unitsPerMeter <= 300) || 1;
+    const pixelsPerMeter = unitsPerMeter * pixelsPerUnit;
+    const fontSize = height * 0.36;
+    const start = fontSize * 0.4;
     const ticks = [0, length / 5, (length * 2) / 5, length];
-    const [a, b, c, d] = ticks.map((meters) => 3.52 + meters * unit);
-    const top = height - 33;
-    const bottom = height - 16;
-    const labels = ticks.map((meters, index) => `<text x="${3.52 + meters * unit}" y="${height - 0.5}" fill="#000" stroke="none" font-size="15" text-anchor="middle">${formatNumber(meters)}${index === 3 ? "m" : ""}</text>`);
-    return svgElement(width, height, `<polyline points="${d} ${bottom} ${d} ${top} ${c} ${top} ${c} ${bottom} ${b} ${bottom} ${b} ${top} ${a} ${top} ${a} ${bottom}"/>${labels.join("")}`);
+    const [a, b, c, d] = ticks.map((meters) => start + meters * pixelsPerMeter);
+    const top = 0.5;
+    const bottom = height * 0.45;
+    const width = d + fontSize * 1.3;
+    const labels = ticks.map((meters, index) => `<text x="${start + meters * pixelsPerMeter}" y="${height - 0.5}" fill="#000" stroke="none" font-size="${fontSize}" text-anchor="middle">${formatNumber(meters)}${index === 3 ? "m" : ""}</text>`);
+    return svgElement(`0 0 ${width} ${height}`, width, height,
+      `<polyline points="${d} ${bottom} ${d} ${top} ${c} ${top} ${c} ${bottom} ${b} ${bottom} ${b} ${top} ${a} ${top} ${a} ${bottom}"/>${labels.join("")}`);
   };
 
   // An <img>'s natural size for a viewBox-only SVG is not the viewBox, so read it from the file.
@@ -293,18 +297,25 @@
       if (!naturalWidth || !naturalHeight || !sliderRect.width || !sliderRect.height) return;
       const scale = Math.min(sliderRect.width / naturalWidth, sliderRect.height / naturalHeight);
 
-      let coordinateOverlay = coordinateImage;
-      let scaleOverlay = scaleImage;
+      // Legacy overlay images are drawing-sized canvases with the mark in a corner, so they get the
+      // drawing's on-screen size; generated ones are compact and set their own cell width.
       const drawingScale = Number(currentImage.dataset.scale);
-      if (Number.isFinite(north) || drawingScale > 0) {
+      const generatedNorth = Number.isFinite(north);
+      const generatedScale = drawingScale > 0;
+      const overlayHeight = Math.round(info.clientHeight * 0.8);
+      let coordinateOverlay = generatedNorth ? northArrow(overlayHeight, north) : coordinateImage;
+      let scaleOverlay = scaleImage;
+      if (generatedScale) {
         const size = await drawingSize(currentImage);
         if (token !== overlayToken) return;
-        if (Number.isFinite(north)) coordinateOverlay = northArrow(size.width, size.height, north);
-        if (drawingScale > 0) scaleOverlay = scaleBar(size.width, size.height, drawingScale);
+        scaleOverlay = scaleBar(drawingScale, (naturalWidth * scale) / size.width, overlayHeight);
       }
       coordinateInfo.replaceChildren(...(coordinateOverlay && showCoordinate ? [coordinateOverlay] : []));
       scaleInfo.replaceChildren(...(scaleOverlay ? [scaleOverlay] : []));
-      [coordinateOverlay, scaleOverlay].filter(Boolean).forEach((overlay) => {
+      coordinateInfo.classList.toggle("is-generated", generatedNorth);
+      scaleInfo.classList.toggle("is-generated", generatedScale);
+      info.style.gridTemplateColumns = `${generatedNorth ? "auto" : "10%"} ${generatedScale ? "auto" : "50%"} 1fr`;
+      [coordinateImage, scaleImage].filter((overlay) => overlay && overlay.isConnected).forEach((overlay) => {
         overlay.style.display = "block";
         overlay.style.width = `${naturalWidth * scale}px`;
         overlay.style.height = `${naturalHeight * scale}px`;

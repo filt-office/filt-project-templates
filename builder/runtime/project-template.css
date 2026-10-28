@@ -8,7 +8,7 @@
   --panel-hide-width: 210px;
   --panel-padding: clamp(12px, 1vw, 18px);
   --body-text-size: clamp(11px, 0.82vw, 12px);
-  --caption-size: clamp(8px, 0.6vw, 8px);
+  --caption-size: clamp(8.5px, 0.62vw, 9px);
   --overview-font-size: clamp(8px, 0.7vw, 10px);
   --overview-title-font-size: clamp(9px, 0.7vw, 10px);
   --overview-row-height: clamp(24px, 2.4vw, 35px);
@@ -281,6 +281,14 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* The ".text-content *" rule above forces body size and full opacity on everything; keep captions
+   smaller and lighter like the original pages (caption 12px at 0.75 opacity next to 16px text). */
+.filt-project-mount .side-section .text-content .side-caption {
+  font-size: var(--caption-size) !important;
+  line-height: 1.25 !important;
+  opacity: 0.75 !important;
 }
 
 /* 3. 하단 표 영역 (프로젝트 개요): 화면 맨 바닥에 210px 높이로 고정 */
@@ -751,15 +759,27 @@ body.filt-menu-open .filt-project-mount .img-section {
   }
 
   .filt-project-mount .mobile-drawing-info-coordinate img,
-  .filt-project-mount .mobile-drawing-info-scale img,
-  .filt-project-mount .mobile-drawing-info-coordinate svg,
-  .filt-project-mount .mobile-drawing-info-scale svg {
+  .filt-project-mount .mobile-drawing-info-scale img {
     position: absolute;
     left: 6px;
     bottom: 6px;
     max-width: none;
     max-height: none;
     display: block;
+    pointer-events: none;
+  }
+
+  /* Generated north arrow / scale bar: 80% of the strip's height, never cropped; the cell grows to fit. */
+  .filt-project-mount .mobile-drawing-info > div.is-generated {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    overflow: visible;
+  }
+
+  .filt-project-mount .mobile-drawing-info > div.is-generated svg {
+    display: block;
+    flex: none;
     pointer-events: none;
   }
 

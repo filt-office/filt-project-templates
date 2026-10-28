@@ -69,6 +69,8 @@
     .badge { padding: 1px 6px; border: 1px solid var(--line); font-size: 11px; color: var(--muted); }
     .badge.on { border-color: #111; color: #111; }
     .spacer { flex: 1; }
+    .help { color: var(--muted); font-size: 12px; }
+    .help:hover { color: #111; }
     .save-group { display: flex; align-items: center; gap: 6px; margin-right: 12px; padding-right: 20px; border-right: 1px solid var(--line); }
     .dirty { color: var(--danger); font-size: 12px; visibility: hidden; }
     .dirty.show { visibility: visible; }
@@ -84,75 +86,89 @@
       user-select: none;
     }
     summary small { margin-left: 6px; font-weight: 400; color: var(--muted); }
-    .section-body details { border: 0; }
-    .section-body summary { padding: 2px 0; font-weight: 400; }
     .section-body { display: grid; gap: 10px; padding: 0 14px 14px; }
-    .stack { display: grid; gap: 10px; }
-    .field { display: grid; gap: 3px; }
-    .field > span { font-size: 11px; color: var(--muted); }
     .row { display: flex; gap: 6px; align-items: center; }
-    .row > * { min-width: 0; }
-    .grow { flex: 1; }
     .hint { margin: 0; font-size: 11px; color: var(--muted); }
-    .row > .hint { flex: none; white-space: nowrap; }
+    .muted { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .pad { padding: 0 6px; }
+    .tag { flex: none; margin: 0 6px; padding: 0 5px; border: 1px solid var(--line); color: var(--muted); font-size: 10px; text-decoration: none; white-space: nowrap; }
+    .tag.on { border-color: #111; color: #111; }
 
-    .item {
-      display: grid;
-      gap: 6px;
-      padding: 8px;
-      border: 1px solid var(--line);
-      background: #fafafa;
+    /* Sheets: rows of cells split by hairlines; inputs fill their cell without a border of their own. */
+    .sheet { border: 1px solid var(--line); background: #fff; }
+    .sheet-row { display: grid; align-items: stretch; border-bottom: 1px solid var(--line); }
+    .sheet > .sheet-row:last-child { border-bottom: 0; }
+    .sheet-row > * + * { border-left: 1px solid var(--line); }
+    .sheet-row input[type="text"], .sheet-row input[type="number"], .sheet-row select, .sheet-row textarea {
+      min-width: 0;
+      border: 0;
+      background: transparent;
     }
-    .item-head { display: flex; align-items: center; gap: 4px; }
-    .item-head .index { width: 30px; color: var(--muted); font-size: 11px; }
-    .item-head .title { flex: 1; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-    .field-item { grid-template-columns: auto 1fr 1.4fr auto; align-items: start; }
-    .block-item { grid-template-columns: auto 1fr auto; align-items: start; }
-    .handle { padding: 5px 2px; color: var(--muted); letter-spacing: -3px; cursor: grab; user-select: none; }
-    .handle:hover { color: #111; }
+    .sheet-row input:focus, .sheet-row select:focus, .sheet-row textarea:focus { background: #f6f6f3; }
+    .sheet-row textarea { display: block; resize: none; }
+    .label { display: flex; align-items: center; padding: 0 10px; background: #fafafa; color: var(--muted); font-size: 11px; }
+    .cell { display: flex; align-items: center; min-width: 0; }
+    .cell > input, .cell > select, .cell > textarea { flex: 1; }
+    .form-row { grid-template-columns: 88px 1fr; }
+    .field-row { grid-template-columns: 22px 38% 1fr 26px; }
+    .slot-row { grid-template-columns: 22px 64px 64px 1fr 26px; }
+    .block-row { grid-template-columns: 22px 1fr 26px; }
+    .image-row { grid-template-columns: 22px 88px 1fr 26px; }
+    .handle { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 12px; letter-spacing: -3px; cursor: grab; user-select: none; }
+    .handle:hover { background: #f6f6f3; color: #111; }
     .dragging { opacity: .4; }
-    .three { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 5px; }
-    input.scale { width: 64px; }
-    .compass { position: relative; flex: none; width: 26px; height: 26px; border: 1px solid #111; border-radius: 50%; }
-    .compass::after { content: ""; position: absolute; left: calc(50% - 1px); top: 2px; width: 2px; height: 10px; background: #111; transform-origin: 50% 100%; transform: rotate(var(--deg, 0deg)); }
-    .compass.off { opacity: .25; }
+    button.remove { padding: 0; border: 0; background: none; color: var(--muted); }
+    button.remove:hover { background: var(--danger); color: #fff; }
+    button.link { padding: 2px 5px; border: 0; background: none; color: var(--muted); font-size: 11px; text-decoration: underline; }
+    button.link:hover { background: none; color: #111; }
+    .add-line { display: flex; }
+    .add-line > * + * { border-left: 1px solid var(--line); }
+    button.add-row { flex: 1; padding: 7px 10px; border: 0; background: none; color: var(--muted); text-align: left; }
+    button.add-row:hover, button.add-row.over { background: #f6f6f3; color: #111; }
+    .stack-cell { display: grid; align-content: start; min-width: 0; }
+    .stack-cell > * + * { border-top: 1px solid var(--line); }
+    .cell-line { display: flex; align-items: stretch; min-width: 0; }
+    .cell-line > * + * { border-left: 1px solid var(--line); }
+    .cell-line > select, .cell-line > input[type="text"] { flex: 1; }
+    .cell-line > select { padding: 5px 3px; font-size: 12px; }
+    .cell-line > .muted, .cell-line > .link, .check { display: flex; align-items: center; }
+    .check { gap: 3px; padding: 0 6px; font-size: 11px; }
+    input.narrow { flex: none !important; width: 58px; }
+    .area { display: flex; flex: none; align-items: center; gap: 2px; padding-left: 6px; border-left: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .area input { width: 72px; }
 
-    .devices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .device {
-      display: grid;
-      gap: 4px;
-      padding: 6px;
-      border: 1px solid var(--line);
-      background: #fff;
-    }
-    .device.off .thumb, .device.off .path { opacity: .35; }
-    .device-head { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; }
-    .device-head label { display: flex; align-items: center; gap: 3px; font-weight: 400; }
-    .device-actions { display: flex; flex-wrap: wrap; gap: 3px; }
-    .path { overflow: hidden; font-size: 10px; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
-    .thumb {
+    .thumb-cell { display: grid; grid-template-rows: 1fr auto; min-width: 0; }
+    .thumb-cell.off .thumb { opacity: .3; }
+    .thumb-actions { display: flex; align-items: center; justify-content: space-between; padding: 0 1px; border-top: 1px solid var(--line); }
+    .thumb-actions input { margin: 0 2px; }
+    .thumb-actions .link { padding: 1px 2px; }
+    button.thumb, .thumb {
       position: relative;
-      height: 96px;
-      border: 1px solid var(--line);
+      display: block;
+      width: 100%;
+      min-height: 52px;
+      padding: 0;
+      border: 0;
       background: #eee center / contain no-repeat;
     }
+    button.thumb:hover { background-color: #ddd; color: inherit; outline: 1px solid #111; outline-offset: -1px; }
     .thumb.broken { background-image: none !important; }
-    .thumb.broken::after { content: "이미지 없음"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 11px; }
-    .thumb.small { width: 64px; height: 40px; flex: none; }
-    .tag { padding: 0 5px; border: 1px solid #111; font-size: 10px; }
+    .thumb.broken::after { content: "이미지 없음"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 10px; }
+    .thumb.small { flex: none; width: 52px; min-height: 0; height: 32px; }
+    .thumb-label { position: absolute; top: 2px; left: 2px; padding: 0 3px; background: rgba(255,255,255,.85); font-size: 9px; font-weight: 700; }
+    .image-row .thumb { min-height: 64px; }
+    .block-text { min-height: 64px; overflow: hidden; line-height: 1.7; }
 
-    .dropzone {
-      display: grid;
-      place-items: center;
-      min-height: 64px;
-      padding: 10px;
-      border: 1px dashed #999;
-      color: var(--muted);
-      text-align: center;
-      cursor: pointer;
-    }
-    .dropzone.over { border-color: #111; color: #111; background: #f0f0f0; }
-    .block-text { min-height: 90px; resize: none; overflow: hidden; line-height: 1.7; }
+    .calibrator { grid-column: 1 / -1; padding: 8px; border-top: 1px solid var(--line); border-left: 0 !important; background: #fafafa; }
+    .calibrate-stage { position: relative; border: 1px solid var(--line); background: #fff; }
+    .calibrate-stage img { display: block; width: 100%; height: auto; }
+    .calibrate-overlay { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+    .dial-cell { padding-left: 4px; }
+    .dial { flex: none; width: 64px; height: 64px; cursor: grab; touch-action: none; }
+    .dial.off .needle { opacity: .25; }
+    .legacy { border: 0; }
+    .legacy summary { padding: 2px 0; color: var(--muted); font-size: 12px; font-weight: 400; }
+    .legacy .sheet { margin-top: 6px; }
 
     .preview { display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; }
     .preview-bar { display: flex; gap: 6px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: #fff; }
@@ -195,6 +211,7 @@
     </nav>
     <select id="projectSelect" aria-label="프로젝트 선택"></select>
     <button id="newProject">+ 새 프로젝트</button>
+    <a class="help" href="https://github.com/filt-office/filt-project-templates-editor/blob/main/docs/BUILDER_GUIDE.md" target="_blank" rel="noopener">도움말</a>
     <div class="badges" title="저장 위치">
       <span class="badge" id="badgeDraft">drafts</span>
       <span class="badge" id="badgeRuntime">runtime</span>
@@ -292,13 +309,6 @@
 
     const store = window.FiltStore;
     const { isExternal } = store;
-
-    const move = (list, index, delta) => {
-      const target = index + delta;
-      if (target < 0 || target >= list.length) return false;
-      [list[index], list[target]] = [list[target], list[index]];
-      return true;
-    };
 
     const escapeHtml = (value) => String(value ?? "")
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -600,23 +610,40 @@
     };
 
     // ---------- form pieces ----------
+    // The editor is laid out as sheets: rows of cells split by hairlines, each input filling its
+    // cell. How-to text lives in docs/BUILDER_GUIDE.md rather than on screen.
 
     const section = (title, note, body, open = true) => h("details", { open },
-      h("summary", {}, title, note ? h("small", {}, note) : null),
+      h("summary", {}, title, note),
       h("div", { class: "section-body" }, body),
     );
 
-    const textField = (label, getValue, setValue, props = {}) => h("label", { class: "field" },
-      h("span", {}, label),
-      h(props.multiline ? "textarea" : "input", {
-        type: props.multiline ? undefined : "text",
-        rows: props.rows,
-        class: props.mono ? "mono" : undefined,
-        placeholder: props.placeholder,
-        value: getValue() ?? "",
-        oninput: (event) => { setValue(event.target.value); markDirty(); },
-      }),
-    );
+    const sheet = (...rows) => h("div", { class: "sheet" }, rows);
+
+    const formRow = (label, ...controls) => h("div", { class: "sheet-row form-row" },
+      h("span", { class: "label" }, label),
+      h("div", { class: "cell" }, controls));
+
+    const textInput = (getValue, setValue, props = {}) => h("input", {
+      type: "text",
+      class: props.class,
+      placeholder: props.placeholder,
+      title: props.title,
+      value: getValue() ?? "",
+      oninput: (event) => { setValue(event.target.value); markDirty(); },
+    });
+
+    const numberValue = (value) => (value === "" ? null : Number(value));
+
+    const numberInput = (getValue, setValue, props = {}) => h("input", {
+      type: "number",
+      class: props.class,
+      min: props.min,
+      step: props.step || "any",
+      placeholder: props.placeholder,
+      value: getValue() ?? "",
+      oninput: (event) => { setValue(numberValue(event.target.value)); markDirty(); props.onInput?.(); },
+    });
 
     const select = (options, value, onChange) => h("select", {
       onchange: (event) => { onChange(event.target.value); markDirty(); },
@@ -624,7 +651,7 @@
 
     const removeButton = (list, index, rerender, label) => h("button", {
       type: "button",
-      class: "icon danger",
+      class: "remove",
       title: "삭제",
       onclick: () => {
         if (!confirm(`${label || "항목"}을(를) 삭제할까요?\n(업로드된 파일은 폴더에 남습니다)`)) return;
@@ -634,11 +661,7 @@
       },
     }, "✕");
 
-    const listControls = (list, index, rerender, label) => [
-      h("button", { type: "button", class: "icon", title: "위로", disabled: index === 0, onclick: () => { move(list, index, -1); rerender(); markDirty(); } }, "↑"),
-      h("button", { type: "button", class: "icon", title: "아래로", disabled: index === list.length - 1, onclick: () => { move(list, index, 1); rerender(); markDirty(); } }, "↓"),
-      removeButton(list, index, rerender, label),
-    ];
+    const addButton = (label, onclick) => h("button", { type: "button", class: "add-row", onclick }, label);
 
     const dragHandle = () => h("span", { class: "handle", title: "끌어서 순서 바꾸기" }, "⋮⋮");
 
@@ -680,22 +703,27 @@
       });
     };
 
-    const numberValue = (value) => (value === "" ? null : Number(value));
+    // A thumbnail that replaces its image when clicked.
+    const thumbButton = (src, label, title, onclick) => {
+      const thumb = h("button", { type: "button", class: "thumb", title, onclick }, label ? h("span", { class: "thumb-label" }, label) : null);
+      setThumb(thumb, src);
+      return thumb;
+    };
 
-    // URL/path input with an upload button; used for single-device assets (방위표, 축척 바).
+    // URL/path input with an upload button; used for the hand-made overlay images (방위표, 축척 바).
     const srcInput = (getValue, setValue, device) => {
       const thumb = h("div", { class: "thumb small" });
       setThumb(thumb, getValue());
       const input = h("input", {
         type: "text",
-        class: "mono grow",
+        class: "mono",
         value: getValue() || "",
         placeholder: "https://… 또는 업로드",
         oninput: () => { setValue(input.value.trim()); setThumb(thumb, input.value.trim()); markDirty(); },
       });
       const button = h("button", {
         type: "button",
-        class: "icon",
+        class: "link",
         onclick: async () => {
           const file = await pickFile();
           if (!file) return;
@@ -707,30 +735,160 @@
           });
         },
       }, "업로드");
-      return h("div", { class: "row" }, thumb, input, button);
+      return [thumb, input, button];
     };
 
-    const dropzone = (label, onFiles) => {
-      const zone = h("div", { class: "dropzone", tabIndex: 0 }, label);
+    const dropButton = (label, onFiles) => {
       const picker = h("input", { type: "file", accept: "image/*", multiple: true, hidden: true, onchange: () => onFiles(picker.files) });
-      zone.addEventListener("click", () => { picker.value = ""; picker.click(); });
-      zone.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); zone.click(); } });
+      const zone = h("button", { type: "button", class: "add-row", onclick: () => { picker.value = ""; picker.click(); } }, label);
       zone.addEventListener("dragover", (event) => { event.preventDefault(); zone.classList.add("over"); });
       zone.addEventListener("dragleave", () => zone.classList.remove("over"));
       zone.addEventListener("drop", (event) => { event.preventDefault(); zone.classList.remove("over"); onFiles(event.dataTransfer.files); });
-      return h("div", {}, zone, picker);
+      return [zone, picker];
+    };
+
+    // ---------- drawing tools (north dial, scale calibration) ----------
+    // Drawings are exported from Illustrator artboards in pt, so at 1:N one metre is 72 / 0.0254 / N
+    // viewBox units — the same rule project-template.js uses to draw the mobile scale bar.
+
+    const UNITS_PER_METER = 72 / 0.0254;
+    const barLength = (scale) => [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => (meters * UNITS_PER_METER) / scale <= 300) || 1;
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const svg = (tag, attrs = {}, text) => {
+      const el = document.createElementNS(SVG_NS, tag);
+      Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+      if (text !== undefined) el.textContent = text;
+      return el;
+    };
+
+    // Keeps a drag going when the pointer leaves the element; not every pointer can be captured.
+    const capture = (element, event) => {
+      try { element.setPointerCapture(event.pointerId); } catch { /* drag still works inside the element */ }
+    };
+
+    const viewBoxes = new Map();
+    const drawingViewBox = (url) => {
+      if (!viewBoxes.has(url)) {
+        viewBoxes.set(url, fetch(url)
+          .then((response) => (response.ok ? response.text() : ""))
+          .then((text) => {
+            const box = text.match(/<svg\b[^>]*?\sviewBox\s*=\s*["']\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)/i);
+            return box ? { width: Number(box[1]), height: Number(box[2]) } : null;
+          })
+          .catch(() => null));
+      }
+      return viewBoxes.get(url);
+    };
+
+    // Drag the needle (anywhere on the dial) to point north; the number box stays in sync.
+    const compassDial = (getDegrees, setDegrees) => {
+      const needle = svg("g", { class: "needle" });
+      needle.append(
+        svg("path", { d: "M0 -24L2.6 0H-2.6Z", fill: "#111" }),
+        svg("text", { y: "-29", "text-anchor": "middle", "font-size": "11", "font-weight": "700", fill: "#111" }, "N"),
+      );
+      const dial = svg("svg", { viewBox: "-42 -42 84 84", class: "dial" });
+      dial.append(svg("circle", { r: "24", fill: "#fff", stroke: "#111", "stroke-width": "1" }), needle);
+      const draw = () => {
+        const degrees = getDegrees();
+        dial.classList.toggle("off", degrees == null);
+        needle.setAttribute("transform", `rotate(${degrees || 0})`);
+      };
+      const turn = (event) => {
+        const rect = dial.getBoundingClientRect();
+        const degrees = Math.round((Math.atan2(event.clientX - rect.left - rect.width / 2, rect.top + rect.height / 2 - event.clientY) * 180) / Math.PI);
+        setDegrees((degrees + 360) % 360);
+        draw();
+      };
+      let turning = false;
+      dial.addEventListener("pointerdown", (event) => { turning = true; capture(dial, event); turn(event); });
+      dial.addEventListener("pointermove", (event) => { if (turning) turn(event); });
+      dial.addEventListener("pointerup", () => { turning = false; });
+      dial.addEventListener("pointercancel", () => { turning = false; });
+      dial.redraw = draw;
+      draw();
+      return dial;
+    };
+
+    // Shows the mobile drawing with the scale bar on top, like a stretchable CAD block: drag the bar
+    // onto a known dimension, then drag its end grip until the lengths match. Stretching keeps the
+    // bar's metres fixed and solves for the scale.
+    const openCalibrator = async (panel, slot, getScale, onScale) => {
+      panel.replaceChildren(h("span", { class: "muted" }, "불러오는 중…"));
+      const url = await store.assetUrl(slot.mob || slot.pc);
+      const box = url && await drawingViewBox(url);
+      if (!box) {
+        panel.replaceChildren(h("span", { class: "muted" }, "SVG 도면에서만 조정할 수 있습니다."));
+        return;
+      }
+      const overlay = svg("svg", { viewBox: `0 0 ${box.width} ${box.height}`, class: "calibrate-overlay" });
+      const image = h("img", { src: url, alt: "" });
+      panel.replaceChildren(h("div", { class: "calibrate-stage" }, image, overlay));
+
+      let origin = { x: box.width * 0.08, y: box.height * 0.92 };
+      let meters = barLength(getScale());
+      const draw = () => {
+        const unitsPerMeter = UNITS_PER_METER / getScale();
+        const px = overlay.getBoundingClientRect().width / box.width || 1; // screen px per drawing unit
+        const ticks = [0, meters / 5, (meters * 2) / 5, meters];
+        const [a, b, c, d] = ticks.map((value) => origin.x + value * unitsPerMeter);
+        const top = origin.y - 10 / px;
+        const bottom = origin.y;
+        const color = "#BD005E";
+        overlay.replaceChildren(
+          svg("polyline", { points: `${d} ${bottom} ${d} ${top} ${c} ${top} ${c} ${bottom} ${b} ${bottom} ${b} ${top} ${a} ${top} ${a} ${bottom}`, fill: "none", stroke: color, "stroke-width": 1.5 / px }),
+          ...ticks.map((value, index) => svg("text", { x: origin.x + value * unitsPerMeter, y: bottom + 13 / px, "font-size": 11 / px, "text-anchor": "middle", fill: color }, `${Number(value.toFixed(2))}${index === 3 ? "m" : ""}`)),
+          svg("rect", { "data-part": "move", x: a, y: top - 6 / px, width: Math.max(d - a, 1), height: 22 / px + 6 / px, fill: "transparent", style: "cursor: move" }),
+          svg("rect", { "data-part": "grip", x: d - 6 / px, y: top - 1 / px, width: 12 / px, height: 12 / px, fill: color, style: "cursor: ew-resize" }),
+        );
+      };
+      const toUnits = (event) => {
+        const point = overlay.createSVGPoint();
+        point.x = event.clientX;
+        point.y = event.clientY;
+        return point.matrixTransform(overlay.getScreenCTM().inverse());
+      };
+      let drag = null;
+      overlay.addEventListener("pointerdown", (event) => {
+        const part = event.target.getAttribute("data-part");
+        if (!part) return;
+        event.preventDefault();
+        capture(overlay, event);
+        drag = { part, start: toUnits(event), origin: { ...origin } };
+      });
+      overlay.addEventListener("pointermove", (event) => {
+        if (!drag) return;
+        const at = toUnits(event);
+        if (drag.part === "move") {
+          origin = { x: drag.origin.x + at.x - drag.start.x, y: drag.origin.y + at.y - drag.start.y };
+        } else {
+          const length = Math.max(box.width * 0.01, at.x - origin.x);
+          onScale(Math.max(1, Math.round(((UNITS_PER_METER * meters) / length) * 10) / 10));
+        }
+        draw();
+      });
+      const end = () => {
+        if (!drag) return;
+        drag = null;
+        meters = barLength(getScale());
+        draw();
+      };
+      overlay.addEventListener("pointerup", end);
+      overlay.addEventListener("pointercancel", end);
+      image.addEventListener("load", draw);
+      panel.refresh = () => { meters = barLength(getScale()); draw(); };
+      draw();
     };
 
     // ---------- sections ----------
 
-    const basicSection = () => section("기본 정보", null, [
-      h("label", { class: "field" }, h("span", {}, "프로젝트 ID (아임웹 위젯의 data-project-id)"),
-        h("input", { type: "text", class: "mono", value: project.id, readOnly: true })),
-      textField("브라우저 탭 제목", () => project.title, (value) => { project.title = value; }, {
+    const basicSection = () => section("기본 정보", null, sheet(
+      formRow("프로젝트 ID", h("input", { type: "text", class: "mono", value: project.id, readOnly: true, title: "아임웹 위젯의 data-project-id" })),
+      formRow("탭 제목", textInput(() => project.title, (value) => { project.title = value; }, {
         placeholder: `${project.overview.titleEn || "PROJECT"} | PROJECT INFO`,
-      }),
+      })),
       worksField(),
-    ]);
+    ));
 
     // ---------- WORKS link ----------
     // The category lives in works.json (one row per project, linked by projectId), not in the project JSON.
@@ -738,22 +896,20 @@
     const worksRow = (data = works) => data?.works.find((work) => work.projectId === project.id);
 
     const worksField = () => {
-      if (!works) return h("p", { class: "hint" }, "WORKS 목록을 불러오지 못해 분류를 지정할 수 없습니다.");
+      if (!works) return formRow("WORKS 분류", h("span", { class: "muted" }, "WORKS 목록을 불러오지 못했습니다"));
       const row = worksRow();
       const value = worksCategory || row?.category || "";
-      return h("div", { class: "field", id: "worksField" },
-        h("span", { class: "hint" }, "WORKS 분류"),
-        h("div", { class: "row" },
-          h("select", {
-            class: "grow",
-            onchange: (event) => { worksCategory = event.target.value || null; markDirty(); },
-          },
+      const field = formRow("WORKS 분류",
+        h("select", { onchange: (event) => { worksCategory = event.target.value || null; markDirty(); } },
           row ? null : h("option", { value: "" }, "— 선택 —"),
           works.categories.map((category) => h("option", { value: category.id, selected: category.id === value }, category.label))),
-          h("a", { href: "works.html", class: "hint" }, "WORKS 목록 열기")),
-        h("p", { class: "hint" }, row
-          ? `WORKS 목록의 "${row.nameKo || row.nameEn || row.id}" 행과 연결돼 있습니다. 분류를 바꾸면 저장할 때 WORKS 목록에도 반영됩니다.`
-          : "분류를 고르고 저장하면 WORKS 목록에 이 프로젝트가 추가됩니다. 사이트에는 아직 안 보이니, WORKS 목록 탭에서 썸네일·아임웹 링크를 채운 뒤 표시를 켜세요."));
+        h("a", {
+          class: `tag${row ? " on" : ""}`,
+          href: "works.html",
+          title: row ? `WORKS 목록의 "${row.nameKo || row.nameEn || row.id}" 행과 연결됨` : "저장하면 WORKS 목록에 추가됩니다 (사이트 표시는 꺼진 상태)",
+        }, row ? "연결됨" : "미등록"));
+      field.id = "worksField";
+      return field;
     };
 
     const newWorksRow = (data) => {
@@ -800,17 +956,17 @@
     };
 
     const overviewSection = () => {
-      const list = h("div", { class: "stack" });
+      const list = h("div", { class: "sheet-list" });
       const fields = project.overview.fields;
       const render = () => {
-        list.replaceChildren(...fields.map((field, index) => h("div", { class: "item field-item", dataset: { index } },
+        list.replaceChildren(...fields.map((field, index) => h("div", { class: "sheet-row field-row", dataset: { index } },
           dragHandle(),
-          h("input", { type: "text", value: field.label || "", placeholder: "항목명 (예: LOCATION)", oninput: (event) => { field.label = event.target.value; markDirty(); } }),
-          h("div", { class: "stack", style: "gap:5px" },
+          h("input", { type: "text", value: field.label || "", placeholder: "항목", oninput: (event) => { field.label = event.target.value; markDirty(); } }),
+          h("div", { class: "cell" },
             h("textarea", {
               rows: String(field.value || "").split("\n").length,
               value: field.value || "",
-              placeholder: "내용 (줄바꿈 가능)",
+              placeholder: "내용",
               oninput: (event) => {
                 field.value = event.target.value;
                 event.target.rows = field.value.split("\n").length;
@@ -818,17 +974,10 @@
               },
             }),
             /AREA/i.test(field.label || "") || field.areaM2 !== undefined
-              ? h("label", { class: "row", title: "숫자를 넣으면 클릭 시 ㎡ ↔ 평 전환" },
-                h("span", { class: "hint" }, "㎡ 숫자"),
-                h("input", {
-                  type: "number",
-                  step: "0.01",
-                  value: field.areaM2 ?? "",
-                  oninput: (event) => {
-                    if (event.target.value === "") delete field.areaM2;
-                    else field.areaM2 = Number(event.target.value);
-                    markDirty();
-                  },
+              ? h("label", { class: "area", title: "㎡ 숫자 — 페이지에서 클릭하면 ㎡ ↔ 평 전환" }, "㎡",
+                numberInput(() => field.areaM2, (value) => {
+                  if (value == null) delete field.areaM2;
+                  else field.areaM2 = value;
                 }))
               : null),
           removeButton(fields, index, render, field.label),
@@ -836,135 +985,138 @@
       };
       render();
       sortable(list, fields, () => { render(); markDirty(); });
-      return section("개요표", "첫 두 항목은 제목 옆, 나머지는 2개씩 한 줄", [
-        textField("영문 제목", () => project.overview.titleEn, (value) => { project.overview.titleEn = value; }),
-        textField("부제 (한글)", () => project.overview.subtitle, (value) => { project.overview.subtitle = value; }),
-        h("p", { class: "hint" }, "왼쪽 ⋮⋮ 를 끌어서 순서를 바꿉니다."),
-        list,
-        h("button", { type: "button", onclick: () => { fields.push({ label: "", value: "" }); render(); markDirty(); } }, "+ 항목 추가"),
+      return section("개요표", null, [
+        sheet(
+          formRow("영문 제목", textInput(() => project.overview.titleEn, (value) => { project.overview.titleEn = value; })),
+          formRow("부제", textInput(() => project.overview.subtitle, (value) => { project.overview.subtitle = value; })),
+        ),
+        h("div", { class: "sheet" }, list, h("div", { class: "add-line" },
+          addButton("+ 항목", () => { fields.push({ label: "", value: "" }); render(); markDirty(); }))),
       ]);
     };
 
-    // One device column (PC or 모바일) inside a gallery slot.
-    const deviceCard = (slot, device, refresh) => {
+    // PC or 모바일 thumbnail cell in a gallery row: click to replace, checkbox to show, URL, copy across.
+    const thumbCell = (slot, device, refresh) => {
       const other = device === PC ? MOB : PC;
       const key = SLOT_KEY[device];
       const hideKey = HIDE_KEY[device];
-      const thumb = h("div", { class: "thumb" });
-      setThumb(thumb, slot[key]);
-      const card = h("div", { class: `device${slot[hideKey] ? " off" : ""}` },
-        h("div", { class: "device-head" },
-          h("span", {}, DEVICE_LABEL[device]),
-          h("label", { title: `${DEVICE_LABEL[device]}에 표시` },
-            h("input", {
-              type: "checkbox",
-              checked: !slot[hideKey],
-              onchange: (event) => { slot[hideKey] = !event.target.checked; refresh(true); markDirty(); },
-            }), "표시")),
-        thumb,
-        h("div", { class: "path mono", title: slot[key] || "" }, slot[key] || "—"),
-        h("div", { class: "device-actions" },
+      const replace = async () => {
+        const file = await pickFile();
+        if (!file) return;
+        await uploadMany([file], device, (_, src) => { slot[key] = src[device]; refresh(); markDirty(); });
+      };
+      return h("div", { class: `thumb-cell${slot[hideKey] ? " off" : ""}` },
+        thumbButton(slot[key], DEVICE_LABEL[device], `${DEVICE_LABEL[device]} 이미지 교체`, replace),
+        h("div", { class: "thumb-actions" },
+          h("input", {
+            type: "checkbox",
+            checked: !slot[hideKey],
+            title: `${DEVICE_LABEL[device]}에 표시`,
+            onchange: (event) => { slot[hideKey] = !event.target.checked; refresh(); markDirty(); },
+          }),
           h("button", {
             type: "button",
-            class: "small",
-            title: `${DEVICE_LABEL[device]} 이미지만 교체`,
-            onclick: async () => {
-              const file = await pickFile();
-              if (!file) return;
-              await uploadMany([file], device, (_, src) => { slot[key] = src[device]; refresh(true); markDirty(); });
-            },
-          }, "교체"),
-          h("button", {
-            type: "button",
-            class: "small",
+            class: "link",
+            title: `${DEVICE_LABEL[device]} 이미지 URL`,
             onclick: () => {
               const src = prompt(`${DEVICE_LABEL[device]} 이미지 URL`, isExternal(slot[key]) ? slot[key] : "");
               if (!src) return;
               slot[key] = src.trim();
-              refresh(true);
+              refresh();
               markDirty();
             },
           }, "URL"),
           h("button", {
             type: "button",
-            class: "small",
+            class: "link",
             disabled: !slot[SLOT_KEY[other]] || slot[SLOT_KEY[other]] === slot[key],
-            title: `${DEVICE_LABEL[other]} 이미지를 ${device} 폴더로 복사`,
+            title: `${DEVICE_LABEL[other]} 이미지와 같게`,
             onclick: async () => {
               try {
                 slot[key] = await copyAcross(slot[SLOT_KEY[other]], device);
-                refresh(true);
+                refresh();
                 markDirty();
               } catch (error) {
                 toast(error.message, true);
               }
             },
-          }, other === PC ? "PC와 같게" : "모바일과 같게")),
-      );
-      return card;
+          }, "⇆")));
     };
 
-    const slotItem = (gallery, slot, index, renderList) => {
-      const item = h("div", { class: "item" });
-      const kindValue = slot.type === "drawing" ? "drawing" : `photo:${slot.orientation}`;
-      const render = (full = false) => {
-        if (full) return renderList();
-        item.replaceChildren(...[
-          h("div", { class: "item-head" },
-            h("span", { class: "index" }, `#${String(index + 1).padStart(2, "0")}`),
-            h("span", { class: "title" }, slot.title || slot.alt || slot.pc || slot.mob || "(빈 이미지)"),
-            listControls(gallery, index, renderList, `#${index + 1} 이미지`)),
-          h("div", { class: "three" },
-            select(KINDS, kindValue, (value) => {
-              const [type, orientation] = value.split(":");
-              slot.type = type;
-              if (orientation) slot.orientation = orientation;
-              render();
-            }),
-            select(FITS.map((value) => [value, `맞춤: ${value}`]), slot.fit, (value) => { slot.fit = value; }),
-            select(ROTATIONS.map((value) => [value, `회전 ${value}°`]), slot.rotation, (value) => { slot.rotation = Number(value); })),
-          h("div", { class: "devices" }, deviceCard(slot, PC, render), deviceCard(slot, MOB, render)),
-          slot.type === "drawing"
-            ? h("div", { class: "row" },
-              h("input", { type: "text", class: "grow", value: slot.title, placeholder: "도면 제목 (모바일 슬라이더, 예: 1F PLAN)", oninput: (event) => { slot.title = event.target.value; markDirty(); } }),
-              h("label", { class: "row", title: "도면 축척. 비우면 '모바일 도면 설정'의 기본 축척" },
-                h("span", { class: "hint" }, "1 :"),
-                h("input", {
-                  type: "number",
-                  class: "scale",
-                  min: "1",
-                  step: "any",
-                  value: slot.scale ?? "",
-                  placeholder: project.mobile.drawings.scale ? String(project.mobile.drawings.scale) : "축척",
-                  oninput: (event) => { slot.scale = numberValue(event.target.value); markDirty(); },
-                })),
-              h("label", { class: "row", title: "모바일 도면에 방위표 표시" },
-                h("input", { type: "checkbox", checked: slot.coordinate !== false, onchange: (event) => { slot.coordinate = event.target.checked; markDirty(); } }),
-                "방위표"))
-            : null,
-          h("input", { type: "text", value: slot.alt, placeholder: "대체 텍스트 (예: #01 Exterior - Daytime View)", oninput: (event) => { slot.alt = event.target.value; markDirty(); } }),
-          slot.type === "drawing" ? h("p", { class: "hint" }, "도면: PC는 갤러리, 모바일은 하단 도면 슬라이더에 들어갑니다.") : null,
+    const slotRow = (gallery, slot, index, renderList) => {
+      const row = h("div", { class: "sheet-row slot-row", dataset: { index } });
+      const render = () => {
+        const kindValue = slot.type === "drawing" ? "drawing" : `photo:${slot.orientation}`;
+        const drawing = slot.type === "drawing";
+        const calibrator = h("div", { class: "calibrator", hidden: true });
+        const defaultScale = () => Number(project.mobile.drawings.scale) || 50;
+        const scaleInput = drawing ? numberInput(() => slot.scale, (value) => { slot.scale = value; }, {
+          class: "narrow",
+          min: "1",
+          placeholder: project.mobile.drawings.scale ? String(project.mobile.drawings.scale) : "축척",
+          onInput: () => calibrator.refresh?.(),
+        }) : null;
+        row.replaceChildren(...[
+          dragHandle(),
+          thumbCell(slot, PC, renderList),
+          thumbCell(slot, MOB, renderList),
+          h("div", { class: "stack-cell" },
+            h("div", { class: "cell-line" },
+              select(KINDS, kindValue, (value) => {
+                const [type, orientation] = value.split(":");
+                slot.type = type;
+                if (orientation) slot.orientation = orientation;
+                render();
+              }),
+              select(FITS.map((value) => [value, value === "auto" ? "맞춤" : value]), slot.fit, (value) => { slot.fit = value; }),
+              select(ROTATIONS.map((value) => [value, `${value}°`]), slot.rotation, (value) => { slot.rotation = Number(value); })),
+            textInput(() => slot.alt, (value) => { slot.alt = value; }, { placeholder: "대체 텍스트" }),
+            drawing
+              ? h("div", { class: "cell-line" },
+                textInput(() => slot.title, (value) => { slot.title = value; }, { placeholder: "도면 제목" }),
+                h("span", { class: "muted pad" }, "1 :"),
+                scaleInput,
+                h("button", {
+                  type: "button",
+                  class: "link",
+                  title: "도면 위에서 축척 바를 늘려 맞추기",
+                  onclick: () => {
+                    calibrator.hidden = !calibrator.hidden;
+                    if (!calibrator.hidden) {
+                      openCalibrator(calibrator, slot, () => Number(slot.scale) || defaultScale(), (scale) => {
+                        slot.scale = scale;
+                        scaleInput.value = scale;
+                        markDirty();
+                      });
+                    }
+                  },
+                }, "조정"),
+                h("label", { class: "check", title: "모바일 도면에 방위표 표시" },
+                  h("input", { type: "checkbox", checked: slot.coordinate !== false, onchange: (event) => { slot.coordinate = event.target.checked; markDirty(); } }),
+                  "N"))
+              : null),
+          removeButton(gallery, index, renderList, `#${index + 1} 이미지`),
+          drawing ? calibrator : null,
         ].filter(Boolean));
       };
       render();
-      return item;
+      return row;
     };
 
     const gallerySection = () => {
       const gallery = project.gallery;
-      const list = h("div", { class: "stack" });
+      const list = h("div", { class: "sheet-list" });
       const countLabel = h("small", {});
       const renderList = () => {
-        list.replaceChildren(...gallery.map((slot, index) => slotItem(gallery, slot, index, renderList)));
+        list.replaceChildren(...gallery.map((slot, index) => slotRow(gallery, slot, index, renderList)));
         const pcCount = gallery.filter((slot) => showsOn(slot, PC)).length;
         const mobCount = gallery.filter((slot) => showsOn(slot, MOB)).length;
         countLabel.textContent = `${gallery.length}개 · PC ${pcCount} / 모바일 ${mobCount}`;
       };
-      const details = section("이미지", null, [
-        h("p", { class: "hint" }, "한 번 올리면 PC/ 와 MOB/ 폴더에 함께 저장되고 양쪽에 표시됩니다. 필요하면 기기별로 교체하거나 숨기세요."),
-        h("p", { class: "hint" }, `올릴 수 있는 형식: ${store.imageFormats}. 긴 변이 ${GALLERY_SHRINK.maxEdge}px보다 큰 사진은 비율 그대로 ${GALLERY_SHRINK.maxEdge}px로 줄여서 올립니다.`),
-        list,
-        dropzone("이미지를 끌어다 놓거나 클릭해서 업로드 (여러 장 가능, SVG는 도면으로 분류)", (files) => uploadMany(files, "both", async (file, src) => {
+      renderList();
+      sortable(list, gallery, () => { renderList(); markDirty(); });
+      return section("이미지", countLabel, h("div", { class: "sheet" }, list, h("div", { class: "add-line" },
+        ...dropButton("+ 이미지 (끌어다 놓기 가능)", (files) => uploadMany(files, "both", async (file, src) => {
           const kind = await detectKind(file);
           const number = String(gallery.length + 1).padStart(2, "0");
           gallery.push(newSlot({
@@ -977,20 +1129,13 @@
           renderList();
           markDirty();
         })),
-        h("button", {
-          type: "button",
-          onclick: () => {
-            const src = (prompt("이미지 URL (PC·모바일 공통)") || "").trim();
-            if (!src) return;
-            gallery.push(newSlot({ pc: src, mob: src }));
-            renderList();
-            markDirty();
-          },
-        }, "+ URL로 추가"),
-      ]);
-      details.querySelector("summary").append(countLabel);
-      renderList();
-      return details;
+        addButton("+ URL", () => {
+          const src = (prompt("이미지 URL (PC·모바일 공통)") || "").trim();
+          if (!src) return;
+          gallery.push(newSlot({ pc: src, mob: src }));
+          renderList();
+          markDirty();
+        }))));
     };
 
     // Description images are shared by PC and mobile, so they are stored once in PC/.
@@ -1002,35 +1147,22 @@
 
     const descriptionSection = () => {
       const blocks = project.description;
-      const list = h("div", { class: "stack" });
+      const list = h("div", { class: "sheet-list" });
       const textBlock = (block, index) => {
         const area = h("textarea", {
           class: "block-text",
           value: block.text || "",
-          placeholder: "본문을 입력하세요.\nEnter는 줄바꿈, 빈 줄(Enter 두 번)은 문단 나누기입니다.",
+          placeholder: "본문",
           oninput: () => { block.text = area.value; autoGrow(area); markDirty(); },
         });
         requestAnimationFrame(() => autoGrow(area));
-        return h("div", { class: "item block-item", dataset: { index } }, dragHandle(), area, removeButton(blocks, index, render, "글"));
+        return h("div", { class: "sheet-row block-row", dataset: { index } }, dragHandle(), area, removeButton(blocks, index, render, "글"));
       };
-      const imageBlock = (block, index) => {
-        const thumb = h("div", { class: "thumb" });
-        setThumb(thumb, block.src);
-        return h("div", { class: "item block-item", dataset: { index } },
-          dragHandle(),
-          h("div", { class: "stack", style: "gap:5px" },
-            thumb,
-            h("div", { class: "row" },
-              h("div", { class: "path mono grow", title: block.src || "" }, block.src || "—"),
-              h("button", { type: "button", class: "small", onclick: () => uploadDescriptionImage((src) => { block.src = src; render(); markDirty(); }) }, "교체")),
-            h("input", {
-              type: "text",
-              value: block.caption || "",
-              placeholder: "캡션 — 이미지 바로 아래 작은 글씨 (예: *리노베이션 전 건물 후면)",
-              oninput: (event) => { block.caption = event.target.value; markDirty(); },
-            })),
-          removeButton(blocks, index, render, "이미지"));
-      };
+      const imageBlock = (block, index) => h("div", { class: "sheet-row image-row", dataset: { index } },
+        dragHandle(),
+        thumbButton(block.src, null, "이미지 교체", () => uploadDescriptionImage((src) => { block.src = src; render(); markDirty(); })),
+        textInput(() => block.caption, (value) => { block.caption = value; }, { placeholder: "캡션" }),
+        removeButton(blocks, index, render, "이미지"));
       const render = () => list.replaceChildren(...blocks.map((block, index) => (block.type === "image" ? imageBlock(block, index) : textBlock(block, index))));
       const add = (block) => {
         blocks.push(block);
@@ -1040,72 +1172,45 @@
       };
       render();
       sortable(list, blocks, () => { render(); markDirty(); });
-      return section("설명", "PC·모바일 공통", [
-        list,
-        h("div", { class: "row" },
-          h("button", { type: "button", onclick: () => add({ type: "text", text: "" }) }, "+ 글"),
-          h("button", { type: "button", onclick: () => uploadDescriptionImage((src) => add({ type: "image", src, caption: "" })) }, "+ 이미지")),
-        h("p", { class: "hint" }, "글: Enter는 줄바꿈, 빈 줄(Enter 두 번)은 문단 나누기. 글 사이에 이미지를 넣으려면 '+ 이미지' 후 ⋮⋮ 를 끌어 위치를 옮기세요."),
-        h("p", { class: "hint" }, "캡션: 각 이미지 아래 칸에 쓰면 이미지 바로 밑에 작은 글씨로 나옵니다. PC에서는 한 줄을 넘으면 '…'으로 잘리니 짧게 써 주세요."),
-        h("p", { class: "hint" }, `이미지 형식: ${store.imageFormats}. 아이폰 사진(HEIC)·TIFF·PSD는 JPG로 바꿔서 올려주세요. 큰 사진은 비율 그대로 가로 ${DESCRIPTION_SHRINK.maxWidth}px로 자동으로 줄여서 올립니다.`),
-      ]);
+      return section("설명", null, h("div", { class: "sheet" }, list, h("div", { class: "add-line" },
+        addButton("+ 글", () => add({ type: "text", text: "" })),
+        addButton("+ 이미지", () => uploadDescriptionImage((src) => add({ type: "image", src, caption: "" }))))));
     };
 
     const mobileSection = () => {
       const drawings = project.mobile.drawings;
-      const compass = h("span", { class: "compass" });
-      const drawCompass = () => {
-        compass.classList.toggle("off", drawings.north == null);
-        compass.style.setProperty("--deg", `${drawings.north || 0}deg`);
-      };
-      drawCompass();
-      return section("모바일 도면 설정", "방위표 · 축척 바", [
-        h("p", { class: "hint" }, "도면 이미지는 위 '이미지'에서 종류를 '도면'으로 지정하세요. 여기서는 모바일 도면 아래에 나오는 방위표와 축척 바를 설정합니다."),
-        h("label", { class: "field" },
-          h("span", {}, "방위 — 북쪽 방향 (도면 위쪽 기준 시계방향 °)"),
-          h("div", { class: "row" },
-            h("input", {
-              type: "number",
-              step: "1",
-              value: drawings.north ?? "",
-              placeholder: "예: 22",
-              oninput: (event) => {
-                drawings.north = numberValue(event.target.value);
-                if (drawings.north == null) delete drawings.north;
-                drawCompass();
-                markDirty();
-              },
-            }),
-            compass)),
-        h("label", { class: "field" },
-          h("span", {}, "기본 축척 — 도면마다 다르면 위 '이미지'의 각 도면에서 따로 입력"),
-          h("div", { class: "row" },
-            h("span", { class: "hint" }, "1 :"),
-            h("input", {
-              type: "number",
-              min: "1",
-              value: drawings.scale ?? "",
-              step: "any",
-              placeholder: "예: 50",
-              oninput: (event) => {
-                drawings.scale = numberValue(event.target.value);
-                if (drawings.scale == null) delete drawings.scale;
-                markDirty();
-              },
-            }))),
-        h("p", { class: "hint" }, "방위표와 축척 바(0·1·2·5m 형식)는 입력한 값으로 자동으로 그려집니다. 축척은 대지(pt)에 놓인 그대로의 축척을 넣으세요 — 상세도를 1:20으로 크게 그렸다면 그 도면에 20. 비율대로 키우거나 줄였다면 소수도 됩니다 (1:50을 2배로 키움 → 25). 모바일 미리보기로 확인하세요."),
-        h("details", {},
-          h("summary", { class: "hint" }, "직접 만든 이미지 쓰기 (각도·축척을 비워둔 경우에만 사용)"),
-          h("div", { class: "stack", style: "padding-top:8px" },
-            h("label", { class: "field" }, h("span", {}, "방위표 이미지"), srcInput(() => drawings.coordinateSrc, (value) => { drawings.coordinateSrc = value; }, MOB)),
-            h("label", { class: "field" }, h("span", {}, "축척 바 이미지"), srcInput(() => drawings.scaleSrc, (value) => { drawings.scaleSrc = value; }, MOB)))),
-      ], false);
+      let dial;
+      const angle = numberInput(() => drawings.north, (value) => {
+        if (value == null) delete drawings.north;
+        else drawings.north = value;
+      }, { class: "narrow", placeholder: "—", onInput: () => dial.redraw() });
+      dial = compassDial(() => drawings.north, (degrees) => {
+        drawings.north = degrees;
+        angle.value = degrees;
+        markDirty();
+      });
+      return section("모바일 도면", null, [
+        sheet(
+          h("div", { class: "sheet-row form-row" },
+            h("span", { class: "label" }, "방위"),
+            h("div", { class: "cell dial-cell" }, dial, angle, h("span", { class: "muted pad" }, "°"))),
+          formRow("기본 축척", h("span", { class: "muted pad" }, "1 :"), numberInput(() => drawings.scale, (value) => {
+            if (value == null) delete drawings.scale;
+            else drawings.scale = value;
+          }, { min: "1", placeholder: "50" })),
+        ),
+        h("details", { class: "legacy" },
+          h("summary", {}, "직접 만든 이미지"),
+          sheet(
+            formRow("방위표", ...srcInput(() => drawings.coordinateSrc, (value) => { drawings.coordinateSrc = value; }, MOB)),
+            formRow("축척 바", ...srcInput(() => drawings.scaleSrc, (value) => { drawings.scaleSrc = value; }, MOB)),
+          )),
+      ]);
     };
 
     const jsonSection = () => {
       const area = h("textarea", { class: "mono", rows: 14, spellcheck: false });
-      const details = section("JSON", "저장되는 내용", [
-        h("p", { class: "hint" }, "gallery와 description이 기준입니다. images · mobile.images · mobile.drawings.images는 gallery에서, descriptionHtml은 description에서 저장할 때 자동으로 만들어집니다."),
+      const details = section("JSON", null, [
         area,
         h("div", { class: "row" },
           h("button", { type: "button", onclick: () => { area.value = JSON.stringify(compile(project), null, 2); } }, "현재 값 불러오기"),
