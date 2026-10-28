@@ -6,9 +6,9 @@
   "use strict";
 
   const OWNER = "filt-office";
-  const REPO = "filt-project-templates-editor";
+  const REPO = "filt-website-editor";
   const BRANCH = "main";
-  const PUBLIC_REPO = "filt-office/filt-project-templates";
+  const PUBLIC_REPO = "filt-office/filt-website";
   const TOKEN_KEY = "filt-builder-token";
   const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
   const DEVICES = ["PC", "MOB"];
