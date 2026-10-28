@@ -339,6 +339,11 @@
   border-top: 0 !important;
 }
 
+/* The last cell of a row meets the panel edge, so it draws no right border. */
+.filt-project-mount .fixed-table tr > td:last-child {
+  border-right: 0 !important;
+}
+
 /* 프로젝트 타이틀 셀 (2행 높이) */
 .filt-project-mount .fixed-table .project-title-cell {
   height: calc(var(--overview-row-height) * 2);
