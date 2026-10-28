@@ -770,15 +770,11 @@ body.filt-menu-open .filt-project-mount .img-section {
   }
 
   /* Generated north arrow / scale bar: 60% of the strip's height inside the fixed columns. */
+  /* Bottom-left, on the same 5px inset as the bottom-right drawing title. */
   .filt-project-mount .mobile-drawing-info > div.is-generated {
     display: flex;
-    align-items: center;
-    padding: 0 6px;
-  }
-
-  .filt-project-mount .mobile-drawing-info > div.mobile-drawing-info-coordinate.is-generated {
-    justify-content: center;
-    padding: 0;
+    align-items: flex-end;
+    justify-content: flex-start;
   }
 
   .filt-project-mount .mobile-drawing-info > div.is-generated svg {

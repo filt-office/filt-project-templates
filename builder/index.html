@@ -1218,7 +1218,7 @@
         bar.setAttribute("height", height);
         bar.append(
           svg("polyline", { points: `${d} ${bottom} ${d} 1 ${c} 1 ${c} ${bottom} ${b} ${bottom} ${b} 1 ${a} 1 ${a} ${bottom}`, fill: "none", stroke: "#111", "stroke-width": ".7" }),
-          ...ticks.map((value, tick) => svg("text", { x: 3 + value * pixelsPerMeter, y: height - 0.5, "font-size": font, "text-anchor": "middle", fill: "#111" }, `${Number(value.toFixed(2))}${tick === 3 ? "m" : ""}`)),
+          ...ticks.map((value, tick) => svg("text", { x: 3 + value * pixelsPerMeter, y: height - 0.5, "font-size": font, "font-weight": 500, "text-anchor": "middle", fill: "#111" }, `${Number(value.toFixed(2))}${tick === 3 ? "m" : ""}`)),
         );
       };
 

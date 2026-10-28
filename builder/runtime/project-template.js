@@ -157,9 +157,9 @@
   };
   const formatNumber = (value) => String(Number(value.toFixed(2)));
 
-  // N and the scale bar's numbers share one size: half the drawing title (10px bold → 5px regular).
+  // N and the scale bar's numbers share one size: half the drawing title (10px bold → 5px, weight 500).
   const LABEL_SIZE = 5;
-  const LABEL_WEIGHT = 400;
+  const LABEL_WEIGHT = 500;
 
   // Drawn in a 32-unit box: circle, a square-ended needle to the rim, and N beyond it, turned together.
   const northArrow = (size, degrees) => {
@@ -321,7 +321,7 @@
       const generatedScale = drawingScale > 0;
       const overlayHeight = Math.round(info.clientHeight * 0.6);
       // The columns stay fixed (10% / 50% / 40%), so the arrow also shrinks to fit a narrow cell.
-      const northSize = Math.min(overlayHeight, Math.floor(coordinateInfo.clientWidth) - 4);
+      const northSize = Math.min(overlayHeight, Math.floor(coordinateInfo.clientWidth) - 10); // minus the cell's 5px padding
       let coordinateOverlay = generatedNorth ? northArrow(northSize, north) : coordinateImage;
       let scaleOverlay = scaleOff ? null : scaleImage;
       if (generatedScale) {
