@@ -113,7 +113,7 @@
       '}',
       // HOME (window.FILT_MENU_MODE = 'home'): the panel stays open over the photos; no mobile menu.
       '#filt-common-menu-v2.is-home .side-panel { transition:none; cursor:default; }',
-      '#filt-common-menu-v2.is-home .vert { cursor:default; }',
+      '#filt-common-menu-v2.is-home .vert { pointer-events:none; }', /* as on the original HOME, the bar sits under the logo: a click morphs the logo */
       '#filt-common-menu-v2.is-home .header-menu-btn, #filt-common-menu-v2.is-home .mobile-menu-panel, #filt-common-menu-v2.is-home .menu-overlay { display:none !important; }',
       '@media (prefers-reduced-motion:reduce) { #filt-common-menu-v2 *, #filt-common-menu-v2 *::before, #filt-common-menu-v2 *::after { transition-duration:.01ms !important; } }'
     ].join('\n');
