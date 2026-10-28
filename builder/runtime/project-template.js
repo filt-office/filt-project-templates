@@ -298,12 +298,14 @@
       const scale = Math.min(sliderRect.width / naturalWidth, sliderRect.height / naturalHeight);
 
       // Legacy overlay images are drawing-sized canvases with the mark in a corner, so they get the
-      // drawing's on-screen size; generated ones are compact and set their own cell width.
+      // drawing's on-screen size; generated ones are compact and sit inside their cell.
       const drawingScale = Number(currentImage.dataset.scale);
       const generatedNorth = Number.isFinite(north);
       const generatedScale = drawingScale > 0;
       const overlayHeight = Math.round(info.clientHeight * 0.8);
-      let coordinateOverlay = generatedNorth ? northArrow(overlayHeight, north) : coordinateImage;
+      // The columns stay fixed (10% / 50% / 40%), so the arrow also shrinks to fit a narrow cell.
+      const northSize = Math.min(overlayHeight, Math.floor(coordinateInfo.clientWidth) - 4);
+      let coordinateOverlay = generatedNorth ? northArrow(northSize, north) : coordinateImage;
       let scaleOverlay = scaleImage;
       if (generatedScale) {
         const size = await drawingSize(currentImage);
@@ -314,7 +316,6 @@
       scaleInfo.replaceChildren(...(scaleOverlay ? [scaleOverlay] : []));
       coordinateInfo.classList.toggle("is-generated", generatedNorth);
       scaleInfo.classList.toggle("is-generated", generatedScale);
-      info.style.gridTemplateColumns = `${generatedNorth ? "auto" : "10%"} ${generatedScale ? "auto" : "50%"} 1fr`;
       [coordinateImage, scaleImage].filter((overlay) => overlay && overlay.isConnected).forEach((overlay) => {
         overlay.style.display = "block";
         overlay.style.width = `${naturalWidth * scale}px`;
