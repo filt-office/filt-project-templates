@@ -8,6 +8,7 @@
   <style>
     :root {
       --line: #d9d9d9;
+      --rule: #111; /* lines of the editor's tables and grids */
       --muted: #777;
       --bg: #f4f4f2;
       --danger: #c62828;
@@ -101,10 +102,10 @@
     .tag.on { border-color: #111; color: #111; }
 
     /* Sheets: rows of cells split by hairlines; inputs fill their cell without a border of their own. */
-    .sheet { border: 1px solid var(--line); background: #fff; }
-    .sheet-row { display: grid; align-items: stretch; border-bottom: 1px solid var(--line); }
+    .sheet { border: 1px solid var(--rule); background: #fff; }
+    .sheet-row { display: grid; align-items: stretch; border-bottom: 1px solid var(--rule); }
     .sheet > .sheet-row:last-child { border-bottom: 0; }
-    .sheet-row > * + * { border-left: 1px solid var(--line); }
+    .sheet-row > * + * { border-left: 1px solid var(--rule); }
     .sheet-row input[type="text"], .sheet-row input[type="number"], .sheet-row select, .sheet-row textarea {
       min-width: 0;
       border: 0;
@@ -121,14 +122,14 @@
     .block-row { grid-template-columns: 22px 1fr 26px; }
     .image-row { grid-template-columns: 22px 88px 1fr 26px; }
     .text-cell { display: grid; align-content: start; min-width: 0; }
-    .text-tools { display: flex; align-items: center; gap: 1px; padding: 2px 4px; border-bottom: 1px solid var(--line); }
+    .text-tools { display: flex; align-items: center; gap: 1px; padding: 2px 4px; border-bottom: 1px solid var(--rule); }
     .tool-gap { width: 8px; }
     .tool-level { margin-left: 3px; color: var(--muted); font-size: 10px; }
     button.text-tool { width: 20px; height: 20px; padding: 2px; border: 0; background: none; color: #bbb; }
     button.text-tool svg { display: block; width: 100%; height: 100%; }
     button.text-tool:hover { background: #f6f6f3; color: #111; }
     button.text-tool.on { color: #111; }
-    .field-row select.unit { flex: none; width: 56px; border-left: 1px solid var(--line); }
+    .field-row select.unit { flex: none; width: 56px; border-left: 1px solid var(--rule); }
     .handle { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 12px; letter-spacing: -3px; cursor: grab; user-select: none; }
     .handle:hover { background: #f6f6f3; color: #111; }
     .dragging { opacity: .4; }
@@ -139,19 +140,19 @@
     button.tool { padding: 0 8px; border: 0; background: #fafafa; color: #111; font-size: 11px; }
     button.tool:hover, button.tool.on { background: #BD005E; color: #fff; }
     .add-line { display: flex; }
-    .add-line > * + * { border-left: 1px solid var(--line); }
+    .add-line > * + * { border-left: 1px solid var(--rule); }
     button.add-row { flex: 1; padding: 7px 10px; border: 0; background: none; color: var(--muted); text-align: left; }
     button.add-row:hover, button.add-row.over { background: #f6f6f3; color: #111; }
     .stack-cell { display: grid; align-content: start; min-width: 0; }
-    .stack-cell > * + * { border-top: 1px solid var(--line); }
+    .stack-cell > * + * { border-top: 1px solid var(--rule); }
     .cell-line { display: flex; align-items: stretch; min-width: 0; }
-    .cell-line > * + * { border-left: 1px solid var(--line); }
+    .cell-line > * + * { border-left: 1px solid var(--rule); }
     .cell-line > select, .cell-line > input[type="text"] { flex: 1; }
     .cell-line > select { padding: 5px 3px; font-size: 12px; }
     .cell-line > .muted, .cell-line > .link, .check { display: flex; align-items: center; }
     .check { gap: 3px; padding: 0 6px; font-size: 11px; }
     input.narrow { flex: none !important; width: 58px; }
-    .area { display: flex; flex: none; align-items: center; gap: 2px; padding-left: 6px; border-left: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .area { display: flex; flex: none; align-items: center; gap: 2px; padding-left: 6px; border-left: 1px solid var(--rule); color: var(--muted); font-size: 11px; }
     .area input { width: 72px; }
 
     .thumb-cell { display: grid; grid-template-rows: 1fr auto; min-width: 0; }
@@ -192,6 +193,10 @@
     .card-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #111; border-left: 1px solid #111; }
     .card { position: relative; min-width: 0; border-right: 1px solid #111; border-bottom: 1px solid #111; background: #fff; }
     .card.calibrating { grid-column: 1 / -1; }
+    .card.placeholder { align-self: stretch; aspect-ratio: 16 / 10; cursor: pointer; } /* stretch: match the neighbour card's height */
+    .card.placeholder.drawing { aspect-ratio: 16 / 12.6; } /* picture + strip */
+    .card.placeholder svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .card.placeholder:hover path { stroke: #BD005E; }
     .card-media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; cursor: pointer; }
     .card-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none; }
     .card-media.broken::after { content: "이미지 없음"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 11px; }
@@ -790,7 +795,7 @@
         release();
         dragged = null;
         const current = items();
-        const order = [...container.children].map((child) => current[Number(child.dataset.index)]);
+        const order = [...container.children].filter((child) => child.dataset.index !== undefined).map((child) => current[Number(child.dataset.index)]);
         if (order.every((item, index) => item === current[index])) return;
         current.splice(0, current.length, ...order);
         onChange();
@@ -1285,6 +1290,25 @@
       return card;
     };
 
+    // An empty grid cell drawn as a crossed box (as in the mock-up); clicking it adds images.
+    const placeholderCard = (kind, onFiles) => {
+      const picker = h("input", {
+        type: "file",
+        accept: "image/*",
+        multiple: true,
+        hidden: true,
+        onclick: (event) => event.stopPropagation(),
+        onchange: () => onFiles(picker.files),
+      });
+      const card = h("div", {
+        class: `card placeholder${kind === "drawing" ? " drawing" : ""}`,
+        title: "이미지 추가",
+        onclick: () => { picker.value = ""; picker.click(); },
+      }, picker);
+      card.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 100 100M100 0 0 100" fill="none" stroke="#bbb" stroke-width="1" vector-effect="non-scaling-stroke"/></svg>');
+      return card;
+    };
+
     const imageGroup = (kind, onChange) => {
       const isKind = (slot) => (kind === "drawing") === isDrawing(slot);
       const group = h("div", { class: "gallery-group" });
@@ -1308,6 +1332,9 @@
         items = project.gallery.filter(isKind);
         store_();
         grid.replaceChildren(...items.map((slot, index) => (kind === "drawing" ? drawingCard : photoCard)(slot, index, render)));
+        // Keep the two columns even: an odd count (or an empty grid) gets crossed-out placeholders.
+        const halfWidth = items.filter((slot) => !calibrating.has(slot)).length;
+        grid.append(...Array.from({ length: items.length ? halfWidth % 2 : 2 }, () => placeholderCard(kind, add)));
         group.replaceChildren(deviceTabs(kind, render), grid, addLine(add));
         onChange();
       };

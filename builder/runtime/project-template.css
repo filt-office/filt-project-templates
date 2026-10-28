@@ -288,7 +288,8 @@
 .filt-project-mount .side-section .text-content .side-caption {
   font-size: var(--caption-size) !important;
   line-height: 1.25 !important;
-  opacity: 0.75 !important;
+  color: #888 !important;
+  opacity: 1 !important;
 }
 
 /* 3. 하단 표 영역 (프로젝트 개요): 화면 맨 바닥에 210px 높이로 고정 */
