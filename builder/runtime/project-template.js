@@ -32,7 +32,8 @@
     return loaded;
   };
 
-  const templateStylesReady = addLink("layout", new URL("project-template.css", templateBase).href);
+  // The builder adds ?v=… to bust caches; pass it on to the stylesheet too.
+  const templateStylesReady = addLink("layout", new URL(`project-template.css${new URL(script.src).search}`, templateBase).href);
   addLink("suit-font", "https://cdn.jsdelivr.net/npm/suit-font@1.0.0/dist/suit.min.css")
     .catch((error) => console.warn("SUIT font stylesheet could not be loaded.", error));
   addLink("pretendard-font", "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css")

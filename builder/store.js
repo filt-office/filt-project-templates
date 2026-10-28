@@ -15,6 +15,8 @@
   const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif"]);
   const MIME = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif", ".svg": "image/svg+xml", ".avif": "image/avif" };
   const MAX_UPLOAD = 20 * 1024 * 1024; // jsDelivr serves GitHub files up to 20MB
+  // Pages caches files for 10 minutes; a per-load query makes previews use the template just deployed.
+  const PAGE_LOAD = Date.now();
   const IMAGE_FORMATS = "JPG · PNG · WEBP · GIF · SVG · AVIF (20MB 이하)";
 
   const params = new URLSearchParams(location.search);
@@ -113,7 +115,7 @@
       { method: "POST" },
     )).src,
     assetUrl: async (src) => (!src || isExternal(src) ? src || "" : `/runtime/${src.replace(/^\.?\//, "")}`),
-    runtimeUrl: (file) => new URL(`/runtime/${file}`, location.href).href,
+    runtimeUrl: (file) => new URL(`/runtime/${file}?v=${PAGE_LOAD}`, location.href).href,
   };
 
   // ---------------------------------------------------------------- github
@@ -293,7 +295,7 @@
       return assetCache.get(src);
     },
     // GitHub Pages serves a copy of runtime/ next to the builder (see deploy-builder workflow).
-    runtimeUrl: (file) => new URL(`runtime/${file}`, location.href).href,
+    runtimeUrl: (file) => new URL(`runtime/${file}?v=${PAGE_LOAD}`, location.href).href,
   };
 
   // ---------------------------------------------------------------- publish (GitHub Actions)
