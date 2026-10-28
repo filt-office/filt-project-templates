@@ -225,7 +225,8 @@
     button.scale-toggle { position: absolute; top: 2px; left: 16px; padding: 0 3px; border: 0; background: none; color: var(--muted); font-size: 9px; letter-spacing: .04em; }
     button.scale-toggle:hover, button.scale-toggle.on { background: #BD005E; color: #fff; }
     .strip-title input { position: absolute; right: 4px; bottom: 4px; width: calc(100% - 8px); font-size: 11px !important; font-weight: 700; text-align: right; }
-    .add-drop { display: flex; align-items: center; gap: 8px; margin-left: calc(50% - 13px); padding: 6px 0; font-size: 15px; font-weight: 700; letter-spacing: .02em; }
+    .add-drop { display: flex; align-items: flex-start; gap: 6px; margin-left: calc(50% - 13px); padding: 6px 0; }
+    .add-drop > span { padding-top: 1px; color: var(--muted); font-size: 11px; font-weight: 700; line-height: 1; letter-spacing: .03em; } /* top edge on the cross's top */
     button.plus { width: 26px; height: 26px; padding: 0; border: 0; background: none; color: #111; }
     button.plus:hover { background: none; color: #BD005E; }
     button.plus svg { display: block; width: 100%; height: 100%; }
@@ -507,11 +508,23 @@
     // Alignment / indent of a text block or a caption, as inline CSS ("" when left and not indented,
     // so untouched text keeps the plain markup the original pages used).
     const INDENT_EM = 2;
-    const indentLevel = (indent) => Math.max(0, Math.round(Number(indent) || 0)); // older data stored true for one level
-    const textStyle = (align, indent) => [
-      align === "center" || align === "right" ? `text-align: ${align}` : "",
-      indentLevel(indent) ? `padding-left: ${indentLevel(indent) * INDENT_EM}em` : "",
-    ].filter(Boolean).join("; ");
+    // Indent level: above 0 indents the whole paragraph (들여쓰기); below 0 is a hanging indent
+    // (내어쓰기) — the first line stays put and the following lines move in. Older data stored true for +1.
+    const indentLevel = (indent) => Math.round(Number(indent) || 0);
+    const indentCss = (indent) => {
+      const level = indentLevel(indent);
+      if (level > 0) return { paddingLeft: `${level * INDENT_EM}em`, textIndent: "" };
+      if (level < 0) return { paddingLeft: `${-level * INDENT_EM}em`, textIndent: `${level * INDENT_EM}em` };
+      return { paddingLeft: "", textIndent: "" };
+    };
+    const textStyle = (align, indent) => {
+      const { paddingLeft, textIndent } = indentCss(indent);
+      return [
+        align === "center" || align === "right" ? `text-align: ${align}` : "",
+        paddingLeft ? `padding-left: ${paddingLeft}` : "",
+        textIndent ? `text-indent: ${textIndent}` : "",
+      ].filter(Boolean).join("; ");
+    };
 
     const descriptionHtml = (blocks) => {
       const parts = blocks.flatMap((block) => {
@@ -526,7 +539,8 @@
           .filter(Boolean)
           .map((paragraph) => `${escapeHtml(paragraph).replace(/\n/g, "<br>\n")}\n<br><br>`);
         const style = textStyle(block.align, block.indent);
-        return style && paragraphs.length ? [`<div style="${style}">\n${paragraphs.join("\n")}\n</div>`] : paragraphs;
+        // One wrapper per paragraph, so a hanging indent starts again at each paragraph.
+        return style ? paragraphs.map((paragraph) => `<div style="${style}">${paragraph}</div>`) : paragraphs;
       });
       return parts.length ? `<br><br>\n${parts.join("\n")}\n` : "";
     };
@@ -1347,7 +1361,7 @@
     };
 
     // Alignment and indent tools for one block; keys name the block's align and indent fields.
-    // Indent is a level: each press of 들여쓰기 adds one step, 내어쓰기 takes one away.
+    // Indent is a level: 들여쓰기 adds one step, 내어쓰기 takes one away; below 0 is a hanging indent.
     const textTools = (block, [alignKey, indentKey], apply) => {
       const tool = (icon, title, on, onclick, disabled = false) => {
         const button = h("button", { type: "button", class: `text-tool${on ? " on" : ""}`, title, disabled, onclick: () => { onclick(); apply(); markDirty(); } });
@@ -1357,7 +1371,7 @@
       const align = block[alignKey] || "left";
       const level = indentLevel(block[indentKey]);
       const setLevel = (next) => {
-        if (next > 0) block[indentKey] = next;
+        if (next) block[indentKey] = next;
         else delete block[indentKey];
       };
       const setAlign = (next) => {
@@ -1369,13 +1383,13 @@
         tool(TEXT_ICONS.center, "가운데 정렬", align === "center", () => setAlign("center")),
         tool(TEXT_ICONS.right, "오른쪽 정렬", align === "right", () => setAlign("right")),
         h("span", { class: "tool-gap" }),
-        tool(TEXT_ICONS.outdent, "내어쓰기", false, () => setLevel(level - 1), level === 0),
-        tool(TEXT_ICONS.indent, "들여쓰기", false, () => setLevel(level + 1)),
-        level ? h("span", { class: "tool-level", title: "들여쓰기 단계" }, String(level)) : null);
+        tool(TEXT_ICONS.outdent, "내어쓰기 (첫 줄은 그대로, 나머지 줄을 들여씀)", level < 0, () => setLevel(level - 1)),
+        tool(TEXT_ICONS.indent, "들여쓰기 (단락 전체)", level > 0, () => setLevel(level + 1)),
+        level ? h("span", { class: "tool-level" }, `${level > 0 ? "들여쓰기" : "내어쓰기"} ${Math.abs(level)}`) : null);
     };
     const previewStyle = (element, align, indent) => {
       element.style.textAlign = align === "center" || align === "right" ? align : "";
-      element.style.paddingLeft = indentLevel(indent) ? `${indentLevel(indent) * INDENT_EM}em` : "";
+      Object.assign(element.style, indentCss(indent));
     };
 
     const descriptionSection = () => {
