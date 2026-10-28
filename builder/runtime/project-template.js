@@ -142,7 +142,7 @@
     return section;
   };
 
-  // Generated overlays are drawn in screen pixels at 80% of the info strip's height. The scale bar's
+  // Generated overlays are drawn in screen pixels at 60% of the info strip's height. The scale bar's
   // length still follows the drawing: drawings are exported from Illustrator artboards in pt, so at
   // 1:N one metre is 72 / 0.0254 / N viewBox units (1:50 → 56.7), times the drawing's display scale.
   const UNITS_PER_METER = 72 / 0.0254;
@@ -153,10 +153,18 @@
   };
   const formatNumber = (value) => String(Number(value.toFixed(2)));
 
-  // Drawn in a 32-unit box: circle, needle to the rim, and N beyond it, all turned together.
-  const northArrow = (size, degrees) => svgElement("-16 -16 32 32", size, size,
-    `<g transform="rotate(${degrees})"><circle r="8"/><path d="M0 -8L.9 0H-.9Z" fill="#000"/>`
-    + `<text y="-10.4" fill="#000" stroke="none" font-size="6" text-anchor="middle">N</text></g>`);
+  // N and the scale bar's numbers share one size: half the drawing title (10px bold → 5px regular).
+  const LABEL_SIZE = 5;
+  const LABEL_WEIGHT = 400;
+
+  // Drawn in a 32-unit box: circle, a square-ended needle to the rim, and N beyond it, turned together.
+  const northArrow = (size, degrees) => {
+    const font = (LABEL_SIZE * 32) / size;
+    const radius = 15.5 - font;
+    return svgElement("-16 -16 32 32", size, size,
+      `<g transform="rotate(${degrees})"><circle r="${radius}"/><rect x="-.6" y="${-radius}" width="1.2" height="${radius}" fill="#000" stroke="none"/>`
+      + `<text y="${-radius - 1}" fill="#000" stroke="none" font-size="${font}" font-weight="${LABEL_WEIGHT}" text-anchor="middle">N</text></g>`);
+  };
 
   // Same shape as the hand-made bars: an outline stepping between 0, 1/5, 2/5 and the full length,
   // which is the longest round length that stays within 300 viewBox units.
@@ -164,14 +172,14 @@
     const unitsPerMeter = UNITS_PER_METER / scale;
     const length = [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => meters * unitsPerMeter <= 300) || 1;
     const pixelsPerMeter = unitsPerMeter * pixelsPerUnit;
-    const fontSize = height * 0.36;
+    const fontSize = LABEL_SIZE;
     const start = fontSize * 0.4;
     const ticks = [0, length / 5, (length * 2) / 5, length];
     const [a, b, c, d] = ticks.map((meters) => start + meters * pixelsPerMeter);
     const top = 0.5;
-    const bottom = height * 0.45;
+    const bottom = height - fontSize - 2;
     const width = d + fontSize * 1.3;
-    const labels = ticks.map((meters, index) => `<text x="${start + meters * pixelsPerMeter}" y="${height - 0.5}" fill="#000" stroke="none" font-size="${fontSize}" text-anchor="middle">${formatNumber(meters)}${index === 3 ? "m" : ""}</text>`);
+    const labels = ticks.map((meters, index) => `<text x="${start + meters * pixelsPerMeter}" y="${height - 0.5}" fill="#000" stroke="none" font-size="${fontSize}" font-weight="${LABEL_WEIGHT}" text-anchor="middle">${formatNumber(meters)}${index === 3 ? "m" : ""}</text>`);
     return svgElement(`0 0 ${width} ${height}`, width, height,
       `<polyline points="${d} ${bottom} ${d} ${top} ${c} ${top} ${c} ${bottom} ${b} ${bottom} ${b} ${top} ${a} ${top} ${a} ${bottom}"/>${labels.join("")}`);
   };
@@ -302,7 +310,7 @@
       const drawingScale = Number(currentImage.dataset.scale);
       const generatedNorth = Number.isFinite(north);
       const generatedScale = drawingScale > 0;
-      const overlayHeight = Math.round(info.clientHeight * 0.8);
+      const overlayHeight = Math.round(info.clientHeight * 0.6);
       // The columns stay fixed (10% / 50% / 40%), so the arrow also shrinks to fit a narrow cell.
       const northSize = Math.min(overlayHeight, Math.floor(coordinateInfo.clientWidth) - 4);
       let coordinateOverlay = generatedNorth ? northArrow(northSize, north) : coordinateImage;

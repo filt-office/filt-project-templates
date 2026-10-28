@@ -769,7 +769,7 @@ body.filt-menu-open .filt-project-mount .img-section {
     pointer-events: none;
   }
 
-  /* Generated north arrow / scale bar: 80% of the strip's height inside the fixed columns. */
+  /* Generated north arrow / scale bar: 60% of the strip's height inside the fixed columns. */
   .filt-project-mount .mobile-drawing-info > div.is-generated {
     display: flex;
     align-items: center;

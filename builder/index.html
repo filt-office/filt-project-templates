@@ -121,6 +121,8 @@
     button.remove:hover { background: var(--danger); color: #fff; }
     button.link { padding: 2px 5px; border: 0; background: none; color: var(--muted); font-size: 11px; text-decoration: underline; }
     button.link:hover { background: none; color: #111; }
+    button.tool { padding: 0 8px; border: 0; background: #fafafa; color: #111; font-size: 11px; }
+    button.tool:hover, button.tool.on { background: #BD005E; color: #fff; }
     .add-line { display: flex; }
     .add-line > * + * { border-left: 1px solid var(--line); }
     button.add-row { flex: 1; padding: 7px 10px; border: 0; background: none; color: var(--muted); text-align: left; }
@@ -1078,10 +1080,11 @@
                 scaleInput,
                 h("button", {
                   type: "button",
-                  class: "link",
-                  title: "도면 위에서 축척 바를 늘려 맞추기",
-                  onclick: () => {
+                  class: "tool",
+                  title: "도면 위에 축척 바를 띄워, 끝 ■을 좌우로 끌어 축척 맞추기",
+                  onclick: (event) => {
                     calibrator.hidden = !calibrator.hidden;
+                    event.currentTarget.classList.toggle("on", !calibrator.hidden);
                     if (!calibrator.hidden) {
                       openCalibrator(calibrator, slot, () => Number(slot.scale) || defaultScale(), (scale) => {
                         slot.scale = scale;
@@ -1090,7 +1093,7 @@
                       });
                     }
                   },
-                }, "조정"),
+                }, "↔ 바 맞추기"),
                 h("label", { class: "check", title: "모바일 도면에 방위표 표시" },
                   h("input", { type: "checkbox", checked: slot.coordinate !== false, onchange: (event) => { slot.coordinate = event.target.checked; markDirty(); } }),
                   "N"))
