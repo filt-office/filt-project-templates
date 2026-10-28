@@ -75,7 +75,7 @@
     .dirty { color: var(--danger); font-size: 12px; visibility: hidden; }
     .dirty.show { visibility: visible; }
 
-    .layout { display: grid; grid-template-columns: minmax(400px, 480px) 1fr; min-height: 0; }
+    .layout { display: grid; grid-template-columns: minmax(440px, 560px) 1fr; min-height: 0; }
     .editor { overflow-y: auto; border-right: 1px solid #111; background: #fff; }
     details { border-bottom: 1px solid var(--line); }
     summary {
@@ -168,6 +168,45 @@
     .dial-cell { padding-left: 4px; }
     .dial { flex: none; width: 64px; height: 64px; cursor: grab; touch-action: none; }
     .dial.off .needle { opacity: .25; }
+    /* Image grids (IMG / DWG): device tabs over 2-column cards; drawing cards carry the mobile strip. */
+    .gallery-group { display: grid; gap: 8px; margin-bottom: 6px; }
+    .group-label { display: flex; align-items: center; gap: 8px; font-size: 13px; letter-spacing: .04em; }
+    .group-label .branch { color: var(--muted); }
+    .device-tabs { display: flex; width: 60%; border: 1.5px solid #111; }
+    .device-tabs button { flex: 1; padding: 3px 8px; border: 0; background: #fff; color: #111; text-align: left; }
+    .device-tabs button.on { background: #111; color: #fff; }
+    .card-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #111; border-left: 1px solid #111; }
+    .card { position: relative; min-width: 0; border-right: 1px solid #111; border-bottom: 1px solid #111; background: #fff; }
+    .card.calibrating { grid-column: 1 / -1; }
+    .card-media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; cursor: pointer; }
+    .card-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none; }
+    .card-media.broken::after { content: "이미지 없음"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 11px; }
+    .card-media.over { outline: 2px solid #BD005E; outline-offset: -2px; }
+    .card.off .card-media img { opacity: .25; }
+    .card.calibrating .card-media { cursor: default; }
+    .card-tools { position: absolute; top: 6px; left: 6px; display: flex; gap: 4px; }
+    .card-corner { position: absolute; top: 6px; right: 6px; display: none; gap: 2px; }
+    .card:hover .card-corner { display: flex; }
+    button.icon-btn, .card-corner button.remove { width: 22px; height: 22px; padding: 2px; border: 0; background: rgba(255,255,255,.9); color: #111; line-height: 1; }
+    button.icon-btn svg { display: block; width: 100%; height: 100%; }
+    button.icon-btn:hover { background: #111; color: #fff; }
+    button.show-toggle { width: 22px; height: 22px; padding: 0; border: 1.5px solid #111; background: #fff; }
+    button.show-toggle.on { background: #111; box-shadow: inset 0 0 0 3px #fff; }
+    button.show-toggle:hover { background: #ccc; }
+    .card-strip { display: grid; grid-template-columns: 16% 44% 40%; height: 44px; border-top: 1px solid #111; }
+    .card-strip > div { position: relative; min-width: 0; overflow: hidden; }
+    .card-strip > div + div { border-left: 1px solid #111; }
+    .strip-num { position: absolute; top: 2px; right: 3px; display: flex; align-items: center; color: var(--muted); font-size: 9px; }
+    .card-strip input { padding: 0; border: 0; background: transparent; font-size: 9px; -moz-appearance: textfield; }
+    .card-strip input::-webkit-inner-spin-button, .card-strip input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .card-strip input:focus { background: #f6f6f3; outline: none; }
+    .strip-num input { width: 30px; text-align: right; color: #111; }
+    .strip-north .dial { position: absolute; left: 3px; bottom: 2px; width: 30px; height: 30px; }
+    .strip-scale .strip-bar { position: absolute; left: 4px; bottom: 3px; overflow: visible; }
+    button.scale-toggle { position: absolute; top: 2px; left: 3px; padding: 0 3px; border: 0; background: none; color: var(--muted); font-size: 9px; letter-spacing: .04em; }
+    button.scale-toggle:hover, button.scale-toggle.on { background: #BD005E; color: #fff; }
+    .strip-title input { position: absolute; right: 4px; bottom: 4px; width: calc(100% - 8px); font-size: 11px !important; font-weight: 700; text-align: right; }
+    .gallery-group > .add-row { justify-self: center; padding: 6px 10px; font-size: 13px; font-weight: 700; letter-spacing: .03em; color: #111; }
     .legacy { border: 0; }
     .legacy summary { padding: 2px 0; color: var(--muted); font-size: 12px; font-weight: 400; }
     .legacy .sheet { margin-top: 6px; }
@@ -255,9 +294,6 @@
 
     const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
     const VIEWPORTS = { desktop: { width: 1440, height: 900 }, mobile: { width: 390, height: 844 } };
-    const KINDS = [["photo:landscape", "사진 · 가로"], ["photo:portrait", "사진 · 세로"], ["drawing", "도면"]];
-    const FITS = ["auto", "contain", "cover"];
-    const ROTATIONS = [0, 90, 180, 270];
     const DEFAULT_FIELDS = [
       "STATUS", "YEAR", "LOCATION", "PROGRAM", "NUMBER OF FLOORS", "PROJECT TYPE",
       "BUILDING AREA", "TOTAL FLOOR AREA", "CLIENT", "CONSTRUCTION", "PHOTOGRAPHER", "COWORK",
@@ -348,6 +384,7 @@
       rotation: 0,
       title: "",
       coordinate: true,
+      north: null, // degrees clockwise from the drawing's top; null = no generated north arrow
       scale: null, // drawing scale denominator (50 = 1:50); null uses mobile.drawings.scale
       pc: "",
       mob: "",
@@ -433,6 +470,7 @@
           src: slot.mob,
           title: slot.title || "",
           ...(slot.coordinate === false ? { coordinate: false } : {}),
+          ...(slot.north != null && slot.north !== "" ? { north: Number(slot.north) } : {}),
           ...(slot.scale > 0 ? { scale: Number(slot.scale) } : {}),
         }));
       out.descriptionHtml = descriptionHtml(out.description || []);
@@ -496,6 +534,15 @@
       data.mobile.drawings ||= {};
       if (!Array.isArray(data.description)) data.description = parseDescription(data.descriptionHtml);
       if (!Array.isArray(data.gallery)) data.gallery = deriveGallery(data);
+      // Angle and scale used to be project-wide defaults; they now live on each drawing.
+      const { north, scale } = data.mobile.drawings;
+      data.gallery.forEach((slot) => {
+        if (slot.type !== "drawing") return;
+        if (slot.north == null && north != null && north !== "" && slot.coordinate !== false) slot.north = Number(north);
+        if (slot.scale == null && Number(scale) > 0) slot.scale = Number(scale);
+      });
+      delete data.mobile.drawings.north;
+      delete data.mobile.drawings.scale;
       // Drawings carry no alt text; photo alts were once prefilled as "#01 …".
       data.gallery = data.gallery.map((slot) => newSlot({
         ...slot,
@@ -650,10 +697,6 @@
       oninput: (event) => { setValue(numberValue(event.target.value)); markDirty(); props.onInput?.(); },
     });
 
-    const select = (options, value, onChange) => h("select", {
-      onchange: (event) => { onChange(event.target.value); markDirty(); },
-    }, options.map(([optionValue, label]) => h("option", { value: optionValue, selected: String(optionValue) === String(value) }, label)));
-
     const removeButton = (list, index, rerender, label) => h("button", {
       type: "button",
       class: "remove",
@@ -670,13 +713,16 @@
 
     const dragHandle = () => h("span", { class: "handle", title: "끌어서 순서 바꾸기" }, "⋮⋮");
 
-    // Drag-to-reorder: container children carry data-index into list and are dragged by their .handle.
-    const sortable = (container, list, onChange) => {
+    // Drag-to-reorder: container children carry data-index into list (an array, or a function returning
+    // the current one) and are dragged by their handle. axis "x" suits grids: left/right half decides.
+    const sortable = (container, list, onChange, { handle = ".handle", axis = "y" } = {}) => {
+      const items = () => (typeof list === "function" ? list() : list);
       let dragged = null;
       const release = () => container.querySelectorAll("[draggable=true]").forEach((item) => { item.draggable = false; });
       container.addEventListener("pointerdown", (event) => {
-        const item = event.target.closest(".handle")?.closest("[data-index]");
-        if (item) item.draggable = true;
+        if (event.target.closest("input, button, .calibrate-overlay")) return;
+        const item = event.target.closest(handle)?.closest("[data-index]");
+        if (item?.parentElement === container) item.draggable = true;
       });
       container.addEventListener("pointerup", release);
       container.addEventListener("dragstart", (event) => {
@@ -692,7 +738,8 @@
         const over = event.target.closest("[data-index]");
         if (!over || over === dragged || over.parentElement !== container) return;
         const rect = over.getBoundingClientRect();
-        if (event.clientY > rect.top + rect.height / 2) over.after(dragged);
+        const after = axis === "x" ? event.clientX > rect.left + rect.width / 2 : event.clientY > rect.top + rect.height / 2;
+        if (after) over.after(dragged);
         else over.before(dragged);
       });
       container.addEventListener("drop", (event) => event.preventDefault());
@@ -701,9 +748,10 @@
         dragged.classList.remove("dragging");
         release();
         dragged = null;
-        const order = [...container.children].map((child) => list[Number(child.dataset.index)]);
-        if (order.every((item, index) => item === list[index])) return;
-        list.splice(0, list.length, ...order);
+        const current = items();
+        const order = [...container.children].map((child) => current[Number(child.dataset.index)]);
+        if (order.every((item, index) => item === current[index])) return;
+        current.splice(0, current.length, ...order);
         onChange();
       });
     };
@@ -815,26 +863,15 @@
       return dial;
     };
 
-    // Shows the mobile drawing with the scale bar on top, like a stretchable CAD block: drag the bar
-    // onto a known dimension, then drag its end grip until the lengths match. Stretching keeps the
-    // bar's metres fixed and solves for the scale.
-    const openCalibrator = async (panel, slot, getScale, onScale) => {
-      panel.replaceChildren(h("span", { class: "muted" }, "불러오는 중…"));
-      const url = await store.assetUrl(slot.mob || slot.pc);
-      const box = url && await drawingViewBox(url);
-      if (!box) {
-        panel.replaceChildren(h("span", { class: "muted" }, "SVG 도면에서만 조정할 수 있습니다."));
-        return;
-      }
-      const overlay = svg("svg", { viewBox: `0 0 ${box.width} ${box.height}`, class: "calibrate-overlay" });
-      const image = h("img", { src: url, alt: "" });
-      panel.replaceChildren(h("div", { class: "calibrate-stage" }, image, overlay));
-
+    // Stretchable scale bar laid over a drawing, like a CAD dynamic block: drag the bar onto a known
+    // dimension, then drag its end grip. Stretching keeps the bar's metres fixed and solves for the
+    // scale. Returns a function that redraws the bar (e.g. after the scale is typed in).
+    const attachCalibrator = (overlay, box, getScale, onScale) => {
       let origin = { x: box.width * 0.08, y: box.height * 0.92 };
       let meters = barLength(getScale());
       const draw = () => {
         const unitsPerMeter = UNITS_PER_METER / getScale();
-        const px = overlay.getBoundingClientRect().width / box.width || 1; // screen px per drawing unit
+        const px = overlay.getScreenCTM()?.a || 1; // screen px per drawing unit
         const ticks = [0, meters / 5, (meters * 2) / 5, meters];
         const [a, b, c, d] = ticks.map((value) => origin.x + value * unitsPerMeter);
         const top = origin.y - 10 / px;
@@ -880,9 +917,8 @@
       };
       overlay.addEventListener("pointerup", end);
       overlay.addEventListener("pointercancel", end);
-      image.addEventListener("load", draw);
-      panel.refresh = () => { meters = barLength(getScale()); draw(); };
       draw();
+      return () => { meters = barLength(getScale()); draw(); };
     };
 
     // ---------- sections ----------
@@ -1000,148 +1036,247 @@
       ]);
     };
 
-    // PC or 모바일 thumbnail cell in a gallery row: click to replace, checkbox to show, URL, copy across.
-    const thumbCell = (slot, device, refresh) => {
-      const other = device === PC ? MOB : PC;
-      const key = SLOT_KEY[device];
-      const hideKey = HIDE_KEY[device];
-      const replace = async () => {
-        const file = await pickFile();
-        if (!file) return;
-        await uploadMany([file], device, (_, src) => { slot[key] = src[device]; refresh(); markDirty(); });
-      };
-      return h("div", { class: `thumb-cell${slot[hideKey] ? " off" : ""}` },
-        thumbButton(slot[key], DEVICE_LABEL[device], `${DEVICE_LABEL[device]} 이미지 교체`, replace),
-        h("div", { class: "thumb-actions" },
-          h("input", {
-            type: "checkbox",
-            checked: !slot[hideKey],
-            title: `${DEVICE_LABEL[device]}에 표시`,
-            onchange: (event) => { slot[hideKey] = !event.target.checked; refresh(); markDirty(); },
-          }),
-          h("button", {
-            type: "button",
-            class: "link",
-            title: `${DEVICE_LABEL[device]} 이미지 URL`,
-            onclick: () => {
-              const src = prompt(`${DEVICE_LABEL[device]} 이미지 URL`, isExternal(slot[key]) ? slot[key] : "");
-              if (!src) return;
-              slot[key] = src.trim();
-              refresh();
-              markDirty();
-            },
-          }, "URL"),
-          h("button", {
-            type: "button",
-            class: "link",
-            disabled: !slot[SLOT_KEY[other]] || slot[SLOT_KEY[other]] === slot[key],
-            title: `${DEVICE_LABEL[other]} 이미지와 같게`,
-            onclick: async () => {
-              try {
-                slot[key] = await copyAcross(slot[SLOT_KEY[other]], device);
-                refresh();
-                markDirty();
-              } catch (error) {
-                toast(error.message, true);
-              }
-            },
-          }, "⇆")));
+    // ---------- images: IMG (photos) and DWG (drawings) ----------
+    // Two card grids over the one gallery list, which is kept as photos then drawings (also the PC
+    // gallery order). Each grid shows one device at a time; a drawing card carries the mobile info
+    // strip (north, scale, title) edited in place.
+
+    const isDrawing = (slot) => slot.type === "drawing";
+    const galleryTab = { photo: PC, drawing: PC };
+    const calibrating = new Set();
+
+    const ICONS = {
+      rotate: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 3.5 3.5 7 7 10.5"/><path d="M3.5 7h8a5 5 0 0 1 0 10H8"/></svg>',
+      landscape: '<svg viewBox="0 0 20 20"><rect x="1.5" y="4.5" width="17" height="11" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="1.5" y="7" width="17" height="6" fill="currentColor"/></svg>',
+      portrait: '<svg viewBox="0 0 20 20"><rect x="4.5" y="1.5" width="11" height="17" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="7" y="1.5" width="6" height="17" fill="currentColor"/></svg>',
     };
 
-    const slotRow = (gallery, slot, index, renderList) => {
-      const row = h("div", { class: "sheet-row slot-row", dataset: { index } });
-      const render = () => {
-        const kindValue = slot.type === "drawing" ? "drawing" : `photo:${slot.orientation}`;
-        const drawing = slot.type === "drawing";
-        const calibrator = h("div", { class: "calibrator", hidden: true });
-        const defaultScale = () => Number(project.mobile.drawings.scale) || 50;
-        const scaleInput = drawing ? numberInput(() => slot.scale, (value) => { slot.scale = value; }, {
-          class: "narrow",
-          min: "1",
-          placeholder: project.mobile.drawings.scale ? String(project.mobile.drawings.scale) : "축척",
-          onInput: () => calibrator.refresh?.(),
-        }) : null;
-        row.replaceChildren(...[
-          dragHandle(),
-          thumbCell(slot, PC, renderList),
-          thumbCell(slot, MOB, renderList),
-          h("div", { class: "stack-cell" },
-            h("div", { class: "cell-line" },
-              select(KINDS, kindValue, (value) => {
-                const [type, orientation] = value.split(":");
-                slot.type = type;
-                if (orientation) slot.orientation = orientation;
-                render();
-              }),
-              select(FITS.map((value) => [value, value === "auto" ? "맞춤" : value]), slot.fit, (value) => { slot.fit = value; }),
-              select(ROTATIONS.map((value) => [value, `${value}°`]), slot.rotation, (value) => { slot.rotation = Number(value); })),
-            drawing ? null : textInput(() => slot.alt, (value) => { slot.alt = value; }, { placeholder: "대체 텍스트" }),
-            drawing
-              ? h("div", { class: "cell-line" },
-                textInput(() => slot.title, (value) => { slot.title = value; }, { placeholder: "도면 제목" }),
-                h("span", { class: "muted pad" }, "1 :"),
-                scaleInput,
-                h("button", {
-                  type: "button",
-                  class: "tool",
-                  title: "도면 위에 축척 바를 띄워, 끝 ■을 좌우로 끌어 축척 맞추기",
-                  onclick: (event) => {
-                    calibrator.hidden = !calibrator.hidden;
-                    event.currentTarget.classList.toggle("on", !calibrator.hidden);
-                    if (!calibrator.hidden) {
-                      openCalibrator(calibrator, slot, () => Number(slot.scale) || defaultScale(), (scale) => {
-                        slot.scale = scale;
-                        scaleInput.value = scale;
-                        markDirty();
-                      });
-                    }
-                  },
-                }, "SCALE"),
-                h("label", { class: "check", title: "모바일 도면에 방위표 표시" },
-                  h("input", { type: "checkbox", checked: slot.coordinate !== false, onchange: (event) => { slot.coordinate = event.target.checked; markDirty(); } }),
-                  "N"))
-              : null),
-          removeButton(gallery, index, renderList, `#${index + 1} 이미지`),
-          drawing ? calibrator : null,
-        ].filter(Boolean));
+    const iconButton = (markup, title, onclick) => {
+      const button = h("button", { type: "button", class: "icon-btn", title, onclick });
+      button.innerHTML = markup;
+      return button;
+    };
+
+    const deviceTabs = (kind, rerender) => h("div", { class: "device-tabs" }, [PC, MOB].map((device) => h("button", {
+      type: "button",
+      class: galleryTab[kind] === device ? "on" : undefined,
+      onclick: () => { galleryTab[kind] = device; rerender(); },
+    }, device === PC ? "PC" : "MOBILE")));
+
+    const showToggle = (slot, device, rerender) => h("button", {
+      type: "button",
+      class: `show-toggle${slot[HIDE_KEY[device]] ? "" : " on"}`,
+      title: `${DEVICE_LABEL[device]}에 표시`,
+      onclick: () => { slot[HIDE_KEY[device]] = !slot[HIDE_KEY[device]]; rerender(); markDirty(); },
+    });
+
+    // The card's picture for one device: click or drop a file on it to replace that device's image.
+    const cardMedia = (slot, device, rerender) => {
+      const key = SLOT_KEY[device];
+      const media = h("div", { class: "card-media", title: `${DEVICE_LABEL[device]} 이미지 교체 — 클릭 또는 파일을 끌어다 놓기` });
+      const img = h("img", { alt: "", draggable: false });
+      const turn = Number(slot.rotation) || 0;
+      if (turn) img.style.transform = `rotate(${turn}deg)${turn % 180 ? " scale(.625)" : ""}`;
+      img.onerror = () => media.classList.add("broken");
+      media.append(img);
+      store.assetUrl(slot[key]).then((url) => { if (url) img.src = url; else media.classList.add("broken"); });
+      const replace = (files) => uploadMany([...files].slice(0, 1), device, (_, src) => { slot[key] = src[device]; rerender(); markDirty(); });
+      media.addEventListener("click", async () => {
+        if (calibrating.has(slot)) return;
+        const file = await pickFile();
+        if (file) replace([file]);
+      });
+      media.addEventListener("dragover", (event) => {
+        if (!event.dataTransfer?.types.includes("Files")) return;
+        event.preventDefault();
+        media.classList.add("over");
+      });
+      media.addEventListener("dragleave", () => media.classList.remove("over"));
+      media.addEventListener("drop", (event) => {
+        if (!event.dataTransfer?.files.length) return;
+        event.preventDefault();
+        event.stopPropagation();
+        media.classList.remove("over");
+        replace(event.dataTransfer.files);
+      });
+      return { media, img };
+    };
+
+    // Shown on hover: copy the other device's image, delete.
+    const cardCorner = (slot, device, rerender) => {
+      const other = device === PC ? MOB : PC;
+      const key = SLOT_KEY[device];
+      const otherKey = SLOT_KEY[other];
+      return h("div", { class: "card-corner" },
+        h("button", {
+          type: "button",
+          class: "icon-btn",
+          title: `${DEVICE_LABEL[other]} 이미지와 같게`,
+          disabled: !slot[otherKey] || slot[otherKey] === slot[key],
+          onclick: async () => {
+            try {
+              slot[key] = await copyAcross(slot[otherKey], device);
+              rerender();
+              markDirty();
+            } catch (error) {
+              toast(error.message, true);
+            }
+          },
+        }, "⇆"),
+        removeButton(project.gallery, project.gallery.indexOf(slot), rerender, "이미지"));
+    };
+
+    const photoCard = (slot, index, rerender) => {
+      const device = galleryTab.photo;
+      const portrait = slot.orientation === "portrait";
+      return h("div", { class: `card${slot[HIDE_KEY[device]] ? " off" : ""}`, dataset: { index } },
+        cardMedia(slot, device, rerender).media,
+        h("div", { class: "card-tools" },
+          showToggle(slot, device, rerender),
+          iconButton(ICONS.rotate, `회전 (지금 ${Number(slot.rotation) || 0}°)`, () => { slot.rotation = ((Number(slot.rotation) || 0) + 90) % 360; rerender(); markDirty(); }),
+          iconButton(portrait ? ICONS.portrait : ICONS.landscape, portrait ? "세로 사진 (눌러서 가로로)" : "가로 사진 (눌러서 세로로)", () => {
+            slot.orientation = portrait ? "landscape" : "portrait";
+            rerender();
+            markDirty();
+          })),
+        cardCorner(slot, device, rerender));
+    };
+
+    const drawingCard = (slot, index, rerender) => {
+      const device = galleryTab.drawing;
+      const { media, img } = cardMedia(slot, device, rerender);
+      const scaleOf = () => Number(slot.scale) || 0;
+      let box = null;
+      let redrawCalibrator = null;
+
+      // Scale bar preview at the drawing's size in this card, as it will sit under the mobile slider.
+      const bar = svg("svg", { class: "strip-bar" });
+      const drawBar = () => {
+        bar.replaceChildren();
+        const scale = scaleOf();
+        const pixelsPerUnit = box ? Math.min(media.clientWidth / box.width, media.clientHeight / box.height) : 0;
+        if (!scale || !pixelsPerUnit) return;
+        const meters = barLength(scale);
+        const pixelsPerMeter = (UNITS_PER_METER / scale) * pixelsPerUnit;
+        const height = 16;
+        const font = 6;
+        const ticks = [0, meters / 5, (meters * 2) / 5, meters];
+        const [a, b, c, d] = ticks.map((value) => 3 + value * pixelsPerMeter);
+        const bottom = height - font - 2;
+        bar.setAttribute("width", d + font * 1.4);
+        bar.setAttribute("height", height);
+        bar.append(
+          svg("polyline", { points: `${d} ${bottom} ${d} 1 ${c} 1 ${c} ${bottom} ${b} ${bottom} ${b} 1 ${a} 1 ${a} ${bottom}`, fill: "none", stroke: "#111", "stroke-width": ".7" }),
+          ...ticks.map((value, tick) => svg("text", { x: 3 + value * pixelsPerMeter, y: height - 0.5, "font-size": font, "text-anchor": "middle", fill: "#111" }, `${Number(value.toFixed(2))}${tick === 3 ? "m" : ""}`)),
+        );
       };
+
+      let dial;
+      const northField = numberInput(() => slot.north, (value) => { slot.north = value; }, { placeholder: "NUM", onInput: () => dial.redraw() });
+      dial = compassDial(() => slot.north, (degrees) => { slot.north = degrees; northField.value = degrees; markDirty(); });
+      const scaleField = numberInput(() => slot.scale, (value) => { slot.scale = value; }, {
+        min: "1",
+        placeholder: "NUM",
+        onInput: () => { drawBar(); redrawCalibrator?.(); },
+      });
+      const card = h("div", { class: `card drawing-card${slot[HIDE_KEY[device]] ? " off" : ""}${calibrating.has(slot) ? " calibrating" : ""}`, dataset: { index } },
+        media,
+        h("div", { class: "card-tools" }, showToggle(slot, device, rerender)),
+        cardCorner(slot, device, rerender),
+        h("div", { class: "card-strip" },
+          h("div", { class: "strip-north", title: "북쪽 방향 — 바늘을 끌거나 각도 입력 (도면 위쪽 기준 시계방향). 비우면 방위표 없음" },
+            dial, h("label", { class: "strip-num" }, northField, "°")),
+          h("div", { class: "strip-scale" },
+            h("button", {
+              type: "button",
+              class: `scale-toggle${calibrating.has(slot) ? " on" : ""}`,
+              title: "도면 위에 축척 바를 띄워, 끝 ■을 좌우로 끌어 축척 맞추기",
+              onclick: () => {
+                if (calibrating.has(slot)) calibrating.delete(slot);
+                else {
+                  calibrating.add(slot);
+                  galleryTab.drawing = MOB; // the scale is the mobile drawing's
+                }
+                rerender();
+              },
+            }, "SCALE"),
+            h("label", { class: "strip-num" }, "1 : ", scaleField),
+            bar),
+          h("div", { class: "strip-title" }, textInput(() => slot.title, (value) => { slot.title = value; }, { placeholder: "TITLE" }))));
+
+      store.assetUrl(slot[SLOT_KEY[device]]).then((url) => (url ? drawingViewBox(url) : null)).then((found) => {
+        box = found;
+        const ready = () => {
+          drawBar();
+          if (!box || !calibrating.has(slot)) return;
+          const overlay = svg("svg", { viewBox: `0 0 ${box.width} ${box.height}`, class: "calibrate-overlay" });
+          media.append(overlay);
+          redrawCalibrator = attachCalibrator(overlay, box, () => scaleOf() || 50, (scale) => {
+            slot.scale = scale;
+            scaleField.value = scale;
+            drawBar();
+            markDirty();
+          });
+        };
+        if (img.complete && img.naturalWidth) ready();
+        else img.addEventListener("load", ready, { once: true });
+      });
+      return card;
+    };
+
+    const imageGroup = (kind, onChange) => {
+      const isKind = (slot) => (kind === "drawing") === isDrawing(slot);
+      const group = h("div", { class: "gallery-group" });
+      const grid = h("div", { class: "card-grid" });
+      let items = [];
+      // Writes this group's order back into the gallery, keeping photos before drawings.
+      const store_ = () => {
+        const others = project.gallery.filter((slot) => !isKind(slot));
+        project.gallery.splice(0, project.gallery.length, ...(kind === "drawing" ? [...others, ...items] : [...items, ...others]));
+      };
+      const render = () => {
+        items = project.gallery.filter(isKind);
+        store_();
+        grid.replaceChildren(...items.map((slot, index) => (kind === "drawing" ? drawingCard : photoCard)(slot, index, render)));
+        group.replaceChildren(
+          h("div", { class: "group-label" }, h("span", { class: "branch" }, kind === "drawing" ? "└" : "├"), kind === "drawing" ? "DWG" : "IMG"),
+          deviceTabs(kind, render),
+          grid,
+          ...dropButton("+ OR DRAG AND DROP", (files) => uploadMany(files, "both", async (file, src) => {
+            const detected = await detectKind(file);
+            const number = String(items.length + 1).padStart(2, "0");
+            project.gallery.push(newSlot(kind === "drawing"
+              ? { type: "drawing", pc: src[PC], mob: src[MOB], title: file.name.replace(/\.[^.]+$/, "") }
+              : { type: "photo", orientation: detected.orientation || "landscape", pc: src[PC], mob: src[MOB], alt: `${number} ${project.overview.titleEn || project.id}` }));
+            render();
+            markDirty();
+          })),
+        );
+        onChange();
+      };
+      sortable(grid, () => items, () => { store_(); render(); markDirty(); }, { handle: ".card-media", axis: "x" });
       render();
-      return row;
+      return group;
+    };
+
+    // Older pages used hand-made overlay images; they show only when a drawing has no angle / scale.
+    const legacyOverlays = () => {
+      const drawings = project.mobile.drawings;
+      return h("details", { class: "legacy" },
+        h("summary", {}, "직접 만든 방위표 · 축척 바 이미지"),
+        sheet(
+          formRow("방위표", ...srcInput(() => drawings.coordinateSrc, (value) => { drawings.coordinateSrc = value; }, MOB)),
+          formRow("축척 바", ...srcInput(() => drawings.scaleSrc, (value) => { drawings.scaleSrc = value; }, MOB)),
+        ));
     };
 
     const gallerySection = () => {
-      const gallery = project.gallery;
-      const list = h("div", { class: "sheet-list" });
       const countLabel = h("small", {});
-      const renderList = () => {
-        list.replaceChildren(...gallery.map((slot, index) => slotRow(gallery, slot, index, renderList)));
-        const pcCount = gallery.filter((slot) => showsOn(slot, PC)).length;
-        const mobCount = gallery.filter((slot) => showsOn(slot, MOB)).length;
-        countLabel.textContent = `${gallery.length}개 · PC ${pcCount} / 모바일 ${mobCount}`;
+      const updateCount = () => {
+        const gallery = project.gallery;
+        countLabel.textContent = `${gallery.length}개 · PC ${gallery.filter((slot) => showsOn(slot, PC)).length} / 모바일 ${gallery.filter((slot) => showsOn(slot, MOB)).length}`;
       };
-      renderList();
-      sortable(list, gallery, () => { renderList(); markDirty(); });
-      return section("이미지", countLabel, h("div", { class: "sheet" }, list, h("div", { class: "add-line" },
-        ...dropButton("+ 이미지 (끌어다 놓기 가능)", (files) => uploadMany(files, "both", async (file, src) => {
-          const kind = await detectKind(file);
-          const number = String(gallery.length + 1).padStart(2, "0");
-          gallery.push(newSlot({
-            ...kind,
-            pc: src[PC],
-            mob: src[MOB],
-            title: kind.type === "drawing" ? file.name.replace(/\.[^.]+$/, "") : "",
-            alt: kind.type === "drawing" ? "" : `${number} ${project.overview.titleEn || project.id}`,
-          }));
-          renderList();
-          markDirty();
-        })),
-        addButton("+ URL", () => {
-          const src = (prompt("이미지 URL (PC·모바일 공통)") || "").trim();
-          if (!src) return;
-          gallery.push(newSlot({ pc: src, mob: src }));
-          renderList();
-          markDirty();
-        }))));
+      return section("이미지", countLabel, [imageGroup("photo", updateCount), imageGroup("drawing", updateCount), legacyOverlays()]);
     };
 
     // Description images are shared by PC and mobile, so they are stored once in PC/.
@@ -1183,37 +1318,6 @@
         addButton("+ 이미지", () => uploadDescriptionImage((src) => add({ type: "image", src, caption: "" }))))));
     };
 
-    const mobileSection = () => {
-      const drawings = project.mobile.drawings;
-      let dial;
-      const angle = numberInput(() => drawings.north, (value) => {
-        if (value == null) delete drawings.north;
-        else drawings.north = value;
-      }, { class: "narrow", placeholder: "—", onInput: () => dial.redraw() });
-      dial = compassDial(() => drawings.north, (degrees) => {
-        drawings.north = degrees;
-        angle.value = degrees;
-        markDirty();
-      });
-      return section("모바일 도면", null, [
-        sheet(
-          h("div", { class: "sheet-row form-row" },
-            h("span", { class: "label" }, "방위"),
-            h("div", { class: "cell dial-cell" }, dial, angle, h("span", { class: "muted pad" }, "°"))),
-          formRow("기본 축척", h("span", { class: "muted pad" }, "1 :"), numberInput(() => drawings.scale, (value) => {
-            if (value == null) delete drawings.scale;
-            else drawings.scale = value;
-          }, { min: "1", placeholder: "50" })),
-        ),
-        h("details", { class: "legacy" },
-          h("summary", {}, "직접 만든 이미지"),
-          sheet(
-            formRow("방위표", ...srcInput(() => drawings.coordinateSrc, (value) => { drawings.coordinateSrc = value; }, MOB)),
-            formRow("축척 바", ...srcInput(() => drawings.scaleSrc, (value) => { drawings.scaleSrc = value; }, MOB)),
-          )),
-      ]);
-    };
-
     const jsonSection = () => {
       const area = h("textarea", { class: "mono", rows: 14, spellcheck: false });
       const details = section("JSON", null, [
@@ -1246,7 +1350,6 @@
         overviewSection(),
         gallerySection(),
         descriptionSection(),
-        mobileSection(),
         jsonSection(),
       );
       updateBadges();

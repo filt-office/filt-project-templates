@@ -223,6 +223,9 @@
       image.dataset.coordinate = drawing.coordinate === false ? "off" : "on";
       const scale = Number(drawing.scale ?? drawingData.scale);
       if (scale > 0) image.dataset.scale = String(scale);
+      // Each drawing has its own angle; older data had one project-wide angle.
+      const north = drawing.north ?? drawingData.north;
+      if (north !== "" && north != null && Number.isFinite(Number(north))) image.dataset.north = String(Number(north));
       image.loading = "lazy";
       image.draggable = false;
       slides.append(image);
@@ -287,9 +290,8 @@
     let touchStartX = null;
     const originalSlideCount = originalSlides.length;
 
-    // A number in drawingData.north or a per-drawing scale draws the overlay; otherwise the uploaded
+    // A drawing with its own angle / scale gets generated overlays; otherwise the uploaded
     // coordinateSrc / scaleSrc images are used as before.
-    const north = drawingData.north === "" || drawingData.north == null ? NaN : Number(drawingData.north);
     let overlayToken = 0;
     const updateDrawingOverlays = async () => {
       const token = ++overlayToken;
@@ -309,6 +311,7 @@
       // Legacy overlay images are drawing-sized canvases with the mark in a corner, so they get the
       // drawing's on-screen size; generated ones are compact and sit inside their cell.
       const drawingScale = Number(currentImage.dataset.scale);
+      const north = currentImage.dataset.north === undefined ? NaN : Number(currentImage.dataset.north);
       const generatedNorth = Number.isFinite(north);
       const generatedScale = drawingScale > 0;
       const overlayHeight = Math.round(info.clientHeight * 0.6);
