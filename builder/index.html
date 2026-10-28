@@ -79,12 +79,18 @@
     .editor { overflow-y: auto; border-right: 1px solid #111; background: #fff; }
     details { border-bottom: 1px solid var(--line); }
     summary {
+      display: flex;
+      align-items: baseline;
       padding: 10px 14px;
       font-weight: 700;
       letter-spacing: .03em;
       cursor: pointer;
+      list-style: none;
       user-select: none;
     }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "+"; width: 16px; flex: none; font-weight: 400; }
+    details[open] > summary::before { content: "−"; }
     summary small { margin-left: 6px; font-weight: 400; color: var(--muted); }
     .section-body { display: grid; gap: 10px; padding: 0 14px 14px; }
     .row { display: flex; gap: 6px; align-items: center; }
@@ -112,14 +118,17 @@
     .form-row { grid-template-columns: 88px 1fr; }
     .field-row { grid-template-columns: 22px 38% 1fr 26px; }
     .slot-row { grid-template-columns: 22px 64px 64px 1fr 26px; }
-    .block-row { grid-template-columns: 22px 1fr 24px 26px; }
-    .image-row { grid-template-columns: 22px 88px 1fr 24px 26px; }
-    .text-tools { display: grid; align-content: start; }
-    button.text-tool { width: 100%; height: 21px; padding: 3px; border: 0; background: none; color: #bbb; }
+    .block-row { grid-template-columns: 22px 1fr 26px; }
+    .image-row { grid-template-columns: 22px 88px 1fr 26px; }
+    .text-cell { display: grid; align-content: start; min-width: 0; }
+    .text-tools { display: flex; align-items: center; gap: 1px; padding: 2px 4px; border-bottom: 1px solid var(--line); }
+    .tool-gap { width: 8px; }
+    .tool-level { margin-left: 3px; color: var(--muted); font-size: 10px; }
+    button.text-tool { width: 20px; height: 20px; padding: 2px; border: 0; background: none; color: #bbb; }
     button.text-tool svg { display: block; width: 100%; height: 100%; }
     button.text-tool:hover { background: #f6f6f3; color: #111; }
     button.text-tool.on { color: #111; }
-    .field-row select.unit { flex: none; width: 52px; border-left: 1px solid var(--line); }
+    .field-row select.unit { flex: none; width: 56px; border-left: 1px solid var(--line); }
     .handle { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 12px; letter-spacing: -3px; cursor: grab; user-select: none; }
     .handle:hover { background: #f6f6f3; color: #111; }
     .dragging { opacity: .4; }
@@ -177,7 +186,7 @@
     /* Image grids (IMG / DWG): device tabs over 2-column cards; drawing cards carry the mobile strip. */
     .gallery-group { display: grid; gap: 8px; margin-bottom: 6px; }
     .gallery-group.over { outline: 2px dashed #BD005E; outline-offset: 4px; }
-    .device-tabs { display: flex; width: 60%; border: 1.5px solid #111; }
+    .device-tabs { display: flex; width: 50%; border: 1.5px solid #111; }
     .device-tabs button { flex: 1; padding: 3px 8px; border: 0; background: #fff; color: #111; text-align: left; }
     .device-tabs button.on { background: #111; color: #fff; }
     .card-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #111; border-left: 1px solid #111; }
@@ -189,15 +198,16 @@
     .card-media.over { outline: 2px solid #BD005E; outline-offset: -2px; }
     .card.off .card-media img { opacity: .25; }
     .card.calibrating .card-media { cursor: default; }
-    .card-tools { position: absolute; top: 6px; left: 6px; display: flex; gap: 4px; }
+    .card-tools { position: absolute; top: 6px; left: 6px; display: flex; align-items: center; gap: 4px; }
     .card-corner { position: absolute; top: 6px; right: 6px; display: none; gap: 2px; }
     .card:hover .card-corner { display: flex; }
-    button.icon-btn, .card-corner button.remove { width: 22px; height: 22px; padding: 2px; border: 0; background: rgba(255,255,255,.9); color: #111; line-height: 1; }
+    button.icon-btn, .card-corner button.remove { width: 20px; height: 20px; padding: 0; border: 0; background: none; color: #111; line-height: 1; }
+    .card-corner button.remove, .card-corner button.icon-btn { background: rgba(255,255,255,.9); }
     button.icon-btn svg { display: block; width: 100%; height: 100%; }
-    button.icon-btn:hover { background: #111; color: #fff; }
-    button.show-toggle { width: 22px; height: 22px; padding: 0; border: 1.5px solid #111; background: #fff; }
-    button.show-toggle.on { background: #111; box-shadow: inset 0 0 0 3px #fff; }
-    button.show-toggle:hover { background: #ccc; }
+    button.icon-btn:hover { background: none; color: #BD005E; }
+    button.show-toggle { width: 18px; height: 18px; padding: 0; border: 1.5px solid #111; background: #fff; }
+    button.show-toggle.on { background: #111; box-shadow: inset 0 0 0 2.5px #fff; }
+    button.show-toggle:hover { border-color: #BD005E; }
     .card-strip { display: grid; grid-template-columns: 16% 44% 40%; height: 44px; border-top: 1px solid #111; }
     .card-strip > div { position: relative; min-width: 0; overflow: hidden; }
     .card-strip > div + div { border-left: 1px solid #111; }
@@ -215,7 +225,10 @@
     button.scale-toggle { position: absolute; top: 2px; left: 16px; padding: 0 3px; border: 0; background: none; color: var(--muted); font-size: 9px; letter-spacing: .04em; }
     button.scale-toggle:hover, button.scale-toggle.on { background: #BD005E; color: #fff; }
     .strip-title input { position: absolute; right: 4px; bottom: 4px; width: calc(100% - 8px); font-size: 11px !important; font-weight: 700; text-align: right; }
-    .gallery-group > .add-row { justify-self: center; padding: 6px 10px; font-size: 13px; font-weight: 700; letter-spacing: .03em; color: #111; }
+    .add-drop { display: flex; align-items: center; gap: 8px; margin-left: calc(50% - 13px); padding: 6px 0; font-size: 15px; font-weight: 700; letter-spacing: .02em; }
+    button.plus { width: 26px; height: 26px; padding: 0; border: 0; background: none; color: #111; }
+    button.plus:hover { background: none; color: #BD005E; }
+    button.plus svg { display: block; width: 100%; height: 100%; }
 
     .preview { display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; }
     .preview-bar { display: flex; gap: 6px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: #fff; }
@@ -387,6 +400,7 @@
       orientation: "landscape",
       alt: "",
       fit: "auto",
+      fitMob: "auto",
       rotation: 0,
       title: "",
       coordinate: true,
@@ -457,11 +471,11 @@
     const compile = (source) => {
       const out = JSON.parse(JSON.stringify(source));
       const gallery = out.gallery || [];
-      const galleryImage = (slot, src) => ({
+      const galleryImage = (slot, src, device = PC) => ({
         src,
         class: slot.type === "drawing" ? "drawing" : slot.orientation,
         alt: slot.type === "drawing" ? "" : slot.alt || "",
-        fit: slot.fit || "auto",
+        fit: slot[device === MOB ? "fitMob" : "fit"] || "auto",
         rotation: Number(slot.rotation) || 0,
       });
       out.images = gallery.filter((slot) => showsOn(slot, PC)).map((slot) => galleryImage(slot, slot.pc));
@@ -469,7 +483,7 @@
       out.mobile ||= {};
       out.mobile.images = gallery
         .filter((slot) => slot.type === "photo" && showsOn(slot, MOB))
-        .map((slot) => galleryImage(slot, slot.mob));
+        .map((slot) => galleryImage(slot, slot.mob, MOB));
       out.mobile.drawings ||= {};
       out.mobile.drawings.images = gallery
         .filter((slot) => slot.type === "drawing" && showsOn(slot, MOB))
@@ -492,7 +506,12 @@
 
     // Alignment / indent of a text block or a caption, as inline CSS ("" when left and not indented,
     // so untouched text keeps the plain markup the original pages used).
-    const textStyle = (align, indent) => [align === "center" ? "text-align: center" : "", indent ? "padding-left: 2em" : ""].filter(Boolean).join("; ");
+    const INDENT_EM = 2;
+    const indentLevel = (indent) => Math.max(0, Math.round(Number(indent) || 0)); // older data stored true for one level
+    const textStyle = (align, indent) => [
+      align === "center" || align === "right" ? `text-align: ${align}` : "",
+      indentLevel(indent) ? `padding-left: ${indentLevel(indent) * INDENT_EM}em` : "",
+    ].filter(Boolean).join("; ");
 
     const descriptionHtml = (blocks) => {
       const parts = blocks.flatMap((block) => {
@@ -778,10 +797,12 @@
       return thumb;
     };
 
-    const dropButton = (label, onFiles) => {
+    // Under an image grid: the + button picks files; the label only says the whole grid takes drops.
+    const addLine = (onFiles) => {
       const picker = h("input", { type: "file", accept: "image/*", multiple: true, hidden: true, onchange: () => onFiles(picker.files) });
-      const zone = h("button", { type: "button", class: "add-row", onclick: () => { picker.value = ""; picker.click(); } }, label);
-      return [zone, picker];
+      const plus = h("button", { type: "button", class: "plus", title: "이미지 추가", onclick: () => { picker.value = ""; picker.click(); } });
+      plus.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="5"/></svg>';
+      return h("div", { class: "add-drop" }, plus, h("span", {}, "OR DRAG AND DROP"), picker);
     };
 
     // ---------- drawing tools (north dial, scale calibration) ----------
@@ -1014,7 +1035,7 @@
           input.value = shown();
           markDirty();
         },
-      }, h("option", { value: "m2", selected: unit() === "m2" }, "㎡"), h("option", { value: "py", selected: unit() === "py" }, "평"));
+      }, h("option", { value: "m2", selected: unit() === "m2" }, "M2"), h("option", { value: "py", selected: unit() === "py" }, "PY"));
       return h("div", { class: "cell" }, input, unitSelect);
     };
 
@@ -1068,10 +1089,20 @@
     const galleryTab = { photo: PC, drawing: PC };
     const calibrating = new Set();
 
+    // Card tool glyphs, drawn to fill their 20px box like the mock-up.
     const ICONS = {
-      rotate: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 3.5 3.5 7 7 10.5"/><path d="M3.5 7h8a5 5 0 0 1 0 10H8"/></svg>',
-      landscape: '<svg viewBox="0 0 20 20"><rect x="1.5" y="4.5" width="17" height="11" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="1.5" y="7" width="17" height="6" fill="currentColor"/></svg>',
-      portrait: '<svg viewBox="0 0 20 20"><rect x="4.5" y="1.5" width="11" height="17" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="7" y="1.5" width="6" height="17" fill="currentColor"/></svg>',
+      rotate: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M11 4.5 16.5 10 11 15.5 5.5 10Z"/><path d="M2 8.5V4h4.5"/><path d="M2 4l4.5 4.5"/></svg>',
+      contain: '<svg viewBox="0 0 20 20"><rect x="1" y="3.5" width="18" height="13" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="1" y="6.5" width="18" height="7" fill="currentColor"/></svg>',
+      cover: '<svg viewBox="0 0 20 20"><rect x="1" y="3.5" width="18" height="13" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="2.5" y="5" width="15" height="10" fill="currentColor"/></svg>',
+    };
+
+    // Fit per device. "auto" follows the template's default: on PC landscape photos fill (cover)
+    // and portrait ones fit (contain); the mobile gallery is the other way round.
+    const FIT_KEY = { [PC]: "fit", [MOB]: "fitMob" };
+    const effectiveFit = (slot, device) => {
+      const fit = slot[FIT_KEY[device]];
+      if (fit === "contain" || fit === "cover") return fit;
+      return (slot.orientation === "portrait") === (device === PC) ? "contain" : "cover";
     };
 
     const iconButton = (markup, title, onclick) => {
@@ -1138,14 +1169,16 @@
 
     const photoCard = (slot, index, rerender) => {
       const device = galleryTab.photo;
-      const portrait = slot.orientation === "portrait";
+      const fit = effectiveFit(slot, device);
+      const { media, img } = cardMedia(slot, device, rerender);
+      img.style.objectFit = fit;
       return h("div", { class: `card${slot[HIDE_KEY[device]] ? " off" : ""}`, dataset: { index } },
-        cardMedia(slot, device, rerender).media,
+        media,
         h("div", { class: "card-tools" },
           showToggle(slot, device, rerender),
-          iconButton(ICONS.rotate, `회전 (지금 ${Number(slot.rotation) || 0}°)`, () => { slot.rotation = ((Number(slot.rotation) || 0) + 90) % 360; rerender(); markDirty(); }),
-          iconButton(portrait ? ICONS.portrait : ICONS.landscape, portrait ? "세로 사진 (눌러서 가로로)" : "가로 사진 (눌러서 세로로)", () => {
-            slot.orientation = portrait ? "landscape" : "portrait";
+          iconButton(ICONS.rotate, `90° 회전 (지금 ${Number(slot.rotation) || 0}°)`, () => { slot.rotation = ((Number(slot.rotation) || 0) + 90) % 360; rerender(); markDirty(); }),
+          iconButton(ICONS[fit], fit === "contain" ? "CONTAIN — 잘리지 않게 (눌러서 COVER)" : "COVER — 꽉 채우기 (눌러서 CONTAIN)", () => {
+            slot[FIT_KEY[device]] = fit === "contain" ? "cover" : "contain";
             rerender();
             markDirty();
           })),
@@ -1267,8 +1300,7 @@
         items = project.gallery.filter(isKind);
         store_();
         grid.replaceChildren(...items.map((slot, index) => (kind === "drawing" ? drawingCard : photoCard)(slot, index, render)));
-        const [button, picker] = dropButton("+ OR DRAG AND DROP", add);
-        group.replaceChildren(deviceTabs(kind, render), grid, button, picker);
+        group.replaceChildren(deviceTabs(kind, render), grid, addLine(add));
         onChange();
       };
       // Files dropped anywhere on the group are added to it.
@@ -1309,27 +1341,41 @@
     const TEXT_ICONS = {
       left: '<svg viewBox="0 0 20 20" fill="currentColor"><rect x="3" y="4" width="14" height="1.6"/><rect x="3" y="8" width="9" height="1.6"/><rect x="3" y="12" width="14" height="1.6"/><rect x="3" y="16" width="9" height="1.6"/></svg>',
       center: '<svg viewBox="0 0 20 20" fill="currentColor"><rect x="3" y="4" width="14" height="1.6"/><rect x="5.5" y="8" width="9" height="1.6"/><rect x="3" y="12" width="14" height="1.6"/><rect x="5.5" y="16" width="9" height="1.6"/></svg>',
+      right: '<svg viewBox="0 0 20 20" fill="currentColor"><rect x="3" y="4" width="14" height="1.6"/><rect x="8" y="8" width="9" height="1.6"/><rect x="3" y="12" width="14" height="1.6"/><rect x="8" y="16" width="9" height="1.6"/></svg>',
+      outdent: '<svg viewBox="0 0 20 20" fill="currentColor"><rect x="8" y="4" width="9" height="1.6"/><rect x="8" y="8" width="9" height="1.6"/><rect x="8" y="12" width="9" height="1.6"/><rect x="8" y="16" width="9" height="1.6"/><path d="M6 7.5 3 10.5 6 13.5Z"/></svg>',
       indent: '<svg viewBox="0 0 20 20" fill="currentColor"><rect x="8" y="4" width="9" height="1.6"/><rect x="8" y="8" width="9" height="1.6"/><rect x="8" y="12" width="9" height="1.6"/><rect x="8" y="16" width="9" height="1.6"/><path d="M3 7.5 6 10.5 3 13.5Z"/></svg>',
     };
 
-    // Left / center / indent toggles for one block. keys name the block's align and indent fields.
+    // Alignment and indent tools for one block; keys name the block's align and indent fields.
+    // Indent is a level: each press of 들여쓰기 adds one step, 내어쓰기 takes one away.
     const textTools = (block, [alignKey, indentKey], apply) => {
-      const tool = (icon, title, on, onclick) => {
-        const button = h("button", { type: "button", class: `text-tool${on ? " on" : ""}`, title, onclick: () => { onclick(); apply(); markDirty(); } });
+      const tool = (icon, title, on, onclick, disabled = false) => {
+        const button = h("button", { type: "button", class: `text-tool${on ? " on" : ""}`, title, disabled, onclick: () => { onclick(); apply(); markDirty(); } });
         button.innerHTML = icon;
         return button;
       };
+      const align = block[alignKey] || "left";
+      const level = indentLevel(block[indentKey]);
+      const setLevel = (next) => {
+        if (next > 0) block[indentKey] = next;
+        else delete block[indentKey];
+      };
+      const setAlign = (next) => {
+        if (next === "left") delete block[alignKey];
+        else block[alignKey] = next;
+      };
       return h("div", { class: "text-tools" },
-        tool(TEXT_ICONS.left, "왼쪽 정렬", block[alignKey] !== "center", () => { delete block[alignKey]; }),
-        tool(TEXT_ICONS.center, "가운데 정렬", block[alignKey] === "center", () => { block[alignKey] = "center"; }),
-        tool(TEXT_ICONS.indent, "단락 전체 들여쓰기", Boolean(block[indentKey]), () => {
-          if (block[indentKey]) delete block[indentKey];
-          else block[indentKey] = true;
-        }));
+        tool(TEXT_ICONS.left, "왼쪽 정렬", align === "left", () => setAlign("left")),
+        tool(TEXT_ICONS.center, "가운데 정렬", align === "center", () => setAlign("center")),
+        tool(TEXT_ICONS.right, "오른쪽 정렬", align === "right", () => setAlign("right")),
+        h("span", { class: "tool-gap" }),
+        tool(TEXT_ICONS.outdent, "내어쓰기", false, () => setLevel(level - 1), level === 0),
+        tool(TEXT_ICONS.indent, "들여쓰기", false, () => setLevel(level + 1)),
+        level ? h("span", { class: "tool-level", title: "들여쓰기 단계" }, String(level)) : null);
     };
     const previewStyle = (element, align, indent) => {
-      element.style.textAlign = align === "center" ? "center" : "";
-      element.style.paddingLeft = indent ? "2em" : "";
+      element.style.textAlign = align === "center" || align === "right" ? align : "";
+      element.style.paddingLeft = indentLevel(indent) ? `${indentLevel(indent) * INDENT_EM}em` : "";
     };
 
     const descriptionSection = () => {
@@ -1345,7 +1391,7 @@
         previewStyle(area, block.align, block.indent);
         requestAnimationFrame(() => autoGrow(area));
         return h("div", { class: "sheet-row block-row", dataset: { index } },
-          dragHandle(), area, textTools(block, ["align", "indent"], render), removeButton(blocks, index, render, "글"));
+          dragHandle(), h("div", { class: "text-cell" }, textTools(block, ["align", "indent"], render), area), removeButton(blocks, index, render, "글"));
       };
       const imageBlock = (block, index) => {
         const caption = textInput(() => block.caption, (value) => { block.caption = value; }, { placeholder: "캡션" });
@@ -1353,8 +1399,7 @@
         return h("div", { class: "sheet-row image-row", dataset: { index } },
           dragHandle(),
           thumbButton(block.src, null, "이미지 교체", () => uploadDescriptionImage((src) => { block.src = src; render(); markDirty(); })),
-          caption,
-          textTools(block, ["captionAlign", "captionIndent"], render),
+          h("div", { class: "text-cell" }, textTools(block, ["captionAlign", "captionIndent"], render), caption),
           removeButton(blocks, index, render, "이미지"));
       };
       const render = () => list.replaceChildren(...blocks.map((block, index) => (block.type === "image" ? imageBlock(block, index) : textBlock(block, index))));
