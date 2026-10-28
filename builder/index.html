@@ -416,7 +416,7 @@
       const galleryImage = (slot, src) => ({
         src,
         class: slot.type === "drawing" ? "drawing" : slot.orientation,
-        alt: slot.alt || "",
+        alt: slot.type === "drawing" ? "" : slot.alt || "",
         fit: slot.fit || "auto",
         rotation: Number(slot.rotation) || 0,
       });
@@ -432,7 +432,6 @@
         .map((slot) => ({
           src: slot.mob,
           title: slot.title || "",
-          alt: slot.alt || slot.title || "",
           ...(slot.coordinate === false ? { coordinate: false } : {}),
           ...(slot.scale > 0 ? { scale: Number(slot.scale) } : {}),
         }));
@@ -497,7 +496,11 @@
       data.mobile.drawings ||= {};
       if (!Array.isArray(data.description)) data.description = parseDescription(data.descriptionHtml);
       if (!Array.isArray(data.gallery)) data.gallery = deriveGallery(data);
-      data.gallery = data.gallery.map((slot) => newSlot(slot));
+      // Drawings carry no alt text; photo alts were once prefilled as "#01 …".
+      data.gallery = data.gallery.map((slot) => newSlot({
+        ...slot,
+        alt: slot.type === "drawing" ? "" : String(slot.alt || "").replace(/^#\s*/, ""),
+      }));
       return data;
     };
 
@@ -1072,7 +1075,7 @@
               }),
               select(FITS.map((value) => [value, value === "auto" ? "맞춤" : value]), slot.fit, (value) => { slot.fit = value; }),
               select(ROTATIONS.map((value) => [value, `${value}°`]), slot.rotation, (value) => { slot.rotation = Number(value); })),
-            textInput(() => slot.alt, (value) => { slot.alt = value; }, { placeholder: "대체 텍스트" }),
+            drawing ? null : textInput(() => slot.alt, (value) => { slot.alt = value; }, { placeholder: "대체 텍스트" }),
             drawing
               ? h("div", { class: "cell-line" },
                 textInput(() => slot.title, (value) => { slot.title = value; }, { placeholder: "도면 제목" }),
@@ -1093,7 +1096,7 @@
                       });
                     }
                   },
-                }, "↔ 바 맞추기"),
+                }, "SCALE"),
                 h("label", { class: "check", title: "모바일 도면에 방위표 표시" },
                   h("input", { type: "checkbox", checked: slot.coordinate !== false, onchange: (event) => { slot.coordinate = event.target.checked; markDirty(); } }),
                   "N"))
@@ -1127,7 +1130,7 @@
             pc: src[PC],
             mob: src[MOB],
             title: kind.type === "drawing" ? file.name.replace(/\.[^.]+$/, "") : "",
-            alt: `#${number} ${project.overview.titleEn || project.id}`,
+            alt: kind.type === "drawing" ? "" : `${number} ${project.overview.titleEn || project.id}`,
           }));
           renderList();
           markDirty();
