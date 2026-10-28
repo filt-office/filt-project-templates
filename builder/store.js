@@ -501,25 +501,29 @@
 
   // Header widget: the publish button, then the signed-in user with a text-style logout (github mode only).
   // Kept apart from the page's save buttons so 게시 is never clicked by mistake for 게시용 저장.
-  // Appends "deploy" and the signed-in account to the header's action row (see header.js).
+  // Fills the header's action row (see header.js) as: account / draft / save / deploy.
+  // The account goes before the page's own buttons, deploy after them.
   const mountHeader = (container) => {
     injectCss();
-    const item = (tag, text, title) => {
+    const item = (tag, text, title, className = "") => {
       const el = document.createElement(tag);
-      el.className = "fb-act";
+      el.className = `fb-act${className ? ` ${className}` : ""}`;
       el.textContent = text;
       el.title = title;
-      container.append(el);
       return el;
     };
+    const first = container.querySelector(".fb-act");
+    const before = (el) => container.insertBefore(el, first);
     if (mode !== "github") {
-      item("span", "local", "로컬 모드 · 게시는 scripts/release.sh");
+      before(item("span", "local", "로컬 모드 · 게시는 scripts/release.sh"));
       return;
     }
-    item("button", "deploy", "게시 창을 엽니다 (누르자마자 반영되지 않습니다)").addEventListener("click", publishDialog);
     if (currentUser) {
-      item("button", currentUser.login, "누르면 로그아웃").addEventListener("click", () => { if (confirm(`${currentUser.login} 계정에서 로그아웃할까요?`)) logout(); });
+      const account = before(item("button", currentUser.login, "누르면 로그아웃", "account"));
+      account.addEventListener("click", () => { if (confirm(`${currentUser.login} 계정에서 로그아웃할까요?`)) logout(); });
     }
+    container.append(item("button", "deploy", "게시 창을 엽니다 (누르자마자 반영되지 않습니다)", "deploy"));
+    container.lastChild.addEventListener("click", publishDialog);
   };
 
   const backend = mode === "github" ? github : local;

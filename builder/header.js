@@ -1,4 +1,4 @@
-// Shared builder header: logo cell, an action row (save / deploy / account) and page tabs.
+// Shared builder header: logo cell, an action row (account / draft / save / deploy) and page tabs.
 // Usage: <header class="fb-header" data-active="works-list"><div class="fb-actions">…</div></header>
 // followed by <script src="header.js"></script>. Items with class "fb-act" get "/" between them.
 (() => {
@@ -56,6 +56,8 @@
     .fb-act:disabled { opacity: .4; pointer-events: none; }
     span.fb-act { cursor: default; }
     span.fb-act:hover { color: inherit; }
+    .fb-act.deploy { color: #BD005E; } /* the site's key colour */
+    .fb-act.deploy:hover, .fb-act.deploy:focus-visible { color: #8a0045; }
     .fb-actions .dirty { margin-right: 8px; font-size: 11px; }
     .fb-tabs {
       display: flex;
