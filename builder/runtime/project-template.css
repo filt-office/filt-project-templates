@@ -796,3 +796,14 @@ body.filt-menu-open .filt-project-mount .img-section {
     line-height: 1;
   }
 }
+
+/* Paragraphs shifted sideways (builder 들여쓰기 / 내어쓰기) are clipped at the description area's edge. */
+.filt-project-mount .side-section .text-content {
+  overflow-x: hidden !important;
+}
+
+@media (max-width: 768px) {
+  .filt-project-mount .side-section .text-content {
+    overflow-x: clip !important;
+  }
+}

@@ -508,21 +508,15 @@
     // Alignment / indent of a text block or a caption, as inline CSS ("" when left and not indented,
     // so untouched text keeps the plain markup the original pages used).
     const INDENT_EM = 2;
-    // Indent level: above 0 indents the whole paragraph (들여쓰기); below 0 is a hanging indent
-    // (내어쓰기) — the first line stays put and the following lines move in. Older data stored true for +1.
+    // Indent level shifts the whole paragraph sideways, whatever its alignment: above 0 to the right
+    // (들여쓰기), below 0 to the left (내어쓰기). Whatever crosses the description area's edge is
+    // clipped there. Older data stored true for +1.
     const indentLevel = (indent) => Math.round(Number(indent) || 0);
-    const indentCss = (indent) => {
-      const level = indentLevel(indent);
-      if (level > 0) return { paddingLeft: `${level * INDENT_EM}em`, textIndent: "" };
-      if (level < 0) return { paddingLeft: `${-level * INDENT_EM}em`, textIndent: `${level * INDENT_EM}em` };
-      return { paddingLeft: "", textIndent: "" };
-    };
     const textStyle = (align, indent) => {
-      const { paddingLeft, textIndent } = indentCss(indent);
+      const level = indentLevel(indent);
       return [
         align === "center" || align === "right" ? `text-align: ${align}` : "",
-        paddingLeft ? `padding-left: ${paddingLeft}` : "",
-        textIndent ? `text-indent: ${textIndent}` : "",
+        level ? `position: relative; left: ${level * INDENT_EM}em` : "",
       ].filter(Boolean).join("; ");
     };
 
@@ -539,7 +533,6 @@
           .filter(Boolean)
           .map((paragraph) => `${escapeHtml(paragraph).replace(/\n/g, "<br>\n")}\n<br><br>`);
         const style = textStyle(block.align, block.indent);
-        // One wrapper per paragraph, so a hanging indent starts again at each paragraph.
         return style ? paragraphs.map((paragraph) => `<div style="${style}">${paragraph}</div>`) : paragraphs;
       });
       return parts.length ? `<br><br>\n${parts.join("\n")}\n` : "";
@@ -1106,7 +1099,7 @@
     // Card tool glyphs, drawn to fill their 20px box like the mock-up.
     const ICONS = {
       // 3/4 circle (outer diameter 18, like the show box) with an arrowhead at its top end only.
-      rotate: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.25 10A8.25 8.25 0 1 1 10 1.75"/><path d="M7.4 -.6 10 1.75 7.4 4.1"/></svg>',
+      rotate: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.25 10A8.25 8.25 0 1 1 10 1.75"/><path d="M7.4 -.6 10 1.75 7.4 4.1" transform="rotate(-2 10 1.75)"/></svg>',
       contain: '<svg viewBox="0 0 20 20"><rect x="1" y="3.5" width="18" height="13" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="1" y="6.5" width="18" height="7" fill="currentColor"/></svg>',
       cover: '<svg viewBox="0 0 20 20"><rect x="1" y="3.5" width="18" height="13" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="2.5" y="5" width="15" height="10" fill="currentColor"/></svg>',
     };
@@ -1362,7 +1355,7 @@
     };
 
     // Alignment and indent tools for one block; keys name the block's align and indent fields.
-    // Indent is a level: 들여쓰기 adds one step, 내어쓰기 takes one away; below 0 is a hanging indent.
+    // Indent is a level: 들여쓰기 moves the paragraph one step right, 내어쓰기 one step left.
     const textTools = (block, [alignKey, indentKey], apply) => {
       const tool = (icon, title, on, onclick, disabled = false) => {
         const button = h("button", { type: "button", class: `text-tool${on ? " on" : ""}`, title, disabled, onclick: () => { onclick(); apply(); markDirty(); } });
@@ -1384,13 +1377,13 @@
         tool(TEXT_ICONS.center, "가운데 정렬", align === "center", () => setAlign("center")),
         tool(TEXT_ICONS.right, "오른쪽 정렬", align === "right", () => setAlign("right")),
         h("span", { class: "tool-gap" }),
-        tool(TEXT_ICONS.outdent, "내어쓰기 (첫 줄은 그대로, 나머지 줄을 들여씀)", level < 0, () => setLevel(level - 1)),
-        tool(TEXT_ICONS.indent, "들여쓰기 (단락 전체)", level > 0, () => setLevel(level + 1)),
+        tool(TEXT_ICONS.outdent, "내어쓰기 — 단락 전체를 왼쪽으로", level < 0, () => setLevel(level - 1)),
+        tool(TEXT_ICONS.indent, "들여쓰기 — 단락 전체를 오른쪽으로", level > 0, () => setLevel(level + 1)),
         level ? h("span", { class: "tool-level" }, `${level > 0 ? "들여쓰기" : "내어쓰기"} ${Math.abs(level)}`) : null);
     };
-    const previewStyle = (element, align, indent) => {
+    // The edit box shows the alignment; the sideways shift shows in the preview and as the level number.
+    const previewStyle = (element, align) => {
       element.style.textAlign = align === "center" || align === "right" ? align : "";
-      Object.assign(element.style, indentCss(indent));
     };
 
     const descriptionSection = () => {
