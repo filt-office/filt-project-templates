@@ -89,8 +89,11 @@
       row.append(createFieldCell("th", field.label));
       const valueCell = createFieldCell("td", field.value);
       if (field.areaM2 !== undefined && Number.isFinite(Number(field.areaM2))) {
-        valueCell.dataset.areaM2 = String(Number(field.areaM2));
-        valueCell.dataset.areaUnit = "m2";
+        const area = Number(field.areaM2);
+        valueCell.dataset.areaM2 = String(area);
+        // The builder lets editors pick which unit shows first; a click still swaps ㎡ ↔ 평.
+        valueCell.dataset.areaUnit = field.areaUnit === "py" ? "py" : "m2";
+        if (field.areaUnit === "py") valueCell.textContent = `${Math.round(area / 3.305785)}py`;
         valueCell.addEventListener("click", toggleAreaUnits);
       }
       row.append(valueCell);
@@ -221,6 +224,7 @@
       image.alt = drawing.alt || drawing.title || "";
       image.dataset.title = drawing.title || "";
       image.dataset.coordinate = drawing.coordinate === false ? "off" : "on";
+      if (drawing.hideScale) image.dataset.scaleOff = "true";
       const scale = Number(drawing.scale ?? drawingData.scale);
       if (scale > 0) image.dataset.scale = String(scale);
       // Each drawing has its own angle; older data had one project-wide angle.
@@ -310,7 +314,8 @@
 
       // Legacy overlay images are drawing-sized canvases with the mark in a corner, so they get the
       // drawing's on-screen size; generated ones are compact and sit inside their cell.
-      const drawingScale = Number(currentImage.dataset.scale);
+      const scaleOff = currentImage.dataset.scaleOff === "true";
+      const drawingScale = scaleOff ? 0 : Number(currentImage.dataset.scale);
       const north = currentImage.dataset.north === undefined ? NaN : Number(currentImage.dataset.north);
       const generatedNorth = Number.isFinite(north);
       const generatedScale = drawingScale > 0;
@@ -318,7 +323,7 @@
       // The columns stay fixed (10% / 50% / 40%), so the arrow also shrinks to fit a narrow cell.
       const northSize = Math.min(overlayHeight, Math.floor(coordinateInfo.clientWidth) - 4);
       let coordinateOverlay = generatedNorth ? northArrow(northSize, north) : coordinateImage;
-      let scaleOverlay = scaleImage;
+      let scaleOverlay = scaleOff ? null : scaleImage;
       if (generatedScale) {
         const size = await drawingSize(currentImage);
         if (token !== overlayToken) return;
