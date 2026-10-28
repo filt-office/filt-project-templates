@@ -837,7 +837,7 @@
     const compassDial = (getDegrees, setDegrees) => {
       const needle = svg("g", { class: "needle" });
       needle.append(
-        svg("path", { d: "M0 -24L2.6 0H-2.6Z", fill: "#111" }),
+        svg("rect", { x: "-1.6", y: "-24", width: "3.2", height: "24", fill: "#111" }), // square-ended, like the site
         svg("text", { y: "-29", "text-anchor": "middle", "font-size": "11", "font-weight": "700", fill: "#111" }, "N"),
       );
       const dial = svg("svg", { viewBox: "-42 -42 84 84", class: "dial" });
