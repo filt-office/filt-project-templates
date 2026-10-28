@@ -2,7 +2,7 @@
   const script = document.currentScript;
   if (!script) throw new Error("Works script element is unavailable.");
 
-  const view = script.dataset.view === "gallery" ? "gallery" : "list";
+  let view = script.dataset.view === "gallery" ? "gallery" : "list";
   const mount = document.querySelector("[data-filt-works]");
   if (!mount) {
     console.error("Works template requires a data-filt-works mount.");
@@ -75,6 +75,15 @@
       const anchor = el("a", `${name}-btn`);
       anchor.href = href;
       anchor.setAttribute("aria-label", label);
+      // "#" (the builder preview) switches the view in place instead of opening the other page.
+      if (href === "#") {
+        anchor.addEventListener("click", (event) => {
+          event.preventDefault();
+          if (view === name) return;
+          view = name;
+          render(currentData);
+        });
+      }
       anchor.innerHTML = icon[name];
       buttons.append(anchor);
     });
@@ -214,10 +223,12 @@
     else attach();
   };
 
+  let currentData = null;
   const render = (data) => {
     if (!data || !Array.isArray(data.works) || !Array.isArray(data.categories)) {
       throw new Error("Works JSON is missing works or categories.");
     }
+    currentData = data;
     mount.classList.add("filt-works");
     mount.dataset.view = view;
     mount.replaceChildren(
