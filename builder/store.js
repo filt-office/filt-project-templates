@@ -106,6 +106,12 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }),
+    getPage: (page) => localApi(`/api/pages/${page}`),
+    savePage: (page, data) => localApi(`/api/pages/${page}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
     upload: async (projectId, device, file) => (await localApi(
       `/api/upload?project=${encodeURIComponent(projectId)}&device=${device}&name=${encodeURIComponent(file.name)}`,
       { method: "POST", body: file },
@@ -254,6 +260,15 @@
       if (errors.length) throw new Error(errors.join("\n"));
       await commitFiles([{ path: "runtime/works.json", content: toJson(data) }], "builder: WORKS 목록 저장");
       return { ok: true, path: "runtime/works.json", count: data.works.length };
+    },
+    getPage: async (page) => {
+      const text = await readText(`runtime/pages/${page}.json`);
+      return text ? JSON.parse(text) : { version: 1 };
+    },
+    savePage: async (page, data) => {
+      const path = `runtime/pages/${page}.json`;
+      await commitFiles([{ path, content: toJson(data) }], `builder: ${page.toUpperCase()} 저장`);
+      return { ok: true, path };
     },
     upload: async (projectId, device, file) => {
       const devices = device === "both" ? DEVICES : [device];

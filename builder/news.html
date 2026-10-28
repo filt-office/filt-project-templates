@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NEWS · FILT. BUILDER</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/suit-font@1.0.0/dist/suit.min.css">
+</head>
+<body>
+  <header class="fb-header" data-active="news">
+    <div class="fb-actions" id="account">
+      <span class="dirty" id="dirty" title="저장 안 됨">●</span>
+      <button class="fb-act" disabled title="NEWS는 임시저장이 없습니다. save가 바로 게시 대상에 저장합니다.">draft</button>
+      <button id="save" class="fb-act" title="저장 (Ctrl+S)">save</button>
+    </div>
+  </header>
+  <script src="header.js"></script>
+  <script src="store.js"></script>
+  <script src="page-editor.js"></script>
+  <script>
+  (() => {
+    "use strict";
+
+    const today = () => new Date().toISOString().slice(0, 10).replace(/-/g, "/");
+
+    FiltPageEditor({
+      page: "news",
+      render: (ctx) => {
+        const { h, data } = ctx;
+        data.news = data.news || [];
+        data.recruit = data.recruit || [];
+        const cell = (obj, key, size = "mid", props) => h("td", { class: size }, ctx.input(obj, key, props));
+
+        // News and recruit rows share one shape; the list is newest first, so new rows go on top.
+        const sheet = (list) => ctx.sheet(
+          ["#", "제목", "모바일 제목 (다를 때만)", "날짜", "종류", "작성자", "이미지", "본문 (모바일에서 펼침)", "링크", ""],
+          list.map((entry, index) => h("tr", {},
+            h("td", { class: "num" }, String(index + 1)),
+            cell(entry, "title", "wide", { keepEmpty: true }),
+            cell(entry, "mobileTitle", "mid"),
+            cell(entry, "date", "short", { placeholder: "2026/01/31", keepEmpty: true }),
+            cell(entry, "type", "short", { placeholder: "Lecture", keepEmpty: true }),
+            cell(entry, "author", "short", { keepEmpty: true }),
+            h("td", {}, ctx.image(entry, "image")),
+            cell(entry, "text", "wide"),
+            cell(entry, "link", "mid", { placeholder: "누르면 이동할 주소" }),
+            h("td", { class: "actions" }, ctx.rowActions(list, index, entry.title ? `"${entry.title}"` : "이 행")))));
+        const addTop = (list) => h("button", {
+          onclick: () => {
+            list.unshift({ title: "", date: today(), type: "", author: "" });
+            ctx.rerender();
+            ctx.markDirty();
+          },
+        }, "+ 맨 위에 추가");
+
+        return [
+          ctx.section(`NEWS (${data.news.length})`, addTop(data.news), sheet(data.news)),
+          ctx.section(`RECRUIT (${data.recruit.length})`, addTop(data.recruit),
+            sheet(data.recruit),
+            h("label", { class: "pe-field", style: "margin-top:8px" },
+              h("span", {}, "공고 없을 때 문구"),
+              ctx.input(data, "recruitEmpty", { placeholder: "진행중인 채용 공고가 없습니다." }))),
+        ];
+      },
+    });
+  })();
+  </script>
+</body>
+</html>

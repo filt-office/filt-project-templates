@@ -6,9 +6,9 @@
 
   // Pages without an editor yet are shown but not linked.
   const TABS = [
-    { id: "home" },
-    { id: "office" },
-    { id: "news" },
+    { id: "home", href: "home.html" },
+    { id: "office", href: "office.html" },
+    { id: "news", href: "news.html" },
     { id: "works-list", href: "./" },
     { id: "works-gallery", href: "./?view=gallery" },
   ];

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OFFICE · FILT. BUILDER</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/suit-font@1.0.0/dist/suit.min.css">
+  <style>
+    .person { margin: 0 0 14px; }
+    .person-head { display: flex; align-items: center; gap: 6px; margin: 0 0 4px; }
+    .person-head strong { font-size: 12px; }
+    .career { margin: 4px 0 0 30px; }
+  </style>
+</head>
+<body>
+  <header class="fb-header" data-active="office">
+    <div class="fb-actions" id="account">
+      <span class="dirty" id="dirty" title="저장 안 됨">●</span>
+      <button class="fb-act" disabled title="OFFICE는 임시저장이 없습니다. save가 바로 게시 대상에 저장합니다.">draft</button>
+      <button id="save" class="fb-act" title="저장 (Ctrl+S)">save</button>
+    </div>
+  </header>
+  <script src="header.js"></script>
+  <script src="store.js"></script>
+  <script src="page-editor.js"></script>
+  <script>
+  (() => {
+    "use strict";
+
+    FiltPageEditor({
+      page: "office",
+      render: (ctx) => {
+        const { h, data } = ctx;
+        data.contact = data.contact || [];
+        data.people = data.people || [];
+        const cell = (obj, key, size = "mid", props) => h("td", { class: size }, ctx.input(obj, key, props));
+        const add = (list, item) => () => { list.push(item()); ctx.rerender(); ctx.markDirty(); };
+
+        const contact = ctx.section("OFFICE · 연락처",
+          h("button", { onclick: add(data.contact, () => ({ text: "" })) }, "+ 행 추가"),
+          ctx.sheet(["#", "표시 문구", "모바일 문구 (다를 때만)", "링크", ""], data.contact.map((entry, index) => h("tr", {},
+            h("td", { class: "num" }, String(index + 1)),
+            cell(entry, "text", "wide", { keepEmpty: true }),
+            cell(entry, "mobileText", "wide"),
+            cell(entry, "link", "mid", { placeholder: "https:// · mailto:" }),
+            h("td", { class: "actions" }, ctx.rowActions(data.contact, index))))));
+
+        const careerSheet = (person) => {
+          person.career = person.career || [];
+          const rows = person.career.map((entry, index) => {
+            const actions = h("td", { class: "actions" }, ctx.rowActions(person.career, index));
+            if (entry.gap) {
+              return h("tr", { class: "gap" },
+                h("td", { class: "num" }, String(index + 1)),
+                h("td", { colspan: 6, class: "muted" }, " 간격 (빈 줄)"),
+                actions);
+            }
+            return h("tr", { class: "sub" },
+              h("td", { class: "num" }, String(index + 1)),
+              cell(entry, "years", "short", { placeholder: "2025–", keepEmpty: true }),
+              cell(entry, "org", "mid", { keepEmpty: true }),
+              cell(entry, "title", "mid", { keepEmpty: true }),
+              cell(entry, "mobileOrg", "short"),
+              cell(entry, "mobileTitle", "short"),
+              h("td", { class: "check", title: "현재 재직 중 (강조 표시)" }, ctx.checkbox(entry, "current")),
+              actions);
+          });
+          return h("div", { class: "career" },
+            ctx.sheet(["#", "기간", "기관", "직함", "모바일 기관", "모바일 직함", "현재", ""], rows),
+            h("div", { class: "person-head", style: "margin-top:4px" },
+              h("button", { class: "small", onclick: add(person.career, () => ({ years: "", org: "", title: "" })) }, "+ 경력"),
+              h("button", { class: "small", onclick: add(person.career, () => ({ gap: true })) }, "+ 간격")));
+        };
+
+        const people = ctx.section("PEOPLE",
+          h("button", {
+            onclick: add(data.people, () => ({ nameKo: "", roleKo: "", nameEn: "", roleEn: "", email: "", career: [] })),
+          }, "+ 사람 추가"),
+          data.people.map((person, index) => h("div", { class: "person" },
+            h("div", { class: "person-head" }, h("strong", {}, `${index + 1}. ${person.nameKo || "(이름 없음)"}`)),
+            ctx.sheet(["대표", "이름", "직책", "영문 이름", "영문 직책", "이메일", ""], [h("tr", {},
+              h("td", { class: "check", title: "대표는 PEOPLE 맨 위에 경력이 펼쳐진 채로 나옵니다" }, ctx.checkbox(person, "principal")),
+              cell(person, "nameKo", "short", { keepEmpty: true }),
+              cell(person, "roleKo", "mid", { keepEmpty: true }),
+              cell(person, "nameEn", "mid", { keepEmpty: true }),
+              cell(person, "roleEn", "mid", { keepEmpty: true }),
+              cell(person, "email", "mid", { keepEmpty: true }),
+              h("td", { class: "actions" }, ctx.rowActions(data.people, index, person.nameKo || "이 사람")))]),
+            careerSheet(person))));
+
+        return [contact, people];
+      },
+    });
+  })();
+  </script>
+</body>
+</html>

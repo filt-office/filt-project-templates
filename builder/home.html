@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HOME · FILT. BUILDER</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/suit-font@1.0.0/dist/suit.min.css">
+  <style>
+    .slides { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+    .slide { display: grid; grid-template-rows: auto auto; border: 1px solid #111; background: #fff; }
+    .slide.dragging { opacity: .4; }
+    .slide.drop-before { box-shadow: -4px 0 0 #111; }
+    .slide-media { position: relative; aspect-ratio: 16 / 10; background: #eee center / cover no-repeat; cursor: grab; }
+    .slide-media .no { position: absolute; top: 0; left: 0; padding: 2px 7px; background: #111; color: #fff; font-size: 11px; }
+    .slide-media .tools { position: absolute; top: 4px; right: 4px; display: flex; gap: 2px; }
+    .slide-media .tools button { background: rgba(255,255,255,.92); }
+    .slide-body { display: grid; gap: 4px; padding: 6px; border-top: 1px solid #111; }
+    .slide-body input, .slide-body select { width: 100%; padding: 3px 5px; border: 1px solid var(--line); background: #fff; }
+    .slide-body input:focus, .slide-body select:focus { outline: none; border-color: #111; }
+    .slide-body .src { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <header class="fb-header" data-active="home">
+    <div class="fb-actions" id="account">
+      <span class="dirty" id="dirty" title="저장 안 됨">●</span>
+      <button class="fb-act" disabled title="HOME은 임시저장이 없습니다. save가 바로 게시 대상에 저장합니다.">draft</button>
+      <button id="save" class="fb-act" title="저장 (Ctrl+S)">save</button>
+    </div>
+  </header>
+  <script src="header.js"></script>
+  <script src="store.js"></script>
+  <script src="page-editor.js"></script>
+  <script>
+  (() => {
+    "use strict";
+
+    // Where each slide is anchored when the screen crops it (CSS object-position).
+    const POSITIONS = [["center top", "위"], ["center center", "가운데"], ["center bottom", "아래"]];
+
+    let dragFrom = null;
+
+    FiltPageEditor({
+      page: "home",
+      render: (ctx) => {
+        const { h, data } = ctx;
+        data.slides = data.slides || [];
+        const slides = data.slides;
+
+        const addFiles = async () => {
+          const files = await ctx.pickFiles();
+          if (!files.length) return;
+          try {
+            for (const [index, file] of files.entries()) {
+              ctx.toast(`업로드 중… (${index + 1}/${files.length})`);
+              slides.push({ src: await ctx.upload(file), position: "center center", alt: "" });
+            }
+            ctx.rerender();
+            ctx.markDirty();
+            ctx.toast(`${files.length}장 추가했습니다`);
+          } catch (error) {
+            ctx.rerender();
+            ctx.toast(error.message, true);
+          }
+        };
+        const addUrl = () => {
+          const value = (prompt("이미지 URL") || "").trim();
+          if (!value) return;
+          slides.push({ src: value, position: "center center", alt: "" });
+          ctx.rerender();
+          ctx.markDirty();
+        };
+
+        const card = (slide, index) => {
+          const media = h("div", { class: "slide-media", title: "끌어서 순서 변경" },
+            h("span", { class: "no" }, String(index + 1)),
+            h("div", { class: "tools" },
+              h("button", {
+                class: "small",
+                title: "이미지 교체",
+                onclick: async () => {
+                  const [file] = await ctx.pickFiles();
+                  if (!file) return;
+                  try {
+                    ctx.toast("업로드 중…");
+                    slide.src = await ctx.upload(file);
+                    ctx.rerender();
+                    ctx.markDirty();
+                    ctx.toast("교체했습니다");
+                  } catch (error) {
+                    ctx.toast(error.message, true);
+                  }
+                },
+              }, "교체"),
+              ctx.rowActions(slides, index, `${index + 1}번 슬라이드`)));
+          media.style.backgroundPosition = slide.position || "center center";
+          FiltStore.assetUrl(slide.src).then((url) => { if (url) media.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`; });
+
+          const position = slide.position || "center center";
+          const known = POSITIONS.some(([value]) => value === position);
+          const el = h("div", { class: "slide", draggable: true },
+            media,
+            h("div", { class: "slide-body" },
+              h("label", {}, h("span", { class: "muted" }, "설명 (alt)"), ctx.input(slide, "alt", { placeholder: "예: Tempin Project", keepEmpty: true })),
+              h("label", {}, h("span", { class: "muted" }, "잘릴 때 기준"), h("select", {
+                onchange: (event) => {
+                  slide.position = event.target.value;
+                  media.style.backgroundPosition = slide.position;
+                  ctx.markDirty();
+                },
+              },
+              POSITIONS.map(([value, label]) => h("option", { value, selected: value === position }, label)),
+              known ? null : h("option", { value: position, selected: true }, position))),
+              h("div", { class: "src", title: slide.src }, slide.src)));
+
+          el.addEventListener("dragstart", (event) => {
+            dragFrom = index;
+            el.classList.add("dragging");
+            event.dataTransfer.effectAllowed = "move";
+          });
+          el.addEventListener("dragend", () => { dragFrom = null; el.classList.remove("dragging"); });
+          el.addEventListener("dragover", (event) => {
+            if (dragFrom === null) return;
+            event.preventDefault();
+            el.classList.add("drop-before");
+          });
+          el.addEventListener("dragleave", () => el.classList.remove("drop-before"));
+          el.addEventListener("drop", (event) => {
+            event.preventDefault();
+            el.classList.remove("drop-before");
+            if (dragFrom === null || dragFrom === index) return;
+            const [moved] = slides.splice(dragFrom, 1);
+            slides.splice(dragFrom < index ? index - 1 : index, 0, moved);
+            dragFrom = null;
+            ctx.rerender();
+            ctx.markDirty();
+          });
+          return el;
+        };
+
+        return [
+          ctx.section("HOME 링크", null,
+            h("label", { class: "pe-field" }, h("span", {}, "클릭 시 이동"), ctx.input(data, "worksLink", { placeholder: "/works_list" }))),
+          ctx.section(`슬라이드 (${slides.length})`,
+            [
+              h("span", { class: "muted" }, "끌어서 순서 변경 · 1번이 처음 보입니다"),
+              h("button", { onclick: addFiles }, "+ 이미지 업로드"),
+              h("button", { onclick: addUrl }, "+ URL"),
+            ],
+            slides.length
+              ? h("div", { class: "slides" }, slides.map(card))
+              : h("p", { class: "muted" }, "슬라이드가 없습니다. 이미지를 업로드하세요.")),
+        ];
+      },
+    });
+  })();
+  </script>
+</body>
+</html>
