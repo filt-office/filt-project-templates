@@ -751,7 +751,9 @@ body.filt-menu-open .filt-project-mount .img-section {
   }
 
   .filt-project-mount .mobile-drawing-info-coordinate img,
-  .filt-project-mount .mobile-drawing-info-scale img {
+  .filt-project-mount .mobile-drawing-info-scale img,
+  .filt-project-mount .mobile-drawing-info-coordinate svg,
+  .filt-project-mount .mobile-drawing-info-scale svg {
     position: absolute;
     left: 6px;
     bottom: 6px;

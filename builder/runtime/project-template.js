@@ -142,6 +142,52 @@
     return section;
   };
 
+  // Generated drawing overlays use the drawing's own coordinate space (its SVG viewBox), so they
+  // scale with it. Drawings are exported from Illustrator artboards in pt, so at 1:N one metre is
+  // 72 / 0.0254 / N units (1:50 → 56.7).
+  const UNITS_PER_METER = 72 / 0.0254;
+  const svgElement = (width, height, body) => {
+    const template = document.createElement("template");
+    template.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" aria-hidden="true" fill="none" stroke="#000" stroke-width=".5">${body}</svg>`;
+    return template.content.firstElementChild;
+  };
+  const formatNumber = (value) => String(Number(value.toFixed(2)));
+
+  const northArrow = (width, height, degrees) => {
+    const radius = 14.88;
+    return svgElement(width, height, `<g transform="translate(30 ${height - 30}) rotate(${degrees})">`
+      + `<circle r="${radius}"/><path d="M0 ${-radius}L1 0H-1Z" fill="#000"/>`
+      + `<text y="${-radius - 3}" fill="#000" stroke="none" font-size="12" text-anchor="middle">N</text></g>`);
+  };
+
+  // Same shape as the hand-made bars: an outline stepping between 0, 1/5, 2/5 and the full length.
+  const scaleBar = (width, height, scale) => {
+    const unit = UNITS_PER_METER / scale;
+    const length = [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => meters * unit <= 300) || 1;
+    const ticks = [0, length / 5, (length * 2) / 5, length];
+    const [a, b, c, d] = ticks.map((meters) => 3.52 + meters * unit);
+    const top = height - 33;
+    const bottom = height - 16;
+    const labels = ticks.map((meters, index) => `<text x="${3.52 + meters * unit}" y="${height - 0.5}" fill="#000" stroke="none" font-size="15" text-anchor="middle">${formatNumber(meters)}${index === 3 ? "m" : ""}</text>`);
+    return svgElement(width, height, `<polyline points="${d} ${bottom} ${d} ${top} ${c} ${top} ${c} ${bottom} ${b} ${bottom} ${b} ${top} ${a} ${top} ${a} ${bottom}"/>${labels.join("")}`);
+  };
+
+  // An <img>'s natural size for a viewBox-only SVG is not the viewBox, so read it from the file.
+  const drawingSizes = new Map();
+  const drawingSize = (image) => {
+    const src = image.currentSrc || image.src;
+    if (!drawingSizes.has(src)) {
+      const isSvg = /\.svg([?#]|$)/i.test(src) || /^(blob:|data:image\/svg)/.test(src);
+      drawingSizes.set(src, (isSvg ? fetch(src).then((response) => (response.ok ? response.text() : "")) : Promise.resolve(""))
+        .then((text) => {
+          const box = text.match(/<svg\b[^>]*?\sviewBox\s*=\s*["']\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)/i);
+          return box ? { width: Number(box[1]), height: Number(box[2]) } : null;
+        })
+        .catch(() => null));
+    }
+    return drawingSizes.get(src).then((size) => size || { width: image.naturalWidth, height: image.naturalHeight });
+  };
+
   const createMobileDrawingSection = (drawingData) => {
     const drawings = Array.isArray(drawingData?.images)
       ? drawingData.images.filter((drawing) => drawing?.src)
@@ -162,6 +208,8 @@
       image.alt = drawing.alt || drawing.title || "";
       image.dataset.title = drawing.title || "";
       image.dataset.coordinate = drawing.coordinate === false ? "off" : "on";
+      const scale = Number(drawing.scale ?? drawingData.scale);
+      if (scale > 0) image.dataset.scale = String(scale);
       image.loading = "lazy";
       image.draggable = false;
       slides.append(image);
@@ -226,23 +274,40 @@
     let touchStartX = null;
     const originalSlideCount = originalSlides.length;
 
-    const updateDrawingOverlays = () => {
+    // A number in drawingData.north or a per-drawing scale draws the overlay; otherwise the uploaded
+    // coordinateSrc / scaleSrc images are used as before.
+    const north = drawingData.north === "" || drawingData.north == null ? NaN : Number(drawingData.north);
+    let overlayToken = 0;
+    const updateDrawingOverlays = async () => {
+      const token = ++overlayToken;
       const index = currentSlide - (originalSlideCount > 1 ? 1 : 0);
       const normalizedIndex = (index + originalSlideCount) % originalSlideCount;
       const currentImage = originalSlides[normalizedIndex];
       title.textContent = currentImage.dataset.title;
-      if (coordinateImage) {
-        coordinateImage.style.display = currentImage.dataset.coordinate === "off" ? "none" : "block";
-      }
+      const showCoordinate = currentImage.dataset.coordinate !== "off";
+      if (coordinateImage) coordinateImage.style.display = showCoordinate ? "block" : "none";
 
       const sliderRect = slider.getBoundingClientRect();
       const naturalWidth = currentImage.naturalWidth;
       const naturalHeight = currentImage.naturalHeight;
       if (!naturalWidth || !naturalHeight || !sliderRect.width || !sliderRect.height) return;
       const scale = Math.min(sliderRect.width / naturalWidth, sliderRect.height / naturalHeight);
-      [coordinateImage, scaleImage].filter(Boolean).forEach((image) => {
-        image.style.width = `${naturalWidth * scale}px`;
-        image.style.height = `${naturalHeight * scale}px`;
+
+      let coordinateOverlay = coordinateImage;
+      let scaleOverlay = scaleImage;
+      const drawingScale = Number(currentImage.dataset.scale);
+      if (Number.isFinite(north) || drawingScale > 0) {
+        const size = await drawingSize(currentImage);
+        if (token !== overlayToken) return;
+        if (Number.isFinite(north)) coordinateOverlay = northArrow(size.width, size.height, north);
+        if (drawingScale > 0) scaleOverlay = scaleBar(size.width, size.height, drawingScale);
+      }
+      coordinateInfo.replaceChildren(...(coordinateOverlay && showCoordinate ? [coordinateOverlay] : []));
+      scaleInfo.replaceChildren(...(scaleOverlay ? [scaleOverlay] : []));
+      [coordinateOverlay, scaleOverlay].filter(Boolean).forEach((overlay) => {
+        overlay.style.display = "block";
+        overlay.style.width = `${naturalWidth * scale}px`;
+        overlay.style.height = `${naturalHeight * scale}px`;
       });
     };
 

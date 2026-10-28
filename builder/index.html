@@ -69,6 +69,7 @@
     .badge { padding: 1px 6px; border: 1px solid var(--line); font-size: 11px; color: var(--muted); }
     .badge.on { border-color: #111; color: #111; }
     .spacer { flex: 1; }
+    .save-group { display: flex; align-items: center; gap: 6px; margin-right: 12px; padding-right: 20px; border-right: 1px solid var(--line); }
     .dirty { color: var(--danger); font-size: 12px; visibility: hidden; }
     .dirty.show { visibility: visible; }
 
@@ -83,10 +84,12 @@
       user-select: none;
     }
     summary small { margin-left: 6px; font-weight: 400; color: var(--muted); }
+    .section-body details { border: 0; }
+    .section-body summary { padding: 2px 0; font-weight: 400; }
     .section-body { display: grid; gap: 10px; padding: 0 14px 14px; }
     .stack { display: grid; gap: 10px; }
-    label.field { display: grid; gap: 3px; }
-    label.field > span { font-size: 11px; color: var(--muted); }
+    .field { display: grid; gap: 3px; }
+    .field > span { font-size: 11px; color: var(--muted); }
     .row { display: flex; gap: 6px; align-items: center; }
     .row > * { min-width: 0; }
     .grow { flex: 1; }
@@ -103,9 +106,16 @@
     .item-head { display: flex; align-items: center; gap: 4px; }
     .item-head .index { width: 30px; color: var(--muted); font-size: 11px; }
     .item-head .title { flex: 1; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-    .field-item { grid-template-columns: 1fr 1.4fr; align-items: start; }
-    .field-item .item-head { grid-column: 1 / -1; }
+    .field-item { grid-template-columns: auto 1fr 1.4fr auto; align-items: start; }
+    .block-item { grid-template-columns: auto 1fr auto; align-items: start; }
+    .handle { padding: 5px 2px; color: var(--muted); letter-spacing: -3px; cursor: grab; user-select: none; }
+    .handle:hover { color: #111; }
+    .dragging { opacity: .4; }
     .three { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 5px; }
+    input.scale { width: 64px; }
+    .compass { position: relative; flex: none; width: 26px; height: 26px; border: 1px solid #111; border-radius: 50%; }
+    .compass::after { content: ""; position: absolute; left: calc(50% - 1px); top: 2px; width: 2px; height: 10px; background: #111; transform-origin: 50% 100%; transform: rotate(var(--deg, 0deg)); }
+    .compass.off { opacity: .25; }
 
     .devices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .device {
@@ -142,7 +152,7 @@
       cursor: pointer;
     }
     .dropzone.over { border-color: #111; color: #111; background: #f0f0f0; }
-    .description { min-height: 260px; }
+    .block-text { min-height: 90px; resize: none; overflow: hidden; line-height: 1.7; }
 
     .preview { display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; }
     .preview-bar { display: flex; gap: 6px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: #fff; }
@@ -191,9 +201,12 @@
     </div>
     <span class="dirty" id="dirty">● 저장 안 됨</span>
     <span class="spacer"></span>
-    <button id="saveDraft" title="Ctrl+S">임시저장</button>
-    <button id="saveRuntime" class="primary">게시용 저장</button>
-    <span id="account" class="row"></span>
+    <div class="save-group" role="group" aria-label="저장">
+      <span class="hint">저장</span>
+      <button id="saveDraft" title="Ctrl+S · 나만 보는 초안">임시저장</button>
+      <button id="saveRuntime" class="primary" title="게시 대상에 올립니다. 공개 페이지 반영은 '게시…'에서">게시용 저장</button>
+    </div>
+    <span id="account"></span>
   </header>
 
   <div class="layout">
@@ -248,6 +261,8 @@
     let viewport = new URLSearchParams(location.search).get("device") === "mobile" ? "mobile" : "desktop";
     let previewUrl = null;
     let previewTimer = null;
+    let works = null; // runtime/works.json, for the WORKS 분류 field
+    let worksCategory = null; // category picked here, written to works.json on the next save
 
     // ---------- helpers ----------
 
@@ -285,6 +300,16 @@
       return true;
     };
 
+    const escapeHtml = (value) => String(value ?? "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+    const titleCase = (value) => String(value || "").toLowerCase().replace(/(^|[\s-])(\S)/g, (_, gap, letter) => gap + letter.toUpperCase());
+
+    const autoGrow = (area) => {
+      area.style.height = "auto";
+      area.style.height = `${area.scrollHeight + 2}px`;
+    };
+
     const markDirty = () => {
       dirty = true;
       $("#dirty").classList.add("show");
@@ -311,6 +336,7 @@
       rotation: 0,
       title: "",
       coordinate: true,
+      scale: null, // drawing scale denominator (50 = 1:50); null uses mobile.drawings.scale
       pc: "",
       mob: "",
       hidePc: false,
@@ -337,6 +363,7 @@
             hideMob: !drawing,
             title: drawing?.title || "",
             coordinate: drawing?.coordinate !== false,
+            scale: drawing?.scale ?? null,
           }));
         } else {
           const match = mobileImages ? mobileImages.find((candidate) => candidate.src === image.src) : image;
@@ -355,6 +382,7 @@
         alt: drawing.alt || "",
         title: drawing.title || "",
         coordinate: drawing.coordinate !== false,
+        scale: drawing.scale ?? null,
         hidePc: true,
       })));
       (mobileImages || []).filter((image) => !usedMobile.has(image)).forEach((image) => slots.push(newSlot({
@@ -394,8 +422,60 @@
           title: slot.title || "",
           alt: slot.alt || slot.title || "",
           ...(slot.coordinate === false ? { coordinate: false } : {}),
+          ...(slot.scale > 0 ? { scale: Number(slot.scale) } : {}),
         }));
+      out.descriptionHtml = descriptionHtml(out.description || []);
       return out;
+    };
+
+    // ---------- description ----------
+    // project.description is the builder's source: [{ type: "text", text } | { type: "image", src, caption }].
+    // In text, Enter is a line break and a blank line starts a new paragraph. compile() writes the
+    // same HTML the hand-written pages used: <br><br> after each paragraph, <figure> for images.
+
+    const descriptionHtml = (blocks) => {
+      const parts = blocks.flatMap((block) => {
+        if (block.type === "image") {
+          if (!block.src) return [];
+          const caption = (block.caption || "").trim();
+          return [`<figure class="side-figure">\n  <img class="side-single-img" src="${escapeHtml(block.src)}" alt="${escapeHtml(caption)}">\n${caption ? `  <figcaption class="side-caption">${escapeHtml(caption)}</figcaption>\n` : ""}</figure>`];
+        }
+        return (block.text || "").split(/\n[ \t]*\n/)
+          .map((paragraph) => paragraph.split("\n").map((line) => line.trim()).join("\n").trim())
+          .filter(Boolean)
+          .map((paragraph) => `${escapeHtml(paragraph).replace(/\n/g, "<br>\n")}\n<br><br>`);
+      });
+      return parts.length ? `<br><br>\n${parts.join("\n")}\n` : "";
+    };
+
+    // Reads hand-written descriptionHtml (e.g. Tempin) into blocks.
+    const parseDescription = (html) => {
+      const template = document.createElement("template");
+      template.innerHTML = html || "";
+      const blocks = [];
+      let text = "";
+      const flush = () => {
+        const paragraphs = text.split(/\n\s*\n/)
+          .map((paragraph) => paragraph.split("\n").map((line) => line.trim()).join("\n").trim())
+          .filter(Boolean);
+        if (paragraphs.length) blocks.push({ type: "text", text: paragraphs.join("\n\n") });
+        text = "";
+      };
+      template.content.childNodes.forEach((node) => {
+        if (node.nodeType === Node.TEXT_NODE) text += node.textContent.replace(/\s+/g, " ");
+        else if (node.nodeName === "BR") text += "\n";
+        else if (node.nodeType !== Node.ELEMENT_NODE) return;
+        else if (node.matches("img, figure") || node.querySelector("img")) {
+          flush();
+          const img = node.matches("img") ? node : node.querySelector("img");
+          const caption = node.querySelector?.("figcaption")?.textContent.replace(/\s+/g, " ").trim() || "";
+          blocks.push({ type: "image", src: img?.getAttribute("src") || "", caption });
+        } else {
+          text += `\n\n${node.textContent.replace(/\s+/g, " ")}\n\n`;
+        }
+      });
+      flush();
+      return blocks;
     };
 
     const ensureShape = (data) => {
@@ -403,7 +483,7 @@
       data.overview.fields = Array.isArray(data.overview.fields) ? data.overview.fields : [];
       data.mobile ||= {};
       data.mobile.drawings ||= {};
-      data.descriptionHtml ??= "";
+      if (!Array.isArray(data.description)) data.description = parseDescription(data.descriptionHtml);
       if (!Array.isArray(data.gallery)) data.gallery = deriveGallery(data);
       data.gallery = data.gallery.map((slot) => newSlot(slot));
       return data;
@@ -417,7 +497,7 @@
         subtitle: "",
         fields: DEFAULT_FIELDS.map((label) => ({ label, value: "" })),
       },
-      descriptionHtml: "",
+      description: [],
       gallery: [],
       mobile: { drawings: { coordinateSrc: "", scaleSrc: "" } },
     });
@@ -446,14 +526,45 @@
       return store.upload(project.id, device, file);
     };
 
-    const uploadMany = async (files, device, onEach) => {
-      const list = Array.from(files).filter((file) => file.type.startsWith("image/") || /\.svg$/i.test(file.name));
+    // Oversized photos are scaled down in the browser before upload, keeping their proportions.
+    // Gallery images fill the screen, so 3840px on the long edge covers a 4K display. Description
+    // images show at most 300px wide on PC and full width on phones, so 1400px covers 3x screens.
+    const GALLERY_SHRINK = { maxEdge: 3840, quality: 0.92, keepPng: true };
+    const DESCRIPTION_SHRINK = { maxWidth: 1400, maxBytes: 1024 * 1024, quality: 0.85 };
+    const MB = (bytes) => `${(bytes / 1048576).toFixed(1)}MB`;
+
+    const shrinkImage = async (file, { maxEdge = Infinity, maxWidth = Infinity, maxBytes = Infinity, quality, keepPng = false }) => {
+      if (/\.(svg|gif)$/i.test(file.name)) return file;
+      const bitmap = await createImageBitmap(file).catch(() => null);
+      if (!bitmap) return file;
+      const ratio = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height), maxWidth / bitmap.width);
+      if (ratio === 1 && file.size <= maxBytes) return file;
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bitmap.width * ratio);
+      canvas.height = Math.round(bitmap.height * ratio);
+      const context = canvas.getContext("2d");
+      const png = keepPng && /\.png$/i.test(file.name);
+      if (!png) {
+        context.fillStyle = "#fff"; // JPG has no transparency; the pages are white behind images
+        context.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, png ? "image/png" : "image/jpeg", quality));
+      if (!blob || blob.size >= file.size) return file;
+      return new File([blob], png ? file.name : `${file.name.replace(/\.[^.]+$/, "")}.jpg`, { type: blob.type });
+    };
+
+    const uploadMany = async (files, device, onEach, shrink = GALLERY_SHRINK) => {
+      // Unsupported files are not filtered out here, so store.upload can say which formats work.
+      const list = Array.from(files);
       if (!list.length) return;
       toast(`업로드 중… (${list.length}개)`);
       let done = 0;
-      for (const file of list) {
+      for (const original of list) {
         try {
-          if (file.size > 5 * 1024 * 1024) toast(`${file.name}: ${(file.size / 1048576).toFixed(1)}MB — 용량이 커서 페이지가 느려질 수 있어요.`);
+          const file = await shrinkImage(original, shrink);
+          if (file !== original) toast(`${original.name}: ${MB(original.size)} → ${MB(file.size)}로 줄여서 올립니다 (비율 그대로).`);
+          else if (file.size > 5 * 1024 * 1024) toast(`${file.name}: ${MB(file.size)} — 용량이 커서 페이지가 느려질 수 있어요.`);
           await onEach(file, await upload(file, device));
           done += 1;
         } catch (error) {
@@ -511,21 +622,65 @@
       onchange: (event) => { onChange(event.target.value); markDirty(); },
     }, options.map(([optionValue, label]) => h("option", { value: optionValue, selected: String(optionValue) === String(value) }, label)));
 
+    const removeButton = (list, index, rerender, label) => h("button", {
+      type: "button",
+      class: "icon danger",
+      title: "삭제",
+      onclick: () => {
+        if (!confirm(`${label || "항목"}을(를) 삭제할까요?\n(업로드된 파일은 폴더에 남습니다)`)) return;
+        list.splice(index, 1);
+        rerender();
+        markDirty();
+      },
+    }, "✕");
+
     const listControls = (list, index, rerender, label) => [
       h("button", { type: "button", class: "icon", title: "위로", disabled: index === 0, onclick: () => { move(list, index, -1); rerender(); markDirty(); } }, "↑"),
       h("button", { type: "button", class: "icon", title: "아래로", disabled: index === list.length - 1, onclick: () => { move(list, index, 1); rerender(); markDirty(); } }, "↓"),
-      h("button", {
-        type: "button",
-        class: "icon danger",
-        title: "삭제",
-        onclick: () => {
-          if (!confirm(`${label || "항목"}을(를) 삭제할까요?\n(업로드된 파일은 폴더에 남습니다)`)) return;
-          list.splice(index, 1);
-          rerender();
-          markDirty();
-        },
-      }, "✕"),
+      removeButton(list, index, rerender, label),
     ];
+
+    const dragHandle = () => h("span", { class: "handle", title: "끌어서 순서 바꾸기" }, "⋮⋮");
+
+    // Drag-to-reorder: container children carry data-index into list and are dragged by their .handle.
+    const sortable = (container, list, onChange) => {
+      let dragged = null;
+      const release = () => container.querySelectorAll("[draggable=true]").forEach((item) => { item.draggable = false; });
+      container.addEventListener("pointerdown", (event) => {
+        const item = event.target.closest(".handle")?.closest("[data-index]");
+        if (item) item.draggable = true;
+      });
+      container.addEventListener("pointerup", release);
+      container.addEventListener("dragstart", (event) => {
+        dragged = event.target.closest?.("[data-index]") || null;
+        if (!dragged) return;
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", "");
+        dragged.classList.add("dragging");
+      });
+      container.addEventListener("dragover", (event) => {
+        if (!dragged) return;
+        event.preventDefault();
+        const over = event.target.closest("[data-index]");
+        if (!over || over === dragged || over.parentElement !== container) return;
+        const rect = over.getBoundingClientRect();
+        if (event.clientY > rect.top + rect.height / 2) over.after(dragged);
+        else over.before(dragged);
+      });
+      container.addEventListener("drop", (event) => event.preventDefault());
+      container.addEventListener("dragend", () => {
+        if (!dragged) return;
+        dragged.classList.remove("dragging");
+        release();
+        dragged = null;
+        const order = [...container.children].map((child) => list[Number(child.dataset.index)]);
+        if (order.every((item, index) => item === list[index])) return;
+        list.splice(0, list.length, ...order);
+        onChange();
+      });
+    };
+
+    const numberValue = (value) => (value === "" ? null : Number(value));
 
     // URL/path input with an upload button; used for single-device assets (방위표, 축척 바).
     const srcInput = (getValue, setValue, device) => {
@@ -574,23 +729,88 @@
       textField("브라우저 탭 제목", () => project.title, (value) => { project.title = value; }, {
         placeholder: `${project.overview.titleEn || "PROJECT"} | PROJECT INFO`,
       }),
+      worksField(),
     ]);
+
+    // ---------- WORKS link ----------
+    // The category lives in works.json (one row per project, linked by projectId), not in the project JSON.
+
+    const worksRow = (data = works) => data?.works.find((work) => work.projectId === project.id);
+
+    const worksField = () => {
+      if (!works) return h("p", { class: "hint" }, "WORKS 목록을 불러오지 못해 분류를 지정할 수 없습니다.");
+      const row = worksRow();
+      const value = worksCategory || row?.category || "";
+      return h("div", { class: "field", id: "worksField" },
+        h("span", { class: "hint" }, "WORKS 분류"),
+        h("div", { class: "row" },
+          h("select", {
+            class: "grow",
+            onchange: (event) => { worksCategory = event.target.value || null; markDirty(); },
+          },
+          row ? null : h("option", { value: "" }, "— 선택 —"),
+          works.categories.map((category) => h("option", { value: category.id, selected: category.id === value }, category.label))),
+          h("a", { href: "works.html", class: "hint" }, "WORKS 목록 열기")),
+        h("p", { class: "hint" }, row
+          ? `WORKS 목록의 "${row.nameKo || row.nameEn || row.id}" 행과 연결돼 있습니다. 분류를 바꾸면 저장할 때 WORKS 목록에도 반영됩니다.`
+          : "분류를 고르고 저장하면 WORKS 목록에 이 프로젝트가 추가됩니다. 사이트에는 아직 안 보이니, WORKS 목록 탭에서 썸네일·아임웹 링크를 채운 뒤 표시를 켜세요."));
+    };
+
+    const newWorksRow = (data) => {
+      const field = (label) => project.overview.fields.find((entry) => (entry.label || "").trim().toUpperCase() === label)?.value || "";
+      const ids = new Set(data.works.map((work) => work.id));
+      let id = project.id;
+      for (let n = 2; ids.has(id); n += 1) id = `${project.id}-${n}`;
+      return {
+        id,
+        category: worksCategory,
+        nameKo: project.overview.subtitle || "",
+        nameEn: titleCase(project.overview.titleEn),
+        year: field("YEAR"),
+        program: titleCase(field("PROGRAM")),
+        location: titleCase(field("LOCATION").split(/[,\n]/)[0].trim()),
+        status: titleCase(field("STATUS")),
+        thumb: "",
+        cardThumb: "",
+        mobileShape: "tall",
+        link: "",
+        projectId: project.id,
+        show: { list: false, gallery: false, mobile: false },
+        galleryOrder: null,
+        note: "상세페이지 빌더에서 추가됨 — 썸네일·링크 입력 후 표시 켜기",
+      };
+    };
+
+    // Applies the picked category to the latest works.json so edits made in the WORKS tab are kept.
+    const syncWorks = async () => {
+      if (!worksCategory) return null;
+      const latest = await store.getWorks();
+      let row = worksRow(latest);
+      if (row) {
+        row.category = worksCategory;
+      } else {
+        row = newWorksRow(latest);
+        const last = latest.works.map((work) => work.category).lastIndexOf(worksCategory);
+        latest.works.splice(last < 0 ? latest.works.length : last + 1, 0, row);
+      }
+      await store.saveWorks(latest);
+      works = latest;
+      worksCategory = null;
+      return row;
+    };
 
     const overviewSection = () => {
       const list = h("div", { class: "stack" });
       const fields = project.overview.fields;
       const render = () => {
-        list.replaceChildren(...fields.map((field, index) => h("div", { class: "item field-item" },
-          h("div", { class: "item-head" },
-            h("span", { class: "index" }, String(index + 1)),
-            h("span", { class: "title" }, field.label || "(이름 없음)"),
-            listControls(fields, index, render, field.label)),
-          h("input", { type: "text", value: field.label || "", placeholder: "항목명", oninput: (event) => { field.label = event.target.value; markDirty(); } }),
+        list.replaceChildren(...fields.map((field, index) => h("div", { class: "item field-item", dataset: { index } },
+          dragHandle(),
+          h("input", { type: "text", value: field.label || "", placeholder: "항목명 (예: LOCATION)", oninput: (event) => { field.label = event.target.value; markDirty(); } }),
           h("div", { class: "stack", style: "gap:5px" },
             h("textarea", {
               rows: String(field.value || "").split("\n").length,
               value: field.value || "",
-              placeholder: "값 (줄바꿈 가능)",
+              placeholder: "내용 (줄바꿈 가능)",
               oninput: (event) => {
                 field.value = event.target.value;
                 event.target.rows = field.value.split("\n").length;
@@ -611,12 +831,15 @@
                   },
                 }))
               : null),
+          removeButton(fields, index, render, field.label),
         )));
       };
       render();
+      sortable(list, fields, () => { render(); markDirty(); });
       return section("개요표", "첫 두 항목은 제목 옆, 나머지는 2개씩 한 줄", [
         textField("영문 제목", () => project.overview.titleEn, (value) => { project.overview.titleEn = value; }),
         textField("부제 (한글)", () => project.overview.subtitle, (value) => { project.overview.subtitle = value; }),
+        h("p", { class: "hint" }, "왼쪽 ⋮⋮ 를 끌어서 순서를 바꿉니다."),
         list,
         h("button", { type: "button", onclick: () => { fields.push({ label: "", value: "" }); render(); markDirty(); } }, "+ 항목 추가"),
       ]);
@@ -704,6 +927,17 @@
           slot.type === "drawing"
             ? h("div", { class: "row" },
               h("input", { type: "text", class: "grow", value: slot.title, placeholder: "도면 제목 (모바일 슬라이더, 예: 1F PLAN)", oninput: (event) => { slot.title = event.target.value; markDirty(); } }),
+              h("label", { class: "row", title: "도면 축척. 비우면 '모바일 도면 설정'의 기본 축척" },
+                h("span", { class: "hint" }, "1 :"),
+                h("input", {
+                  type: "number",
+                  class: "scale",
+                  min: "1",
+                  step: "any",
+                  value: slot.scale ?? "",
+                  placeholder: project.mobile.drawings.scale ? String(project.mobile.drawings.scale) : "축척",
+                  oninput: (event) => { slot.scale = numberValue(event.target.value); markDirty(); },
+                })),
               h("label", { class: "row", title: "모바일 도면에 방위표 표시" },
                 h("input", { type: "checkbox", checked: slot.coordinate !== false, onchange: (event) => { slot.coordinate = event.target.checked; markDirty(); } }),
                 "방위표"))
@@ -728,6 +962,7 @@
       };
       const details = section("이미지", null, [
         h("p", { class: "hint" }, "한 번 올리면 PC/ 와 MOB/ 폴더에 함께 저장되고 양쪽에 표시됩니다. 필요하면 기기별로 교체하거나 숨기세요."),
+        h("p", { class: "hint" }, `올릴 수 있는 형식: ${store.imageFormats}. 긴 변이 ${GALLERY_SHRINK.maxEdge}px보다 큰 사진은 비율 그대로 ${GALLERY_SHRINK.maxEdge}px로 줄여서 올립니다.`),
         list,
         dropzone("이미지를 끌어다 놓거나 클릭해서 업로드 (여러 장 가능, SVG는 도면으로 분류)", (files) => uploadMany(files, "both", async (file, src) => {
           const kind = await detectKind(file);
@@ -758,57 +993,119 @@
       return details;
     };
 
+    // Description images are shared by PC and mobile, so they are stored once in PC/.
+    const uploadDescriptionImage = async (onDone) => {
+      const file = await pickFile();
+      if (!file) return;
+      await uploadMany([file], PC, (_, src) => onDone(src[PC]), DESCRIPTION_SHRINK);
+    };
+
     const descriptionSection = () => {
-      const area = h("textarea", {
-        class: "mono description",
-        value: project.descriptionHtml,
-        spellcheck: false,
-        oninput: () => { project.descriptionHtml = area.value; markDirty(); },
-      });
-      const insert = (snippet) => {
-        const start = area.selectionStart ?? area.value.length;
-        area.setRangeText(snippet, start, area.selectionEnd ?? start, "end");
-        area.focus();
-        project.descriptionHtml = area.value;
-        markDirty();
+      const blocks = project.description;
+      const list = h("div", { class: "stack" });
+      const textBlock = (block, index) => {
+        const area = h("textarea", {
+          class: "block-text",
+          value: block.text || "",
+          placeholder: "본문을 입력하세요.\nEnter는 줄바꿈, 빈 줄(Enter 두 번)은 문단 나누기입니다.",
+          oninput: () => { block.text = area.value; autoGrow(area); markDirty(); },
+        });
+        requestAnimationFrame(() => autoGrow(area));
+        return h("div", { class: "item block-item", dataset: { index } }, dragHandle(), area, removeButton(blocks, index, render, "글"));
       };
-      const figure = (src, caption) => `\n<figure class="side-figure">\n  <img class="side-single-img" src="${src}" alt="${caption.replace(/"/g, "&quot;")}">\n  <figcaption class="side-caption">${caption}</figcaption>\n</figure>\n`;
-      return section("설명", "HTML · PC·모바일 공통", [
+      const imageBlock = (block, index) => {
+        const thumb = h("div", { class: "thumb" });
+        setThumb(thumb, block.src);
+        return h("div", { class: "item block-item", dataset: { index } },
+          dragHandle(),
+          h("div", { class: "stack", style: "gap:5px" },
+            thumb,
+            h("div", { class: "row" },
+              h("div", { class: "path mono grow", title: block.src || "" }, block.src || "—"),
+              h("button", { type: "button", class: "small", onclick: () => uploadDescriptionImage((src) => { block.src = src; render(); markDirty(); }) }, "교체")),
+            h("input", {
+              type: "text",
+              value: block.caption || "",
+              placeholder: "캡션 — 이미지 바로 아래 작은 글씨 (예: *리노베이션 전 건물 후면)",
+              oninput: (event) => { block.caption = event.target.value; markDirty(); },
+            })),
+          removeButton(blocks, index, render, "이미지"));
+      };
+      const render = () => list.replaceChildren(...blocks.map((block, index) => (block.type === "image" ? imageBlock(block, index) : textBlock(block, index))));
+      const add = (block) => {
+        blocks.push(block);
+        render();
+        markDirty();
+        list.lastElementChild?.querySelector("textarea, input[type=text]")?.focus();
+      };
+      render();
+      sortable(list, blocks, () => { render(); markDirty(); });
+      return section("설명", "PC·모바일 공통", [
+        list,
         h("div", { class: "row" },
-          h("button", { type: "button", onclick: () => insert("\n<br><br>\n") }, "문단 구분"),
-          h("button", {
-            type: "button",
-            onclick: async () => {
-              const file = await pickFile();
-              if (!file) return;
-              await uploadMany([file], PC, (_, src) => insert(figure(src[PC], prompt("캡션을 입력하세요 (예: *리노베이션 전 모습)") || "")));
-            },
-          }, "보조 이미지 업로드"),
-          h("button", {
-            type: "button",
-            onclick: () => {
-              const src = prompt("보조 이미지 URL");
-              if (src) insert(figure(src.trim(), prompt("캡션") || ""));
-            },
-          }, "보조 이미지 URL")),
-        area,
-        h("p", { class: "hint" }, "문단 사이는 <br><br>, 보조 이미지는 <figure class=\"side-figure\"> 형식입니다. 설명은 PC·모바일이 같은 내용을 쓰므로 보조 이미지는 PC/ 폴더에 저장됩니다."),
+          h("button", { type: "button", onclick: () => add({ type: "text", text: "" }) }, "+ 글"),
+          h("button", { type: "button", onclick: () => uploadDescriptionImage((src) => add({ type: "image", src, caption: "" })) }, "+ 이미지")),
+        h("p", { class: "hint" }, "글: Enter는 줄바꿈, 빈 줄(Enter 두 번)은 문단 나누기. 글 사이에 이미지를 넣으려면 '+ 이미지' 후 ⋮⋮ 를 끌어 위치를 옮기세요."),
+        h("p", { class: "hint" }, "캡션: 각 이미지 아래 칸에 쓰면 이미지 바로 밑에 작은 글씨로 나옵니다. PC에서는 한 줄을 넘으면 '…'으로 잘리니 짧게 써 주세요."),
+        h("p", { class: "hint" }, `이미지 형식: ${store.imageFormats}. 아이폰 사진(HEIC)·TIFF·PSD는 JPG로 바꿔서 올려주세요. 큰 사진은 비율 그대로 가로 ${DESCRIPTION_SHRINK.maxWidth}px로 자동으로 줄여서 올립니다.`),
       ]);
     };
 
     const mobileSection = () => {
       const drawings = project.mobile.drawings;
-      return section("모바일 도면 설정", "MOB/", [
-        h("p", { class: "hint" }, "도면 이미지는 위 '이미지'에서 종류를 '도면'으로 지정하세요. 여기서는 모바일 도면 위에 겹치는 표시만 설정합니다."),
-        h("label", { class: "field" }, h("span", {}, "방위표 이미지"), srcInput(() => drawings.coordinateSrc, (value) => { drawings.coordinateSrc = value; }, MOB)),
-        h("label", { class: "field" }, h("span", {}, "축척 바 이미지"), srcInput(() => drawings.scaleSrc, (value) => { drawings.scaleSrc = value; }, MOB)),
+      const compass = h("span", { class: "compass" });
+      const drawCompass = () => {
+        compass.classList.toggle("off", drawings.north == null);
+        compass.style.setProperty("--deg", `${drawings.north || 0}deg`);
+      };
+      drawCompass();
+      return section("모바일 도면 설정", "방위표 · 축척 바", [
+        h("p", { class: "hint" }, "도면 이미지는 위 '이미지'에서 종류를 '도면'으로 지정하세요. 여기서는 모바일 도면 아래에 나오는 방위표와 축척 바를 설정합니다."),
+        h("label", { class: "field" },
+          h("span", {}, "방위 — 북쪽 방향 (도면 위쪽 기준 시계방향 °)"),
+          h("div", { class: "row" },
+            h("input", {
+              type: "number",
+              step: "1",
+              value: drawings.north ?? "",
+              placeholder: "예: 22",
+              oninput: (event) => {
+                drawings.north = numberValue(event.target.value);
+                if (drawings.north == null) delete drawings.north;
+                drawCompass();
+                markDirty();
+              },
+            }),
+            compass)),
+        h("label", { class: "field" },
+          h("span", {}, "기본 축척 — 도면마다 다르면 위 '이미지'의 각 도면에서 따로 입력"),
+          h("div", { class: "row" },
+            h("span", { class: "hint" }, "1 :"),
+            h("input", {
+              type: "number",
+              min: "1",
+              value: drawings.scale ?? "",
+              step: "any",
+              placeholder: "예: 50",
+              oninput: (event) => {
+                drawings.scale = numberValue(event.target.value);
+                if (drawings.scale == null) delete drawings.scale;
+                markDirty();
+              },
+            }))),
+        h("p", { class: "hint" }, "방위표와 축척 바(0·1·2·5m 형식)는 입력한 값으로 자동으로 그려집니다. 축척은 대지(pt)에 놓인 그대로의 축척을 넣으세요 — 상세도를 1:20으로 크게 그렸다면 그 도면에 20. 비율대로 키우거나 줄였다면 소수도 됩니다 (1:50을 2배로 키움 → 25). 모바일 미리보기로 확인하세요."),
+        h("details", {},
+          h("summary", { class: "hint" }, "직접 만든 이미지 쓰기 (각도·축척을 비워둔 경우에만 사용)"),
+          h("div", { class: "stack", style: "padding-top:8px" },
+            h("label", { class: "field" }, h("span", {}, "방위표 이미지"), srcInput(() => drawings.coordinateSrc, (value) => { drawings.coordinateSrc = value; }, MOB)),
+            h("label", { class: "field" }, h("span", {}, "축척 바 이미지"), srcInput(() => drawings.scaleSrc, (value) => { drawings.scaleSrc = value; }, MOB)))),
       ], false);
     };
 
     const jsonSection = () => {
       const area = h("textarea", { class: "mono", rows: 14, spellcheck: false });
       const details = section("JSON", "저장되는 내용", [
-        h("p", { class: "hint" }, "gallery가 기준이고, images · mobile.images · mobile.drawings.images는 저장할 때 gallery에서 자동으로 만들어집니다."),
+        h("p", { class: "hint" }, "gallery와 description이 기준입니다. images · mobile.images · mobile.drawings.images는 gallery에서, descriptionHtml은 description에서 저장할 때 자동으로 만들어집니다."),
         area,
         h("div", { class: "row" },
           h("button", { type: "button", onclick: () => { area.value = JSON.stringify(compile(project), null, 2); } }, "현재 값 불러오기"),
@@ -931,6 +1228,7 @@
       const { project: data } = await store.getProject(id);
       project = ensureShape(data);
       project.id = id;
+      worksCategory = null;
       await refreshList(id);
       setUrl(id);
       renderEditor();
@@ -943,9 +1241,12 @@
         "게시용으로 저장할까요?\n\n다음에 '게시'를 누르면 공개 페이지에 반영됩니다.",
       )) return;
       const result = await store.saveProject(project.id, target, compile(project));
+      const row = await syncWorks();
       await refreshList(project.id);
       setClean();
-      if (!quiet) toast(`저장했습니다: ${result.path}`);
+      if (row) $("#worksField")?.replaceWith(worksField());
+      const category = row && works.categories.find((entry) => entry.id === row.category)?.label;
+      if (!quiet || row) toast(`저장했습니다: ${result.path}${row ? `\nWORKS 목록 반영: ${category}` : ""}`);
     };
 
     const guarded = (fn) => async (...args) => {
@@ -965,6 +1266,7 @@
       if (!ID_RE.test(id) || id === "works") throw new Error("ID는 영문 소문자, 숫자, 하이픈만 쓸 수 있습니다. ('works'는 사용 불가)");
       if (projects.some((entry) => entry.id === id)) throw new Error(`"${id}"는 이미 있습니다.`);
       project = ensureShape(blankProject(id));
+      worksCategory = null;
       saved = { draft: false, runtime: false };
       await saveProject("draft", { quiet: true });
       setUrl(id);
@@ -986,6 +1288,7 @@
       layoutStage();
       await store.ready();
       store.mountHeader($("#account"));
+      works = await store.getWorks().catch(() => null);
       await refreshList();
       const wanted = new URLSearchParams(location.search).get("id");
       const first = projects.find((entry) => entry.id === wanted) || projects[0];

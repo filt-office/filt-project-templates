@@ -15,6 +15,7 @@
   const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif"]);
   const MIME = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif", ".svg": "image/svg+xml", ".avif": "image/avif" };
   const MAX_UPLOAD = 20 * 1024 * 1024; // jsDelivr serves GitHub files up to 20MB
+  const IMAGE_FORMATS = "JPG · PNG · WEBP · GIF · SVG · AVIF (20MB 이하)";
 
   const params = new URLSearchParams(location.search);
   const mode = params.get("mode") || (location.hostname.endsWith("github.io") ? "github" : "local");
@@ -60,6 +61,25 @@
   };
 
   const toJson = (value) => `${JSON.stringify(value, null, 2)}\n`;
+
+  // Other formats this browser can decode (BMP; HEIC/TIFF in Safari) are converted to JPG first.
+  const prepareUpload = async (file) => {
+    const ext = extOf(file.name);
+    if (IMAGE_EXT.has(ext)) return file;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      canvas.getContext("2d").drawImage(bitmap, 0, 0);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+      if (!blob) throw new Error("conversion failed");
+      return new File([blob], `${file.name.slice(0, file.name.length - ext.length)}.jpg`, { type: "image/jpeg" });
+    } catch {
+      const heic = [".heic", ".heif"].includes(ext) ? "\n아이폰 사진(HEIC)은 JPG로 변환해서 올려주세요." : "";
+      throw new Error(`지원하지 않는 파일 형식입니다 (${ext || "확장자 없음"}).\n올릴 수 있는 형식: ${IMAGE_FORMATS}${heic}`);
+    }
+  };
 
   // ---------------------------------------------------------------- local
 
@@ -332,10 +352,13 @@
     .fs-card button { padding: 6px 12px; border: 1px solid #111; background: #fff; font: inherit; cursor: pointer; }
     .fs-card button.fs-primary { background: #111; color: #fff; }
     .fs-error { min-height: 1.5em; margin-top: 8px; color: #c62828; white-space: pre-line; }
+    .fs-header { display: flex; align-items: center; gap: 18px; }
     .fs-user { display: flex; align-items: center; gap: 6px; font-size: 12px; }
     .fs-user img { width: 22px; height: 22px; border-radius: 50%; }
-    .fs-user button, .fs-publish { padding: 4px 9px; border: 1px solid #111; background: #fff; font: inherit; cursor: pointer; }
-    .fs-publish { background: #BD005E; border-color: #BD005E; color: #fff; }
+    .fs-user .fs-logout { padding: 0; border: 0; background: none; color: #777; font-size: 11px; text-decoration: underline; cursor: pointer; }
+    .fs-user .fs-logout:hover { background: none; color: #111; }
+    .fs-publish { padding: 4px 12px; border: 1px solid #BD005E; background: #BD005E; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+    .fs-publish:hover { background: #8f0047; border-color: #8f0047; }
     .fs-history { margin: 10px 0 0; padding: 0; list-style: none; border-top: 1px solid #ddd; }
     .fs-history li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 12px; }
     .fs-history .fs-grow { flex: 1; min-width: 0; }
@@ -481,7 +504,8 @@
     loadHistory();
   };
 
-  // Header widget: signed-in user, logout, and the publish button (github mode only).
+  // Header widget: the publish button, then the signed-in user with a text-style logout (github mode only).
+  // Kept apart from the page's save buttons so 게시 is never clicked by mistake for 게시용 저장.
   const mountHeader = (container) => {
     injectCss();
     if (mode !== "github") {
@@ -491,31 +515,40 @@
       container.append(note);
       return;
     }
-    const box = document.createElement("div");
-    box.className = "fs-user";
+    const wrapper = document.createElement("div");
+    wrapper.className = "fs-header";
+    const publishButton = document.createElement("button");
+    publishButton.className = "fs-publish";
+    publishButton.textContent = "게시…";
+    publishButton.title = "게시 창을 엽니다 (누르자마자 반영되지 않습니다)";
+    publishButton.addEventListener("click", publishDialog);
+    wrapper.append(publishButton);
     if (currentUser) {
+      const box = document.createElement("div");
+      box.className = "fs-user";
       const avatar = document.createElement("img");
       avatar.src = currentUser.avatar_url;
       avatar.alt = "";
       const name = document.createElement("span");
       name.textContent = currentUser.login;
       const out = document.createElement("button");
+      out.className = "fs-logout";
       out.textContent = "로그아웃";
       out.addEventListener("click", () => { if (confirm("로그아웃할까요?")) logout(); });
       box.append(avatar, name, out);
+      wrapper.append(box);
     }
-    const publishButton = document.createElement("button");
-    publishButton.className = "fs-publish";
-    publishButton.textContent = "게시";
-    publishButton.addEventListener("click", publishDialog);
-    container.append(box, publishButton);
+    container.append(wrapper);
   };
 
+  const backend = mode === "github" ? github : local;
   window.FiltStore = {
     mode,
     ready,
     mountHeader,
     isExternal,
-    ...(mode === "github" ? github : local),
+    imageFormats: IMAGE_FORMATS,
+    ...backend,
+    upload: async (projectId, device, file) => backend.upload(projectId, device, await prepareUpload(file)),
   };
 })();
