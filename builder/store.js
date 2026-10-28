@@ -354,13 +354,6 @@
     .fs-card button { padding: 6px 12px; border: 1px solid #111; background: #fff; font: inherit; cursor: pointer; }
     .fs-card button.fs-primary { background: #111; color: #fff; }
     .fs-error { min-height: 1.5em; margin-top: 8px; color: #c62828; white-space: pre-line; }
-    .fs-header { display: flex; align-items: center; gap: 18px; }
-    .fs-user { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-    .fs-user img { width: 22px; height: 22px; border-radius: 50%; }
-    .fs-user .fs-logout { padding: 0; border: 0; background: none; color: #777; font-size: 11px; text-decoration: underline; cursor: pointer; }
-    .fs-user .fs-logout:hover { background: none; color: #111; }
-    .fs-publish { padding: 4px 12px; border: 1px solid #BD005E; background: #BD005E; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
-    .fs-publish:hover { background: #8f0047; border-color: #8f0047; }
     .fs-history { margin: 10px 0 0; padding: 0; list-style: none; border-top: 1px solid #ddd; }
     .fs-history li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 12px; }
     .fs-history .fs-grow { flex: 1; min-width: 0; }
@@ -508,39 +501,25 @@
 
   // Header widget: the publish button, then the signed-in user with a text-style logout (github mode only).
   // Kept apart from the page's save buttons so 게시 is never clicked by mistake for 게시용 저장.
+  // Appends "deploy" and the signed-in account to the header's action row (see header.js).
   const mountHeader = (container) => {
     injectCss();
+    const item = (tag, text, title) => {
+      const el = document.createElement(tag);
+      el.className = "fb-act";
+      el.textContent = text;
+      el.title = title;
+      container.append(el);
+      return el;
+    };
     if (mode !== "github") {
-      const note = document.createElement("span");
-      note.className = "fs-muted";
-      note.textContent = "로컬 모드 · 게시는 scripts/release.sh";
-      container.append(note);
+      item("span", "local", "로컬 모드 · 게시는 scripts/release.sh");
       return;
     }
-    const wrapper = document.createElement("div");
-    wrapper.className = "fs-header";
-    const publishButton = document.createElement("button");
-    publishButton.className = "fs-publish";
-    publishButton.textContent = "게시…";
-    publishButton.title = "게시 창을 엽니다 (누르자마자 반영되지 않습니다)";
-    publishButton.addEventListener("click", publishDialog);
-    wrapper.append(publishButton);
+    item("button", "deploy", "게시 창을 엽니다 (누르자마자 반영되지 않습니다)").addEventListener("click", publishDialog);
     if (currentUser) {
-      const box = document.createElement("div");
-      box.className = "fs-user";
-      const avatar = document.createElement("img");
-      avatar.src = currentUser.avatar_url;
-      avatar.alt = "";
-      const name = document.createElement("span");
-      name.textContent = currentUser.login;
-      const out = document.createElement("button");
-      out.className = "fs-logout";
-      out.textContent = "로그아웃";
-      out.addEventListener("click", () => { if (confirm("로그아웃할까요?")) logout(); });
-      box.append(avatar, name, out);
-      wrapper.append(box);
+      item("button", currentUser.login, "누르면 로그아웃").addEventListener("click", () => { if (confirm(`${currentUser.login} 계정에서 로그아웃할까요?`)) logout(); });
     }
-    container.append(wrapper);
   };
 
   const backend = mode === "github" ? github : local;

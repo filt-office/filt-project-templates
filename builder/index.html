@@ -40,20 +40,6 @@
     button:disabled { opacity: .35; pointer-events: none; }
     a { color: inherit; }
 
-    header.bar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      border-bottom: 1px solid #111;
-      background: #fff;
-    }
-    header.bar h1 { margin: 0 6px 0 0; font-size: 15px; letter-spacing: .04em; }
-    .tabs { display: flex; }
-    .tabs a { padding: 4px 12px; border: 1px solid #111; text-decoration: none; }
-    .tabs a + a { border-left: 0; }
-    .tabs a.active { background: #111; color: #fff; }
     .spacer { flex: 1; }
     .dirty { color: var(--danger); visibility: hidden; }
     .dirty.show { visibility: visible; }
@@ -153,7 +139,7 @@
     .toast.error { background: var(--danger); }
     .preview-panel {
       position: fixed;
-      inset: 90px 0 0;
+      inset: var(--panel-top, 120px) 0 0;
       z-index: 15;
       display: grid;
       grid-template-rows: auto 1fr;
@@ -180,20 +166,16 @@
   </style>
 </head>
 <body>
-  <header class="bar">
-    <h1>FILT. BUILDER</h1>
-    <nav class="tabs">
-      <a href="./" class="active">WORKS 목록</a>
-      <a href="project.html">프로젝트 상세</a>
-    </nav>
-    <span class="dirty" id="dirty">● 저장 안 됨</span>
-    <span class="spacer"></span>
-    <button id="togglePreview">미리보기</button>
-    <button id="addRow">+ 행 추가</button>
-    <button id="save" class="primary" title="Ctrl+S">저장</button>
-    <span id="account" style="display:flex;gap:6px;align-items:center"></span>
+  <header class="fb-header" data-active="works-list">
+    <div class="fb-actions" id="account">
+      <span class="dirty" id="dirty" title="저장 안 됨">●</span>
+      <button id="save" class="fb-act" title="저장 (Ctrl+S)">save</button>
+    </div>
   </header>
+  <script src="header.js"></script>
   <div class="filters">
+    <button id="addRow">+ 행 추가</button>
+    <button id="togglePreview">미리보기</button>
     <input type="search" id="search" placeholder="이름·지역·용도 검색">
     <select id="categoryFilter" aria-label="분류 필터"></select>
     <label><input type="checkbox" id="noteOnly"> 확인 필요만</label>
@@ -599,6 +581,7 @@
     let previewTimer = null;
 
     const layoutStage = () => {
+      document.body.style.setProperty("--panel-top", `${$("#sheetWrap").getBoundingClientRect().top}px`);
       const stage = $("#stage");
       const size = VIEWPORTS[previewDevice];
       const scale = Math.min(1, (stage.clientWidth - 24) / size.width, previewDevice === "mobile" ? 1 : Infinity);
@@ -629,17 +612,45 @@
     };
     const schedulePreview = () => { clearTimeout(previewTimer); previewTimer = setTimeout(renderPreview, 600); };
 
-    $("#togglePreview").addEventListener("click", () => {
-      $("#previewPanel").hidden = !$("#previewPanel").hidden;
+    const openPreview = () => {
+      $("#previewPanel").hidden = false;
       layoutStage();
       renderPreview();
+    };
+    const setPreviewView = (view) => {
+      previewView = view;
+      document.querySelectorAll("#previewPanel [data-view]").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
+      window.FiltHeader.setActive(`works-${view}`);
+      history.replaceState(null, "", view === "gallery" ? "?view=gallery" : location.pathname);
+      renderPreview();
+    };
+
+    $("#togglePreview").addEventListener("click", () => {
+      if ($("#previewPanel").hidden) openPreview();
+      else $("#previewPanel").hidden = true;
     });
     $("#closePreview").addEventListener("click", () => { $("#previewPanel").hidden = true; });
-    document.querySelectorAll("#previewPanel [data-view]").forEach((button) => button.addEventListener("click", () => {
-      previewView = button.dataset.view;
-      document.querySelectorAll("#previewPanel [data-view]").forEach((other) => other.classList.toggle("active", other === button));
-      renderPreview();
+    document.querySelectorAll("#previewPanel [data-view]").forEach((button) => button.addEventListener("click", () => setPreviewView(button.dataset.view)));
+    // Both tabs edit this sheet; they switch the preview instead of reloading the page.
+    window.FiltHeader.tabs.querySelectorAll('[data-tab^="works-"]').forEach((tab) => tab.addEventListener("click", (event) => {
+      event.preventDefault();
+      const view = tab.dataset.tab.slice("works-".length);
+      if (view === "gallery") $("#previewPanel").hidden = false;
+      setPreviewView(view);
+      if (!$("#previewPanel").hidden) layoutStage();
     }));
+    // The frame's own list/gallery icons link to "#"; the published runtime may not handle that
+    // yet, so the builder catches the click and re-renders the other view itself.
+    $("#previewFrame").addEventListener("load", () => {
+      $("#previewFrame").contentDocument?.addEventListener("click", (event) => {
+        const button = event.target.closest?.(".list-btn, .gallery-btn");
+        if (!button) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const view = button.classList.contains("gallery-btn") ? "gallery" : "list";
+        if (view !== previewView) setPreviewView(view);
+      }, true);
+    });
     document.querySelectorAll("#previewPanel [data-device]").forEach((button) => button.addEventListener("click", () => {
       previewDevice = button.dataset.device;
       document.querySelectorAll("#previewPanel [data-device]").forEach((other) => other.classList.toggle("active", other === button));
@@ -669,7 +680,7 @@
       const result = await store.saveWorks(data);
       setClean();
       render();
-      if (!quiet) toast(`저장했습니다: ${result.path} (${result.count}행)\n공개 페이지에는 '게시'를 누르면 반영됩니다.`);
+      if (!quiet) toast(`저장했습니다: ${result.path} (${result.count}행)\n공개 페이지에는 deploy를 누르면 반영됩니다.`);
     };
 
     $("#save").addEventListener("click", () => saveWorks().catch((error) => toast(error.message, true)));
@@ -706,6 +717,10 @@
           ...data.categories.map((category) => h("option", { value: category.id }, category.label)),
         );
         render();
+        if (new URLSearchParams(location.search).get("view") === "gallery") {
+          setPreviewView("gallery");
+          openPreview();
+        }
       } catch (error) {
         toast(error.message, true);
       }

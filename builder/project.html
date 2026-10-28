@@ -17,7 +17,7 @@
     html, body { height: 100%; margin: 0; }
     body {
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: auto auto 1fr;
       font: 13px/1.5 "SUIT", system-ui, sans-serif;
       color: #111;
       background: var(--bg);
@@ -51,7 +51,7 @@
     textarea { resize: vertical; }
     .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
 
-    header.bar {
+    .bar {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -60,19 +60,13 @@
       border-bottom: 1px solid #111;
       background: #fff;
     }
-    header.bar h1 { margin: 0 10px 0 0; font-size: 15px; letter-spacing: .04em; }
-    header.bar select { width: auto; min-width: 180px; }
-    .tabs { display: flex; }
-    .tabs a { padding: 4px 12px; border: 1px solid #111; color: inherit; text-decoration: none; }
-    .tabs a + a { border-left: 0; }
-    .tabs a.active { background: #111; color: #fff; }
+    .bar select { width: auto; min-width: 180px; }
     .badges { display: flex; gap: 4px; }
     .badge { padding: 1px 6px; border: 1px solid var(--line); font-size: 11px; color: var(--muted); }
     .badge.on { border-color: #111; color: #111; }
     .spacer { flex: 1; }
     .help { color: var(--muted); font-size: 12px; }
     .help:hover { color: #111; }
-    .save-group { display: flex; align-items: center; gap: 6px; margin-right: 12px; padding-right: 20px; border-right: 1px solid var(--line); }
     .dirty { color: var(--danger); font-size: 12px; visibility: hidden; }
     .dirty.show { visibility: visible; }
 
@@ -269,12 +263,16 @@
   </style>
 </head>
 <body>
-  <header class="bar">
-    <h1>FILT. BUILDER</h1>
-    <nav class="tabs">
-      <a href="./">WORKS 목록</a>
-      <a href="project.html" class="active">프로젝트 상세</a>
-    </nav>
+  <header class="fb-header" data-active="works-list">
+    <div class="fb-actions" id="account">
+      <span class="dirty" id="dirty" title="저장 안 됨">●</span>
+      <button id="saveDraft" class="fb-act" title="임시저장 (Ctrl+S) · 나만 보는 초안">draft</button>
+      <button id="saveRuntime" class="fb-act" title="게시용 저장 · 게시 대상에 올립니다. 공개 페이지 반영은 deploy에서">save</button>
+    </div>
+  </header>
+  <script src="header.js"></script>
+  <div class="bar">
+    <strong>프로젝트 상세</strong>
     <select id="projectSelect" aria-label="프로젝트 선택"></select>
     <button id="newProject">+ 새 프로젝트</button>
     <a class="help" href="https://github.com/filt-office/filt-website-editor/blob/main/docs/BUILDER_GUIDE.md" target="_blank" rel="noopener">도움말</a>
@@ -282,15 +280,7 @@
       <span class="badge" id="badgeDraft">drafts</span>
       <span class="badge" id="badgeRuntime">runtime</span>
     </div>
-    <span class="dirty" id="dirty">● 저장 안 됨</span>
-    <span class="spacer"></span>
-    <div class="save-group" role="group" aria-label="저장">
-      <span class="hint">저장</span>
-      <button id="saveDraft" title="Ctrl+S · 나만 보는 초안">임시저장</button>
-      <button id="saveRuntime" class="primary" title="게시 대상에 올립니다. 공개 페이지 반영은 '게시…'에서">게시용 저장</button>
-    </div>
-    <span id="account"></span>
-  </header>
+  </div>
 
   <div class="layout">
     <main class="editor" id="editor">
@@ -1585,7 +1575,7 @@
     const saveProject = async (target, { quiet = false } = {}) => {
       if (!project) return;
       if (target === "runtime" && !confirm(
-        "게시용으로 저장할까요?\n\n다음에 '게시'를 누르면 공개 페이지에 반영됩니다.",
+        "게시용으로 저장할까요?\n\n다음에 deploy를 누르면 공개 페이지에 반영됩니다.",
       )) return;
       const result = await store.saveProject(project.id, target, compile(project));
       const row = await syncWorks();
