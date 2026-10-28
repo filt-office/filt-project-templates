@@ -377,12 +377,15 @@
         <li>Permissions → Repository permissions에서 <b>Contents</b>와 <b>Actions</b>를 <b>Read and write</b>로 바꿉니다.</li>
         <li>맨 아래 <b>Generate token</b>을 누르고, 나온 <code>github_pat_…</code> 키를 아래에 붙여넣습니다.</li>
       </ol>
-      <input type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
-      <div class="fs-error"></div>
-      <div class="fs-row"><button class="fs-primary">로그인</button></div>
-      <p class="fs-muted">키는 이 브라우저에만 저장됩니다. 공용 PC에서는 사용 후 로그아웃하세요.</p>
+      <form>
+        <input type="text" name="username" value="filt-builder" autocomplete="username" hidden>
+        <input type="password" name="password" placeholder="github_pat_…" autocomplete="current-password" spellcheck="false">
+        <div class="fs-error"></div>
+        <div class="fs-row"><button type="submit" class="fs-primary">로그인</button></div>
+      </form>
+      <p class="fs-muted">키는 이 브라우저에 저장됩니다. 브라우저가 비밀번호 저장을 물으면 저장해 두세요 — 다음에 자동완성됩니다. 공용 PC에서는 사용 후 로그아웃하세요.</p>
     `);
-    const input = overlay.querySelector("input");
+    const input = overlay.querySelector('input[type="password"]');
     const error = overlay.querySelector(".fs-error");
     const submit = async () => {
       token = input.value.trim();
@@ -398,8 +401,7 @@
         error.textContent = problem.message;
       }
     };
-    overlay.querySelector("button").addEventListener("click", submit);
-    input.addEventListener("keydown", (event) => { if (event.key === "Enter") submit(); });
+    overlay.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); submit(); });
     input.focus();
   });
 
