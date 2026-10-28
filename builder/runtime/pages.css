@@ -1,0 +1,383 @@
+/* ------------------------------
+    FILT HOME / OFFICE / NEWS
+    Ported from home-, office- and news-pc/mobile.html (filtehwa/filt_website).
+    Everything is scoped under .filt-page so the Imweb page is untouched.
+------------------------------ */
+.filt-page {
+  --accent: #BD005E;
+  --bg-color: #fff;
+  --panel-hide-width: 210px;
+  font-family: "Suit", "Pretendard Variable", "Pretendard", "Noto Sans KR", sans-serif !important;
+  font-weight: 300;
+  letter-spacing: 0.4px;
+  color: #000;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.filt-page *,
+.filt-page *::before,
+.filt-page *::after {
+  box-sizing: border-box;
+}
+
+.filt-page .info-mobile,
+.filt-page .home-loading { display: none; }
+.filt-page [hidden] { display: none !important; }
+
+/* ==================== HOME (PC): full-screen vertical slideshow ==================== */
+.filt-page .home-slides {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  overflow: hidden;
+  cursor: default;
+}
+
+.filt-page .home-slides .slides {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.filt-page .home-slides .slides img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  visibility: hidden;
+  z-index: 0;
+  will-change: transform;
+}
+.filt-page .home-slides .slides img.is-current { visibility: visible; z-index: 1; }
+.filt-page .home-slides .slides img.is-incoming { visibility: visible; z-index: 2; }
+
+/* Right 20%: top half = previous, bottom half = next. */
+.filt-page .home-slides .click-zone {
+  position: absolute;
+  right: 0;
+  z-index: 9100;
+  width: 20%;
+  height: 50%;
+  cursor: default;
+}
+.filt-page .home-slides .click-zone.prev { top: 0; }
+.filt-page .home-slides .click-zone.next { bottom: 0; }
+
+/* ==================== OFFICE / NEWS (PC) ==================== */
+.filt-page .info-desktop {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 75% 25%;
+  background: var(--bg-color);
+  transition: none;
+}
+
+.filt-page .info-desktop .left {
+  display: grid;
+  grid-template-rows: 10vh 30vh 30vh 30vh;
+  height: 100%;
+  padding-left: 30px;
+  border-right: 0.5px solid #000;
+  background: var(--bg-color);
+  transition: transform 0.45s cubic-bezier(0.33, 1, 0.68, 1),
+              width 0.45s cubic-bezier(0.33, 1, 0.68, 1);
+  will-change: transform, width;
+}
+.filt-page .info-desktop[data-page="news"] .left { grid-template-rows: 10vh 60vh 30vh; }
+
+/* Common menu open: shift only the left column (the right preview stays). */
+body.menu-open .filt-page .info-desktop .left {
+  transform: translateX(var(--panel-hide-width));
+  width: calc(100% - var(--panel-hide-width));
+}
+
+.filt-page .sec {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  color: #000;
+  line-height: 1.7;
+}
+
+.filt-page .sec__inner {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.filt-page .sec__inner::-webkit-scrollbar { display: none; }
+
+.filt-page .sec.empty {
+  height: 120px;
+  background: #fff;
+}
+
+.filt-page .sec__header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+}
+
+.filt-page .sec__title {
+  position: relative !important;
+  display: block !important;
+  margin: 0 0 4px 20px !important;
+  padding: 0 !important;
+  color: #000 !important;
+  font-family: inherit !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.4px !important;
+  line-height: 1.2 !important;
+  transform: none !important;
+}
+
+.filt-page .sec__divider {
+  height: 0.5px;
+  margin-bottom: 6px;
+  background: #000;
+  pointer-events: none;
+}
+
+.filt-page .item {
+  display: grid;
+  grid-template-columns: 4fr 2fr 2fr 2fr;
+  column-gap: 10px;
+  margin-left: 20px;
+  padding: 0;
+  font-family: "Pretendard Variable", "Pretendard", "Noto Sans", sans-serif !important;
+  font-size: 12px;
+  font-weight: 300;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.filt-page .item:hover { color: var(--accent); }
+.filt-page .item p { margin: 0; padding: 0; line-height: 1.8; }
+.filt-page .item a { color: inherit; text-decoration: none; line-height: 1.8; }
+
+/* PEOPLE */
+.filt-page .sec.people .item.person {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px !important;
+}
+.filt-page .sec.people .item.person .main {
+  display: grid;
+  grid-template-columns: 3fr 2fr 2fr;
+  column-gap: 10px;
+  font-size: 12px !important;
+  font-weight: 400;
+  letter-spacing: 0.4px;
+}
+.filt-page .sec.people .item.person .name { font-weight: 500; }
+
+.filt-page .sec.people .info {
+  max-height: 0;
+  padding-top: 10px;
+  overflow: hidden;
+  opacity: 0;
+  font-size: 12px;
+  font-weight: 300;
+  letter-spacing: 0.4px;
+  line-height: 1.8;
+  transition: max-height 0.5s ease, opacity 0.4s ease;
+}
+.filt-page .sec.people .info > div {
+  display: grid;
+  grid-template-columns: 3fr 2fr 2fr;
+  column-gap: 10px;
+}
+.filt-page .sec.people .info.open { max-height: 400px; opacity: 1; }
+.filt-page .sec.people .item.person.principal { cursor: default; }
+.filt-page .sec.people .item.person.principal .info { max-height: none; opacity: 1; }
+.filt-page .sec.people .info .is-bold span { font-weight: 500 !important; }
+.filt-page .sec.people .info .spacer { height: 6px; }
+
+/* Right column */
+.filt-page .info-desktop .right {
+  position: relative;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60%;
+}
+
+/* NEWS hover preview */
+.filt-page .info-desktop .thumbnail {
+  position: relative;
+  top: 175px;
+  display: flex;
+  width: 80%;
+  overflow: hidden;
+  background-color: #fff;
+  pointer-events: none;
+}
+.filt-page .info-desktop .thumb {
+  width: 100%;
+  height: auto;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.filt-page .info-desktop .thumb.show { opacity: 1; }
+
+/* ==================== Mobile ==================== */
+@media (max-width: 768px) {
+  .filt-page .home-slides,
+  .filt-page .info-desktop { display: none; }
+  .filt-page .info-mobile { display: block; }
+
+  /* HOME: the FILT logo unfolds, then WORKS opens. */
+  .filt-page .home-loading {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+    background: #fff;
+  }
+  .filt-page .home-loading svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: auto;
+    min-width: 100%;
+    height: 100vh;
+    opacity: 0;
+    cursor: pointer;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  .filt-page .home-loading svg path {
+    fill: none;
+    stroke: #000;
+    stroke-width: 25;
+    stroke-linecap: butt;
+  }
+  .filt-page .home-loading.fade-out { animation: filt-page-fade-out 0.8s forwards; }
+
+  .filt-page .mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 5000;
+    width: 100%;
+    height: 40px;
+    border-bottom: 0.7px solid #000;
+    background: #fff;
+  }
+
+  .filt-page .category-filter {
+    position: fixed;
+    top: 40px;
+    left: 0;
+    z-index: 4000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 3px 8px;
+    border-bottom: 0.7px solid #000;
+    background: #fff;
+  }
+  .filt-page .category-filter button {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #000;
+    font-family: inherit;
+    font-size: 1.2rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .filt-page .category-filter button.active {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Full viewport width regardless of the host page's side padding. */
+  .filt-page .mobile-page {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    max-width: none;
+    margin: 0 calc(50% - 50vw);
+    padding: 75px 0 0;
+    letter-spacing: 0;
+  }
+  .filt-page .info-mobile[data-page="news"] .mobile-page { padding-top: 67px; }
+  .filt-page .mobile-page p { margin: 0; padding: 0; }
+
+  .filt-page .gap-5 { height: 5px; }
+  .filt-page .gap-6 { height: 6px; }
+  .filt-page .gap-10 { height: 10px; }
+  .filt-page .gap-15 { height: 15px; }
+
+  /* OFFICE */
+  .filt-page .office-content { color: #000; font-size: 1rem; line-height: 1.5; }
+  .filt-page .office-section { margin-left: 5px; font-size: 1rem; }
+  .filt-page .divider-hr {
+    width: 100vw;
+    height: 0.5px;
+    margin: 0;
+    background: #000;
+    transform: scaleY(0.5);
+  }
+  .filt-page .people-block { margin-left: 5px; font-size: 1.2rem; }
+  .filt-page .designer-block { cursor: pointer; }
+  .filt-page .people-row {
+    display: grid;
+    grid-template-columns: 7fr 9fr 6fr;
+    column-gap: 10px;
+    width: 100%;
+    font-size: 1rem;
+  }
+  .filt-page .people-row .col { font-weight: 300; text-align: left; }
+  .filt-page .people-row .col.bold { font-weight: 600; }
+  .filt-page .people-block .timeline { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+  .filt-page .people-block.always-open .timeline { min-height: 200px; max-height: 2000px; }
+
+  /* NEWS */
+  .filt-page .news-row {
+    display: grid;
+    grid-template-columns: 3fr 1fr 1fr;
+    column-gap: 15px;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 0.5px solid #000;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .filt-page .news-row > div { margin: 0; padding: 0; }
+  .filt-page .news-grid .timeline {
+    max-height: 0;
+    overflow: hidden;
+    border-bottom: 0.5px solid #000;
+    transition: max-height 0.35s ease;
+  }
+  .filt-page .news-body { margin-left: 5px; font-size: 1rem; line-height: 1.5; }
+  .filt-page .news-body img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    max-height: 240px;
+    margin: 6px 0 8px;
+    object-fit: contain;
+  }
+}
+
+@keyframes filt-page-fade-out { to { opacity: 0; } }

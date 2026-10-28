@@ -111,6 +111,10 @@
       '  #filt-common-menu-v2 .menu-bottom { flex:0 0 50px; display:flex; flex-direction:column; justify-content:flex-start; align-items:flex-end; padding:5px; background:#000; text-align:right; }',
       '  #filt-common-menu-v2 .menu-bottom a { color:#fff; font-size:1.2rem; font-weight:400; text-decoration:none; }',
       '}',
+      // HOME (window.FILT_MENU_MODE = 'home'): the panel stays open over the photos; no mobile menu.
+      '#filt-common-menu-v2.is-home .side-panel { transition:none; cursor:default; }',
+      '#filt-common-menu-v2.is-home .vert { cursor:default; }',
+      '#filt-common-menu-v2.is-home .header-menu-btn, #filt-common-menu-v2.is-home .mobile-menu-panel, #filt-common-menu-v2.is-home .menu-overlay { display:none !important; }',
       '@media (prefers-reduced-motion:reduce) { #filt-common-menu-v2 *, #filt-common-menu-v2 *::before, #filt-common-menu-v2 *::after { transition-duration:.01ms !important; } }'
     ].join('\n');
 
@@ -145,7 +149,12 @@
     };
 
     let currentStage = 'panel';
-    let panelOpen = false;
+    const homeMode = window.FILT_MENU_MODE === 'home';
+    let panelOpen = homeMode;
+    if (homeMode) {
+      root.classList.add('is-home');
+      panel.classList.add('open');
+    }
     let morphPromise;
 
     function ensureMorphPlugin() {
@@ -180,6 +189,7 @@
     }
 
     function toggleDesktopPanel() {
+      if (homeMode) return;
       panelOpen = !panelOpen;
       panel.classList.toggle('open', panelOpen);
       morphTo('panel');
