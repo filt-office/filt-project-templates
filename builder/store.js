@@ -528,15 +528,69 @@
   // Fills the header's action row (see header.js) as: account / draft / save / deploy.
   // The account goes before the page's own buttons, deploy after them.
   // ---------------------------------------------------------------- design system
-  // runtime/pages/design.json: { colors: [{ id, name, value }] }. The first colour is the key colour;
-  // each colour becomes --filt-<id> on the page (the first also --filt-key).
-  const DEFAULT_DESIGN = { version: 1, colors: [{ id: "key", name: "키컬러", value: "#BD005E" }] };
+  // runtime/pages/design.json, edited on design.html. Defaults are the values the site was built with.
+  // designVars() turns it into the CSS variables pages use (runtime/design.js sets the same ones):
+  //   colors[]   --filt-key (the first), --filt-<id>
+  //   logo       --filt-logo-stroke (in the mark's 240×410 units), --filt-logo-color,
+  //              --filt-logo-morph (seconds) and logo.ease (a GSAP ease name, read by the menu script)
+  //   type       --filt-font-family, --filt-font-weight;
+  //              per scale entry --filt-size-<id>, --filt-size-<id>-mobile, --filt-weight-<id>, --filt-line-<id>
+  //   motion     --filt-motion-panel, --filt-motion-hover (seconds)
+  const DEFAULT_DESIGN = {
+    version: 2,
+    colors: [{ id: "key", name: "키컬러", value: "#BD005E" }],
+    logo: { stroke: 5, color: "black", duration: 0.8, ease: "power2.inOut" },
+    type: {
+      family: "'Suit', 'Pretendard Variable', 'Noto Sans KR', sans-serif",
+      weight: 300,
+      scale: [
+        { id: "body", name: "본문", pc: 12, mobile: 13.5, weight: 300, line: 1.7 },
+        { id: "caption", name: "캡션", pc: 9, mobile: 10, weight: 300, line: 1.4 },
+        { id: "overview", name: "개요표", pc: 10, mobile: 10, weight: 400, line: 1.3 },
+        { id: "overview-title", name: "개요표 제목", pc: 10, mobile: 12, weight: 700, line: 1.3 },
+        { id: "list", name: "목록", pc: 12, mobile: 12, weight: 300, line: 1.6 },
+        { id: "menu", name: "메뉴", pc: 12, mobile: 19.2, weight: 400, line: 1.6 },
+      ],
+    },
+    motion: { panel: 0.35, hover: 0.2 },
+  };
+  // Saved files may predate a section; missing parts take the defaults.
+  const fullDesign = (design) => {
+    const base = JSON.parse(JSON.stringify(DEFAULT_DESIGN));
+    if (!design) return base;
+    const scale = base.type.scale.map((entry) => ({ ...entry, ...(design.type?.scale || []).find((saved) => saved.id === entry.id) }));
+    return {
+      ...base,
+      ...design,
+      colors: design.colors?.length ? design.colors : base.colors,
+      logo: { ...base.logo, ...design.logo },
+      type: { ...base.type, ...design.type, scale },
+      motion: { ...base.motion, ...design.motion },
+    };
+  };
+  const designVars = (input) => {
+    const design = fullDesign(input);
+    const vars = { "--filt-key": design.colors[0].value };
+    design.colors.forEach((color) => { vars[`--filt-${color.id}`] = color.value; });
+    vars["--filt-logo-stroke"] = String(design.logo.stroke);
+    vars["--filt-logo-color"] = design.logo.color === "black" ? "#000" : `var(--filt-${design.logo.color}, #000)`;
+    vars["--filt-logo-morph"] = `${design.logo.duration}s`;
+    vars["--filt-font-family"] = design.type.family;
+    vars["--filt-font-weight"] = String(design.type.weight);
+    design.type.scale.forEach((entry) => {
+      vars[`--filt-size-${entry.id}`] = `${entry.pc}px`;
+      vars[`--filt-size-${entry.id}-mobile`] = `${entry.mobile}px`;
+      vars[`--filt-weight-${entry.id}`] = String(entry.weight);
+      vars[`--filt-line-${entry.id}`] = String(entry.line);
+    });
+    vars["--filt-motion-panel"] = `${design.motion.panel}s`;
+    vars["--filt-motion-hover"] = `${design.motion.hover}s`;
+    return vars;
+  };
   const applyDesign = (design) => {
-    const colors = design?.colors?.length ? design.colors : DEFAULT_DESIGN.colors;
     const root = document.documentElement.style;
-    root.setProperty("--filt-key", colors[0].value);
-    colors.forEach((color) => root.setProperty(`--filt-${color.id}`, color.value));
-    window.FiltDesign = { ...design, colors };
+    Object.entries(designVars(design)).forEach(([name, value]) => root.setProperty(name, value));
+    window.FiltDesign = fullDesign(design);
     document.dispatchEvent(new CustomEvent("filt-design", { detail: window.FiltDesign }));
   };
 
@@ -614,11 +668,11 @@
     // Attributes for a preview's <html>: the current (maybe unsaved) colours, and the flag that tells
     // runtime/design.js not to load pages/design.json over them.
     designAttrs: () => {
-      const colors = window.FiltDesign?.colors || DEFAULT_DESIGN.colors;
-      const vars = [`--filt-key: ${colors[0].value}`, ...colors.map((color) => `--filt-${color.id}: ${color.value}`)].join("; ");
-      return ` data-filt-design="builder" style="${vars}"`;
+      const vars = Object.entries(designVars(window.FiltDesign)).map(([name, value]) => `${name}: ${value}`).join("; ");
+      return ` data-filt-design="builder" style="${vars.replace(/"/g, "&quot;")}"`;
     },
-    defaultDesign: () => JSON.parse(JSON.stringify(DEFAULT_DESIGN)),
+    fullDesign,
+    designVars,
     upload: async (projectId, device, file) => backend.upload(projectId, device, await prepareUpload(file)),
     getWorks: async () => {
       const data = await backend.getWorks();

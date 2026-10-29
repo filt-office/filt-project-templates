@@ -2,7 +2,8 @@
 // A page calls FiltPageEditor({ page, render }) after store.js, header.js and row-menu.js;
 // render(ctx) returns the editor's elements and is called again on ctx.rerender(). The preview
 // draws the unsaved data, minus archived items, with the real runtime/pages.js.
-// Pages with other data pass load / save / previewBody(dataUrl, runtimeUrl) and assetKeys.
+// Pages with other data pass load / save / previewBody(dataUrl, runtimeUrl) and assetKeys;
+// preview: false drops the preview.
 (() => {
   "use strict";
 
@@ -114,6 +115,7 @@
     save: saveData = (data) => window.FiltStore.savePage(page, data),
     previewBody = (dataUrl, runtimeUrl) => `<div data-filt-page></div><script src="${runtimeUrl("pages.js")}" data-page="${page}" data-page-src="${dataUrl}" data-works-url="#"><\/script>`,
     assetKeys = ["src", "image"], // fields that hold image paths
+    preview = true, // false: the editor takes the whole width
   }) => {
     const store = window.FiltStore;
     const $ = (selector) => document.querySelector(selector);
@@ -122,7 +124,7 @@
     document.head.append(style);
 
     document.body.append(
-      h("div", { class: "pe-layout", id: "peLayout" },
+      h("div", { class: `pe-layout${preview ? "" : " no-preview"}`, id: "peLayout" },
         h("main", { class: "pe-editor", id: "peEditor" }, h("p", { class: "pe-section muted" }, "불러오는 중…")),
         h("section", { class: "pe-preview", "aria-label": "미리보기" },
           h("div", { class: "pe-preview-bar" },
@@ -400,6 +402,7 @@
     };
 
     const renderPreview = async () => {
+      if (!preview) return;
       const token = ++previewToken;
       const copy = await resolveAssets(window.FiltRowMenu.withoutArchived(ctx.data));
       if (token !== previewToken) return;
