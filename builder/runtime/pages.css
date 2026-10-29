@@ -4,7 +4,7 @@
     Everything is scoped under .filt-page so the Imweb page is untouched.
 ------------------------------ */
 .filt-page {
-  --accent: #BD005E;
+  --accent: var(--filt-key, #BD005E);
   --bg-color: #fff;
   --panel-hide-width: 210px;
   font-family: "Suit", "Pretendard Variable", "Pretendard", "Noto Sans KR", sans-serif !important;

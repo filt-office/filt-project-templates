@@ -58,6 +58,9 @@
     element.addEventListener("error", reject, { once: true });
     document.body.append(element);
   });
+
+  // Site colours (--filt-key, --filt-<id>) from pages/design.json.
+  loadScript(new URL("design.js", templateBase).href).catch(() => {});
   // Same URLs as common-menu-v2.js, so the libraries load once.
   const GSAP = "https://unpkg.com/gsap@3/dist/gsap.min.js";
   const MORPH = "https://assets.codepen.io/16327/MorphSVGPlugin3.min.js";

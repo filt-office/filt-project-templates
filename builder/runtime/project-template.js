@@ -51,6 +51,9 @@
     document.body.append(externalScript);
   };
 
+  // Site colours (--filt-key, --filt-<id>) from pages/design.json.
+  loadScript(new URL("design.js", templateBase).href);
+
   const createFieldCell = (tagName, value, className) => {
     const cell = document.createElement(tagName);
     if (className) cell.className = className;
@@ -141,7 +144,7 @@
       img.src = resolveAsset(image.src);
       img.alt = image.alt || "";
       img.className = ["portrait", "landscape", "drawing"].includes(image.class) ? image.class : "landscape";
-      img.dataset.fit = ["auto", "contain", "cover"].includes(image.fit) ? image.fit : "auto";
+      img.dataset.fit = ["auto", "contain", "cover", "pad-s", "pad-l"].includes(image.fit) ? image.fit : "auto";
       img.dataset.rotation = [0, 90, 180, 270].includes(Number(image.rotation)) ? String(Number(image.rotation)) : "0";
       img.loading = "lazy";
       img.addEventListener("load", () => updateRotatedImageSize(section, img));

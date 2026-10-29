@@ -49,6 +49,9 @@
     document.body.append(element);
   };
 
+  // Site colours (--filt-key, --filt-<id>) from pages/design.json.
+  loadScript(new URL("design.js", templateBase).href);
+
   const el = (tag, className, text) => {
     const node = document.createElement(tag);
     if (className) node.className = className;

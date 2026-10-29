@@ -2,7 +2,7 @@
     📌1. 기본 설정
 ------------------------------ */
 .filt-project-mount {
-  --accent: #BD005E;
+  --accent: var(--filt-key, #BD005E);
   --bg-color: #fff;
   --panel-width: clamp(300px, 28vw, 430px);
   --panel-hide-width: 210px;
@@ -118,6 +118,15 @@
 .filt-project-mount .img-section img[data-fit="cover"] {
   object-fit: cover !important;
 }
+
+/* 여백 (builder): contain with a margin of 5% / 12% of the frame's short side. */
+.filt-project-mount .img-section img[data-fit^="pad-"],
+.filt-project-mount .img-section.portrait-mode img[data-fit^="pad-"] {
+  object-fit: contain !important;
+  box-sizing: border-box !important;
+}
+.filt-project-mount .img-section img[data-fit="pad-s"] { padding: 5vmin !important; }
+.filt-project-mount .img-section img[data-fit="pad-l"] { padding: 12vmin !important; }
 
 .filt-project-mount .mobile-drawing-section {
   display: none;
@@ -241,12 +250,28 @@
 
 .filt-project-mount .side-section .text-content,
 .filt-project-mount .side-section .text-content * {
-  color: #000 !important;
   opacity: 1 !important;
   visibility: visible !important;
-  display: block !important;
-  font-size: var(--body-text-size) !important;
   line-height: 1.8 !important;
+}
+
+.filt-project-mount .side-section .text-content {
+  color: #000 !important;
+  font-size: var(--body-text-size) !important;
+}
+
+/* Builder rich text (b, i, u, s, span style="color / font-size / …") stays inline, and its inline
+   color and size win; everything else inherits the body text style whatever the host page sets. */
+.filt-project-mount .side-section .text-content *:not(b, strong, i, em, u, s, span, a) {
+  display: block !important;
+}
+
+.filt-project-mount .side-section .text-content *:not([style*="color"]) {
+  color: inherit !important;
+}
+
+.filt-project-mount .side-section .text-content *:not([style*="font-size"]) {
+  font-size: inherit !important;
 }
 
 .filt-project-mount .side-section .text-content p {
@@ -283,7 +308,7 @@
   text-overflow: ellipsis;
 }
 
-/* The ".text-content *" rule above forces body size and full opacity on everything; keep captions
+/* The ".text-content *" rules above force body size and full opacity on everything; keep captions
    smaller and lighter like the original pages (caption 12px at 0.75 opacity next to 16px text). */
 .filt-project-mount .side-section .text-content .side-caption {
   font-size: var(--caption-size) !important;
@@ -657,7 +682,6 @@ body.filt-menu-open .filt-project-mount .img-section {
 
   .filt-project-mount .side-section .text-content,
   .filt-project-mount .side-section .text-content * {
-    font-size: var(--body-text-size) !important;
     line-height: 1.5 !important;
   }
 
@@ -823,4 +847,4 @@ body.filt-menu-open .filt-project-mount .img-section {
   font-weight: 300;
   color: #000;
 }
-.filt-template-error a { color: #BD005E; text-decoration: none; }
+.filt-template-error a { color: var(--filt-key, #BD005E); text-decoration: none; }
