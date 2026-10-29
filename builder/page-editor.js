@@ -50,15 +50,19 @@
     .pe-sheet td.wide input { min-width: 320px; }
     .pe-sheet td.mid input { min-width: 160px; }
     .pe-sheet td.short input { min-width: 90px; }
-    .thumb-box { display: flex; align-items: center; gap: 4px; padding: 0 4px; }
-    .thumb { position: relative; flex: none; width: 56px; height: 28px; border: 1px dashed #b5b5b5; background: #f4f4f2 center / cover no-repeat; cursor: pointer; }
-    .thumb.empty::after { content: "+"; position: absolute; inset: 0; display: grid; place-items: center; color: #999; font-size: 15px; }
-    .thumb.filled { border-style: solid; border-color: var(--line); }
-    .thumb:hover, .thumb:focus-visible, .thumb.drop { border: 1px solid #111; outline: none; }
+    /* Image cell: a faint X marks an empty placeholder; an image fills the cell (cover). */
+    .thumb { position: relative; display: block; width: 100%; min-width: 56px; height: var(--row-h); background: center / cover no-repeat; cursor: pointer; }
+    .thumb.empty { background-image: linear-gradient(to top right, transparent calc(50% - .6px), #d4d4d4 50%, transparent calc(50% + .6px)), linear-gradient(to bottom right, transparent calc(50% - .6px), #d4d4d4 50%, transparent calc(50% + .6px)); }
+    .thumb:hover, .thumb:focus-visible, .thumb.drop { box-shadow: inset 0 0 0 2px #111; outline: none; }
     .thumb.busy { opacity: .45; pointer-events: none; }
-    .thumb .x { position: absolute; top: -1px; right: -1px; display: none; width: 14px; height: 14px; padding: 0; border: 0; background: #111; color: #fff; font-size: 9px; line-height: 14px; }
+    .thumb .x { position: absolute; top: 0; right: 0; display: none; width: 15px; height: 15px; padding: 0; border: 0; background: #111; color: #fff; font-size: 9px; line-height: 15px; }
     .thumb:hover .x { display: block; }
     .thumb .x:hover { background: var(--danger); }
+    .pe-sheet td.img { width: 64px; }
+    .grip { cursor: grab; user-select: none; }
+    .dragging { opacity: .4; }
+    tr.drop-before > td { box-shadow: inset 0 2px 0 #111; }
+    tr.drop-after > td { box-shadow: inset 0 -2px 0 #111; }
 
     .pe-preview { display: grid; grid-template-rows: auto 1fr; min-height: 0; background: var(--bg); }
     .pe-preview-bar { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: #fff; }
@@ -124,6 +128,7 @@
     };
 
     let dirty = false;
+    let dragging = null;
     let previewTimer = null;
     const markDirty = () => {
       dirty = true;
@@ -167,10 +172,13 @@
       };
       box.addEventListener("click", (event) => { if (!event.target.closest(".x")) pick(); });
       box.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); pick(); } });
-      box.addEventListener("dragover", (event) => { event.preventDefault(); box.classList.add("drop"); });
+      const isFile = (event) => event.dataTransfer?.types.includes("Files");
+      box.addEventListener("dragover", (event) => { if (!isFile(event)) return; event.preventDefault(); box.classList.add("drop"); });
       box.addEventListener("dragleave", () => box.classList.remove("drop"));
       box.addEventListener("drop", (event) => {
+        if (!isFile(event)) return;
         event.preventDefault();
+        event.stopPropagation();
         box.classList.remove("drop");
         run(event.dataTransfer.files[0]);
       });
@@ -190,6 +198,7 @@
       // A text input bound to obj[key]; empty strings are removed so the JSON stays as written by hand.
       input: (obj, key, props = {}) => h("input", {
         type: "text",
+        size: 1, // width comes from the column's min-width, not the default 20 characters
         value: obj[key] ?? "",
         oninput: (event) => {
           if (event.target.value === "" && !props.keepEmpty) delete obj[key];
@@ -207,34 +216,64 @@
           markDirty();
         },
       }),
-      // Thumbnail with upload / URL buttons for obj[key].
       // Image placeholder for obj[key]: click or drop a file to upload, ✕ to clear.
-      image: (obj, key) => h("div", { class: "thumb-box" }, imageSlot(obj[key], {
+      image: (obj, key) => imageSlot(obj[key], {
         resolve: store.assetUrl,
         upload: async (file) => { obj[key] = await upload(file); ctx.rerender(); markDirty(); },
         clear: () => { delete obj[key]; ctx.rerender(); markDirty(); },
-      })),
-      // ↑ ↓ ✕ buttons for list[index].
-      rowActions: (list, index, label = "이 행") => [
-        h("button", { class: "small", title: "위로", disabled: index === 0, onclick: () => ctx.move(list, index, -1) }, "↑"),
-        h("button", { class: "small", title: "아래로", disabled: index === list.length - 1, onclick: () => ctx.move(list, index, 1) }, "↓"),
-        h("button", {
-          class: "small danger",
-          title: "삭제",
-          onclick: () => {
-            if (!confirm(`${label}을(를) 삭제할까요?`)) return;
-            list.splice(index, 1);
-            ctx.rerender();
-            markDirty();
-          },
-        }, "✕"),
-      ],
-      move: (list, from, delta) => {
-        const to = from + delta;
-        if (to < 0 || to >= list.length) return;
-        list.splice(to, 0, list.splice(from, 1)[0]);
-        ctx.rerender();
-        markDirty();
+      }),
+      remove: (list, index, label = "이 행") => h("button", {
+        class: "small danger",
+        title: "삭제",
+        onclick: () => {
+          if (!confirm(`${label}을(를) 삭제할까요?`)) return;
+          list.splice(index, 1);
+          ctx.rerender();
+          markDirty();
+        },
+      }, "✕"),
+      // Reorders list[index] by dragging el from its handle. Drops only land on items with the same
+      // scope; the drop goes before or after the target depending on which half the pointer is in.
+      draggable: (el, { list, index, scope = list, handle = el, axis = "y" }) => {
+        handle.classList.add("grip");
+        handle.title = handle.title || "끌어서 순서 변경";
+        handle.addEventListener("mousedown", () => { el.draggable = true; });
+        handle.addEventListener("mouseup", () => { el.draggable = false; });
+        const after = (event) => {
+          const box = el.getBoundingClientRect();
+          return axis === "x" ? event.clientX > box.left + box.width / 2 : event.clientY > box.top + box.height / 2;
+        };
+        const clear = () => el.classList.remove("drop-before", "drop-after");
+        el.addEventListener("dragstart", (event) => {
+          if (event.target !== el) return;
+          dragging = { list, index, scope };
+          el.classList.add("dragging");
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", "");
+        });
+        el.addEventListener("dragend", () => { dragging = null; el.draggable = false; el.classList.remove("dragging"); });
+        el.addEventListener("dragover", (event) => {
+          if (dragging?.scope !== scope) return;
+          event.preventDefault();
+          const isAfter = after(event);
+          el.classList.toggle("drop-after", isAfter);
+          el.classList.toggle("drop-before", !isAfter);
+        });
+        el.addEventListener("dragleave", clear);
+        el.addEventListener("drop", (event) => {
+          if (dragging?.scope !== scope) return;
+          event.preventDefault();
+          clear();
+          const from = dragging.index;
+          let to = index + (after(event) ? 1 : 0);
+          if (from < to) to -= 1;
+          dragging = null;
+          if (to === from) return;
+          list.splice(to, 0, list.splice(from, 1)[0]);
+          ctx.rerender();
+          markDirty();
+        });
+        return el;
       },
       section: (title, tools, ...body) => h("section", { class: "pe-section" },
         h("div", { class: "pe-section-head" }, h("h2", {}, title), h("span", { class: "spacer" }), tools),

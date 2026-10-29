@@ -102,16 +102,19 @@
     td input:focus, td select:focus { outline: 2px solid #111; outline-offset: -2px; background: #fff; }
     td.check { width: 46px; text-align: center; }
     td.mono input { font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
-    td.thumb-cell { padding: 0 4px; }
-    .thumb-box { display: flex; align-items: center; gap: 4px; }
-    .thumb { position: relative; flex: none; width: 56px; height: 28px; border: 1px dashed #b5b5b5; background: #f4f4f2 center / cover no-repeat; cursor: pointer; }
-    .thumb.empty::after { content: "+"; position: absolute; inset: 0; display: grid; place-items: center; color: #999; font-size: 15px; }
-    .thumb.filled { border-style: solid; border-color: var(--line); }
-    .thumb:hover, .thumb:focus-visible, .thumb.drop { border: 1px solid #111; outline: none; }
+    td.thumb-cell { width: 64px; }
+    /* Image cell: a faint X marks an empty placeholder; an image fills the cell (cover). */
+    .thumb { position: relative; display: block; width: 100%; min-width: 56px; height: var(--row-h); background: center / cover no-repeat; cursor: pointer; }
+    .thumb.empty { background-image: linear-gradient(to top right, transparent calc(50% - .6px), #d4d4d4 50%, transparent calc(50% + .6px)), linear-gradient(to bottom right, transparent calc(50% - .6px), #d4d4d4 50%, transparent calc(50% + .6px)); }
+    .thumb:hover, .thumb:focus-visible, .thumb.drop { box-shadow: inset 0 0 0 2px #111; outline: none; }
     .thumb.busy { opacity: .45; pointer-events: none; }
-    .thumb .x { position: absolute; top: -1px; right: -1px; display: none; width: 14px; height: 14px; padding: 0; border: 0; background: #111; color: #fff; font-size: 9px; line-height: 14px; }
+    .thumb .x { position: absolute; top: 0; right: 0; display: none; width: 15px; height: 15px; padding: 0; border: 0; background: #111; color: #fff; font-size: 9px; line-height: 15px; }
     .thumb:hover .x { display: block; }
     .thumb .x:hover { background: var(--danger); }
+    td.num.grip { cursor: grab; user-select: none; }
+    tr.dragging { opacity: .4; }
+    tr.drop-before > td { box-shadow: inset 0 2px 0 #111; }
+    tr.drop-after > td { box-shadow: inset 0 -2px 0 #111; }
     td.detail { padding: 0 4px; }
     .detail-box { display: flex; align-items: center; gap: 4px; }
     .detail-box select { width: 120px; height: 26px; border: 1px solid var(--line); }
@@ -365,10 +368,13 @@
       };
       box.addEventListener("click", (event) => { if (!event.target.closest(".x")) pick(); });
       box.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); pick(); } });
-      box.addEventListener("dragover", (event) => { event.preventDefault(); box.classList.add("drop"); });
+      const isFile = (event) => event.dataTransfer?.types.includes("Files");
+      box.addEventListener("dragover", (event) => { if (!isFile(event)) return; event.preventDefault(); box.classList.add("drop"); });
       box.addEventListener("dragleave", () => box.classList.remove("drop"));
       box.addEventListener("drop", (event) => {
+        if (!isFile(event)) return;
         event.preventDefault();
+        event.stopPropagation();
         box.classList.remove("drop");
         run(event.dataTransfer.files[0]);
       });
@@ -384,7 +390,7 @@
       });
       box.addEventListener("mousemove", (event) => showPopup(work[key], event));
       box.addEventListener("mouseleave", hidePopup);
-      return h("td", { class: "thumb-cell" }, h("div", { class: "thumb-box" }, box));
+      return h("td", { class: "thumb-cell" }, box);
     };
 
     // ---------- detail page link ----------
@@ -461,16 +467,43 @@
       ...extra,
     });
 
-    const moveRow = (work, delta) => {
-      // Swap with the neighbouring visible row so moves work while filtered.
-      const visible = visibleWorks();
-      const neighbour = visible[visible.indexOf(work) + delta];
-      if (!neighbour) return;
-      const a = data.works.indexOf(work);
-      const b = data.works.indexOf(neighbour);
-      [data.works[a], data.works[b]] = [data.works[b], data.works[a]];
-      render();
-      markDirty();
+    // Rows are reordered by dragging their number, within the same category (works while filtered).
+    let draggingWork = null;
+    const makeDraggable = (tr, work, handle) => {
+      handle.classList.add("grip");
+      handle.title = "끌어서 순서 변경";
+      handle.addEventListener("mousedown", () => { tr.draggable = true; });
+      handle.addEventListener("mouseup", () => { tr.draggable = false; });
+      const after = (event) => { const box = tr.getBoundingClientRect(); return event.clientY > box.top + box.height / 2; };
+      const accepts = () => draggingWork && draggingWork.category === work.category;
+      const clear = () => tr.classList.remove("drop-before", "drop-after");
+      tr.addEventListener("dragstart", (event) => {
+        draggingWork = work;
+        tr.classList.add("dragging");
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", "");
+      });
+      tr.addEventListener("dragend", () => { draggingWork = null; tr.draggable = false; tr.classList.remove("dragging"); });
+      tr.addEventListener("dragover", (event) => {
+        if (!accepts()) return;
+        event.preventDefault();
+        const isAfter = after(event);
+        tr.classList.toggle("drop-after", isAfter);
+        tr.classList.toggle("drop-before", !isAfter);
+      });
+      tr.addEventListener("dragleave", clear);
+      tr.addEventListener("drop", (event) => {
+        if (!accepts()) return;
+        event.preventDefault();
+        clear();
+        const moved = draggingWork;
+        draggingWork = null;
+        if (moved === work) return;
+        data.works.splice(data.works.indexOf(moved), 1);
+        data.works.splice(data.works.indexOf(work) + (after(event) ? 1 : 0), 0, moved);
+        render();
+        markDirty();
+      });
     };
 
     const rowFor = (work, index, visible) => {
@@ -479,8 +512,10 @@
         class: [work.note ? "has-note" : "", previous && previous.category !== work.category ? "category-start" : ""].join(" "),
         dataset: { id: work.id },
       });
+      const num = h("td", { class: "num" }, String(data.works.indexOf(work) + 1));
+      makeDraggable(tr, work, num);
       tr.append(
-        h("td", { class: "num" }, String(data.works.indexOf(work) + 1)),
+        num,
         h("td", {}, h("select", {
           class: "category",
           onchange: (event) => { work.category = event.target.value; render(); markDirty(); },
@@ -515,8 +550,6 @@
           oninput: (event) => { work.note = event.target.value; tr.classList.toggle("has-note", Boolean(work.note)); markDirty(); },
         })),
         h("td", { class: "actions" },
-          h("button", { class: "small", title: "위로", disabled: index === 0, onclick: () => moveRow(work, -1) }, "↑"),
-          h("button", { class: "small", title: "아래로", disabled: index === visible.length - 1, onclick: () => moveRow(work, 1) }, "↓"),
           h("button", {
             class: "small danger",
             title: "행 삭제",

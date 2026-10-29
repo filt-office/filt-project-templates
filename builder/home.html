@@ -8,8 +8,8 @@
   <style>
     .slides { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
     .slide { display: grid; grid-template-rows: auto auto; border: 1px solid #111; background: #fff; }
-    .slide.dragging { opacity: .4; }
-    .slide.drop-before { box-shadow: -4px 0 0 #111; }
+    .slide.drop-before { box-shadow: -5px 0 0 #111; }
+    .slide.drop-after { box-shadow: 5px 0 0 #111; }
     .slide-media { position: relative; aspect-ratio: 16 / 10; background: #eee center / cover no-repeat; cursor: grab; }
     .slide-media .no { position: absolute; top: 0; left: 0; padding: 2px 7px; background: #111; color: #fff; font-size: 11px; }
     .slide-media .tools { position: absolute; top: 4px; right: 4px; display: flex; gap: 2px; }
@@ -37,8 +37,6 @@
 
     // Where each slide is anchored when the screen crops it (CSS object-position).
     const POSITIONS = [["center top", "위"], ["center center", "가운데"], ["center bottom", "아래"]];
-
-    let dragFrom = null;
 
     FiltPageEditor({
       page: "home",
@@ -92,13 +90,13 @@
                   }
                 },
               }, "교체"),
-              ctx.rowActions(slides, index, `${index + 1}번 슬라이드`)));
+              ctx.remove(slides, index, `${index + 1}번 슬라이드`)));
           media.style.backgroundPosition = slide.position || "center center";
           FiltStore.assetUrl(slide.src).then((url) => { if (url) media.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`; });
 
           const position = slide.position || "center center";
           const known = POSITIONS.some(([value]) => value === position);
-          const el = h("div", { class: "slide", draggable: true },
+          const el = h("div", { class: "slide" },
             media,
             h("div", { class: "slide-body" },
               h("label", {}, h("span", { class: "muted" }, "설명 (alt)"), ctx.input(slide, "alt", { placeholder: "예: Tempin Project", keepEmpty: true })),
@@ -113,29 +111,7 @@
               known ? null : h("option", { value: position, selected: true }, position))),
               h("div", { class: "src", title: slide.src }, slide.src)));
 
-          el.addEventListener("dragstart", (event) => {
-            dragFrom = index;
-            el.classList.add("dragging");
-            event.dataTransfer.effectAllowed = "move";
-          });
-          el.addEventListener("dragend", () => { dragFrom = null; el.classList.remove("dragging"); });
-          el.addEventListener("dragover", (event) => {
-            if (dragFrom === null) return;
-            event.preventDefault();
-            el.classList.add("drop-before");
-          });
-          el.addEventListener("dragleave", () => el.classList.remove("drop-before"));
-          el.addEventListener("drop", (event) => {
-            event.preventDefault();
-            el.classList.remove("drop-before");
-            if (dragFrom === null || dragFrom === index) return;
-            const [moved] = slides.splice(dragFrom, 1);
-            slides.splice(dragFrom < index ? index - 1 : index, 0, moved);
-            dragFrom = null;
-            ctx.rerender();
-            ctx.markDirty();
-          });
-          return el;
+          return ctx.draggable(el, { list: slides, index, handle: media, axis: "x" });
         };
 
         return [
