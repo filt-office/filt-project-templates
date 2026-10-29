@@ -182,8 +182,8 @@
     /* Same first control below the tabs as WORKS-LIST; never part of save/deploy actions. */
     .fb-preview-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--line, #d9d9d9); background: #fff; }
     body.fb-has-preview-tools { grid-template-rows: auto auto minmax(0, 1fr); }
-    button.fb-preview-toggle { flex: none; align-self: flex-start; margin: 0; padding: 4px 9px; border: 1px solid #111; border-radius: 0; background: #fff; color: #111; font: 12px/1.4 "SUIT", system-ui, sans-serif; white-space: nowrap; cursor: pointer; }
-    button.fb-preview-toggle:hover { background: #111; color: #fff; }
+    button.fb-preview-toggle { flex: none; align-self: center; margin: 0 0 0 auto; padding: 4px 2px; border: 0; border-radius: 0; background: none; color: #111; font: 700 12px/1.4 "SUIT", system-ui, sans-serif; white-space: nowrap; cursor: pointer; }
+    button.fb-preview-toggle:hover, button.fb-preview-toggle[aria-expanded="true"] { background: none; color: var(--filt-key, #BD005E); }
   `;
 
   const font = document.createElement("link");
@@ -244,7 +244,7 @@
       toggle.className = "fb-preview-toggle";
       toggle.setAttribute("data-fb-preview-toggle", "");
       toggle.setAttribute("aria-controls", pane.id || "");
-      tools.prepend(toggle);
+      tools.append(toggle); // always the last control, at the right end of the bar
       state = { layout, pane, onChange, expanded: !pane.hidden };
       previewToggleState.set(toggle, state);
       toggle.addEventListener("click", (event) => {
