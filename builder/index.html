@@ -151,7 +151,6 @@
     .preview-panel[hidden] { display: none; }
     .preview-bar { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: #fff; }
     .preview-bar button.active { background: #111; color: #fff; }
-    .preview-bar .sep { width: 10px; }
     .stage { position: relative; overflow: hidden; }
     .stage-inner { position: absolute; top: 12px; left: 50%; transform-origin: top center; box-shadow: 0 0 0 1px #111, 0 6px 24px rgba(0,0,0,.12); background: #fff; }
     .stage iframe { display: block; width: 100%; height: 100%; border: 0; background: #fff; }
@@ -217,9 +216,6 @@
   <section class="preview-panel" id="previewPanel" hidden>
     <div class="preview-bar">
       <strong>미리보기</strong>
-      <button data-view="list" class="active">목록</button>
-      <button data-view="gallery">갤러리</button>
-      <span class="sep"></span>
       <button data-device="desktop" class="active">PC</button>
       <button data-device="mobile">모바일</button>
       <span class="count" id="previewSize"></span>
@@ -235,8 +231,9 @@
   <script src="store.js"></script>
   <script src="row-menu.js"></script>
   <script>
-    // Old builder links opened a project at ./?id=…; that editor is now project.html.
+    // Old builder links: ./?id=… opened a project (now project.html), ./?view=gallery the gallery.
     if (new URLSearchParams(location.search).has("id")) location.replace(`project.html${location.search}`);
+    else if (new URLSearchParams(location.search).get("view") === "gallery") location.replace("works-gallery.html");
   (() => {
     "use strict";
 
@@ -603,7 +600,6 @@
     // ---------- preview (real runtime/works.js with unsaved data) ----------
 
     const VIEWPORTS = { desktop: { width: 1440, height: 900 }, mobile: { width: 390, height: 844 } };
-    let previewView = "list";
     let previewDevice = "desktop";
     let previewUrl = null;
     let previewTimer = null;
@@ -634,7 +630,7 @@
       if (token !== previewToken) return;
       const nextUrl = URL.createObjectURL(new Blob([JSON.stringify(copy)], { type: "application/json" }));
       const src = store.runtimeUrl("works.js");
-      $("#previewFrame").srcdoc = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0}</style></head><body><div data-filt-works></div><script src="${src}" data-view="${previewView}" data-works-src="${nextUrl}" data-list-url="#" data-gallery-url="#"><\/script></body></html>`;
+      $("#previewFrame").srcdoc = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0}</style></head><body><div data-filt-works></div><script src="${src}" data-view="list" data-works-src="${nextUrl}" data-list-url="#" data-gallery-url="#"><\/script></body></html>`;
       if (previewUrl) setTimeout(URL.revokeObjectURL.bind(URL, previewUrl), 5000);
       previewUrl = nextUrl;
     };
@@ -645,29 +641,20 @@
       layoutStage();
       renderPreview();
     };
-    const setPreviewView = (view) => {
-      previewView = view;
-      document.querySelectorAll("#previewPanel [data-view]").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
-      history.replaceState(null, "", view === "gallery" ? "?view=gallery" : location.pathname);
-      renderPreview();
-    };
 
     $("#togglePreview").addEventListener("click", () => {
       if ($("#previewPanel").hidden) openPreview();
       else $("#previewPanel").hidden = true;
     });
     $("#closePreview").addEventListener("click", () => { $("#previewPanel").hidden = true; });
-    document.querySelectorAll("#previewPanel [data-view]").forEach((button) => button.addEventListener("click", () => setPreviewView(button.dataset.view)));
-    // The frame's own list/gallery icons link to "#"; the published runtime may not handle that
-    // yet, so the builder catches the click and re-renders the other view itself.
+    // The preview shows the list only; its gallery icon opens the gallery editor.
     $("#previewFrame").addEventListener("load", () => {
       $("#previewFrame").contentDocument?.addEventListener("click", (event) => {
         const button = event.target.closest?.(".list-btn, .gallery-btn");
         if (!button) return;
         event.preventDefault();
         event.stopPropagation();
-        const view = button.classList.contains("gallery-btn") ? "gallery" : "list";
-        if (view !== previewView) setPreviewView(view);
+        if (button.classList.contains("gallery-btn")) location.href = "works-gallery.html";
       }, true);
     });
     document.querySelectorAll("#previewPanel [data-device]").forEach((button) => button.addEventListener("click", () => {
@@ -736,10 +723,6 @@
           ...data.categories.map((category) => h("option", { value: category.id }, category.label)),
         );
         render();
-        if (new URLSearchParams(location.search).get("view") === "gallery") {
-          setPreviewView("gallery");
-          openPreview();
-        }
       } catch (error) {
         toast(error.message, true);
       }
