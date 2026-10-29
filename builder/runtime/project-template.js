@@ -178,10 +178,11 @@
   };
 
   // Same shape as the hand-made bars: an outline stepping between 0, 1/5, 2/5 and the full length,
-  // which is the longest round length that stays within 300 viewBox units.
-  const scaleBar = (scale, pixelsPerUnit, height) => {
+  // which is the longest round length that stays within 15% of the drawing's width (viewBox units,
+  // or pixels for JPG/PNG), so large raster drawings get a bar as long as SVG ones.
+  const scaleBar = (scale, pixelsPerUnit, height, drawingWidth) => {
     const unitsPerMeter = UNITS_PER_METER / scale;
-    const length = [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => meters * unitsPerMeter <= 300) || 1;
+    const length = [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => meters * unitsPerMeter <= drawingWidth * 0.15) || 1;
     const pixelsPerMeter = unitsPerMeter * pixelsPerUnit;
     const fontSize = LABEL_SIZE;
     const start = fontSize * 0.4;
@@ -334,7 +335,7 @@
       if (generatedScale) {
         const size = await drawingSize(currentImage);
         if (token !== overlayToken) return;
-        scaleOverlay = scaleBar(drawingScale, (naturalWidth * scale) / size.width, overlayHeight);
+        scaleOverlay = scaleBar(drawingScale, (naturalWidth * scale) / size.width, overlayHeight, size.width);
       }
       coordinateInfo.replaceChildren(...(coordinateOverlay && showCoordinate ? [coordinateOverlay] : []));
       scaleInfo.replaceChildren(...(scaleOverlay ? [scaleOverlay] : []));
