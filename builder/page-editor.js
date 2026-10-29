@@ -132,13 +132,12 @@
         h("main", { class: "pe-editor", id: "peEditor" }, h("p", { class: "pe-section muted" }, "불러오는 중…")),
         h("section", { class: "pe-preview", id: "pePreview", "aria-label": "미리보기" },
           h("div", { class: "pe-preview-bar" },
-            h("strong", {}, "미리보기"),
-            h("button", { class: "active", dataset: { device: "desktop" } }, "PC"),
-            h("button", { dataset: { device: "mobile" } }, "모바일"),
-            h("span", { class: "muted", id: "peSize" }),
-            previewTools,
+            h("div", { class: "pv-devices", role: "group", "aria-label": "미리보기 화면 크기" },
+              h("button", { type: "button", class: "active", dataset: { device: "desktop" } }, "PC"),
+              h("span", { "aria-hidden": "true" }, "/"),
+              h("button", { type: "button", dataset: { device: "mobile" } }, "MOBILE")),
             h("span", { class: "spacer" }),
-            h("span", { class: "muted" }, "저장 전 내용 기준")),
+            previewTools),
           h("div", { class: "pe-stage", id: "peStage" },
             h("div", { class: "pe-stage-inner", id: "peStageInner" }, h("iframe", { id: "peFrame", title: `${page} 미리보기` }))))),
       h("input", { type: "file", id: "pePicker", accept: "image/*", multiple: true, hidden: true }),
@@ -451,7 +450,6 @@
       inner.style.width = `${size.width}px`;
       inner.style.height = `${height}px`;
       inner.style.transform = `translateX(-50%) scale(${scale})`;
-      $("#peSize").textContent = `${size.width}px · ${Math.round(scale * 100)}%`;
     };
 
     // Uploaded images are paths relative to runtime/; give the preview URLs this browser can load.

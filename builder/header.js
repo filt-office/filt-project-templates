@@ -183,6 +183,12 @@
     .fb-preview-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--line, #d9d9d9); background: #fff; }
     body.fb-has-preview-tools { grid-template-rows: auto auto minmax(0, 1fr); }
     button.fb-preview-toggle { flex: none; align-self: center; margin: 0 0 0 auto; padding: 4px 2px; border: 0; border-radius: 0; background: none; color: #111; font: 700 12px/1.4 "SUIT", system-ui, sans-serif; white-space: nowrap; cursor: pointer; }
+    /* Preview bars: just PC / MOBILE as borderless text buttons. */
+    .pv-devices { display: flex; align-items: center; gap: 6px; font: 700 12px/1.4 "SUIT", system-ui, sans-serif; }
+    .pv-devices > span { color: #c4c4c4; }
+    .pv-devices button { padding: 2px !important; border: 0 !important; background: none !important; color: #9a9a9a !important; font: inherit; cursor: pointer; }
+    .pv-devices button:hover { color: #111 !important; }
+    .pv-devices button.active { color: var(--filt-key, #BD005E) !important; }
     button.fb-preview-toggle:hover, button.fb-preview-toggle[aria-expanded="true"] { background: none; color: var(--filt-key, #BD005E); }
   `;
 

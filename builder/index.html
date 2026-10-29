@@ -211,13 +211,9 @@
   </div>
   <section class="preview-panel" id="previewPanel" hidden>
     <div class="preview-bar">
-      <strong>미리보기</strong>
-      <button data-device="desktop" class="active">PC</button>
-      <button data-device="mobile">모바일</button>
-      <span class="count" id="previewSize"></span>
-      <span class="spacer"></span>
-      <span class="count">저장 전 내용 기준</span>
-      <button id="closePreview">닫기</button>
+      <div class="pv-devices" role="group" aria-label="미리보기 화면 크기">
+        <button type="button" data-device="desktop" class="active">PC</button><span aria-hidden="true">/</span><button type="button" data-device="mobile">MOBILE</button>
+      </div>
     </div>
     <div class="stage" id="stage"><div class="stage-inner" id="stageInner"><iframe id="previewFrame" title="Works 미리보기"></iframe></div></div>
   </section>
@@ -649,7 +645,6 @@
       inner.style.width = `${size.width}px`;
       inner.style.height = `${height}px`;
       inner.style.transform = `translateX(-50%) scale(${scale})`;
-      $("#previewSize").textContent = `${size.width}px · ${Math.round(scale * 100)}%`;
     };
 
     let previewToken = 0;
@@ -688,7 +683,6 @@
       if ($("#previewPanel").hidden) openPreview();
       else { $("#previewPanel").hidden = true; syncPreviewToggle(); }
     });
-    $("#closePreview").addEventListener("click", () => { $("#previewPanel").hidden = true; syncPreviewToggle(); });
     syncPreviewToggle();
     // The preview shows the list only; its gallery icon opens the gallery editor.
     $("#previewFrame").addEventListener("load", () => {
