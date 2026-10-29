@@ -154,8 +154,10 @@
   };
 
   // Generated overlays are drawn in screen pixels at 60% of the info strip's height. The scale bar's
-  // length still follows the drawing: drawings are exported from Illustrator artboards in pt, so at
-  // 1:N one metre is 72 / 0.0254 / N viewBox units (1:50 → 56.7), times the drawing's display scale.
+  // length follows the drawing. A bar set in the builder (scaleBar: { meters, width }) gives its length
+  // as a share of the image's own width, so it works for SVG and JPG/PNG alike. Older data has only
+  // scale (1:N): drawings are exported from Illustrator artboards in pt, so one metre is
+  // 72 / 0.0254 / N viewBox units (1:50 → 56.7), times the drawing's display scale.
   const UNITS_PER_METER = 72 / 0.0254;
   const svgElement = (viewBox, width, height, body) => {
     const template = document.createElement("template");
@@ -177,12 +179,8 @@
       + `<text y="${-radius - 1}" fill="#000" stroke="none" font-size="${font}" font-weight="${LABEL_WEIGHT}" text-anchor="middle">N</text></g>`);
   };
 
-  // Same shape as the hand-made bars: an outline stepping between 0, 1/5, 2/5 and the full length,
-  // which is the longest round length that stays within 300 viewBox units.
-  const scaleBar = (scale, pixelsPerUnit, height) => {
-    const unitsPerMeter = UNITS_PER_METER / scale;
-    const length = [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => meters * unitsPerMeter <= 300) || 1;
-    const pixelsPerMeter = unitsPerMeter * pixelsPerUnit;
+  // Same shape as the hand-made bars: an outline stepping between 0, 1/5, 2/5 and the full length.
+  const scaleBar = (length, pixelsPerMeter, height) => {
     const fontSize = LABEL_SIZE;
     const start = fontSize * 0.4;
     const ticks = [0, length / 5, (length * 2) / 5, length];
@@ -211,6 +209,13 @@
     return drawingSizes.get(src).then((size) => size || { width: image.naturalWidth, height: image.naturalHeight });
   };
 
+  // Older 1:N data: the longest round length that stays within 300 viewBox units.
+  const legacyScaleBar = (scale, pixelsPerUnit, height) => {
+    const unitsPerMeter = UNITS_PER_METER / scale;
+    const length = [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => meters * unitsPerMeter <= 300) || 1;
+    return scaleBar(length, unitsPerMeter * pixelsPerUnit, height);
+  };
+
   const createMobileDrawingSection = (drawingData) => {
     const drawings = Array.isArray(drawingData?.images)
       ? drawingData.images.filter((drawing) => drawing?.src)
@@ -234,6 +239,11 @@
       if (drawing.hideScale) image.dataset.scaleOff = "true";
       const scale = Number(drawing.scale ?? drawingData.scale);
       if (scale > 0) image.dataset.scale = String(scale);
+      const bar = drawing.scaleBar;
+      if (bar && Number(bar.meters) > 0 && Number(bar.width) > 0 && Number(bar.width) <= 1) {
+        image.dataset.barMeters = String(Number(bar.meters));
+        image.dataset.barWidth = String(Number(bar.width));
+      }
       // Each drawing has its own angle; older data had one project-wide angle.
       const north = drawing.north ?? drawingData.north;
       if (north !== "" && north != null && Number.isFinite(Number(north))) image.dataset.north = String(Number(north));
@@ -323,18 +333,22 @@
       // drawing's on-screen size; generated ones are compact and sit inside their cell.
       const scaleOff = currentImage.dataset.scaleOff === "true";
       const drawingScale = scaleOff ? 0 : Number(currentImage.dataset.scale);
+      const barMeters = scaleOff ? 0 : Number(currentImage.dataset.barMeters) || 0;
+      const barWidth = Number(currentImage.dataset.barWidth) || 0;
       const north = currentImage.dataset.north === undefined ? NaN : Number(currentImage.dataset.north);
       const generatedNorth = Number.isFinite(north);
-      const generatedScale = drawingScale > 0;
+      const generatedScale = barMeters > 0 || drawingScale > 0;
       const overlayHeight = Math.round(info.clientHeight * 0.6);
       // The columns stay fixed (10% / 50% / 40%), so the arrow also shrinks to fit a narrow cell.
       const northSize = Math.min(overlayHeight, Math.floor(coordinateInfo.clientWidth) - 10); // minus the cell's 5px padding
       let coordinateOverlay = generatedNorth ? northArrow(northSize, north) : coordinateImage;
       let scaleOverlay = scaleOff ? null : scaleImage;
-      if (generatedScale) {
+      if (barMeters > 0) {
+        scaleOverlay = scaleBar(barMeters, (barWidth * naturalWidth * scale) / barMeters, overlayHeight);
+      } else if (generatedScale) {
         const size = await drawingSize(currentImage);
         if (token !== overlayToken) return;
-        scaleOverlay = scaleBar(drawingScale, (naturalWidth * scale) / size.width, overlayHeight);
+        scaleOverlay = legacyScaleBar(drawingScale, (naturalWidth * scale) / size.width, overlayHeight);
       }
       coordinateInfo.replaceChildren(...(coordinateOverlay && showCoordinate ? [coordinateOverlay] : []));
       scaleInfo.replaceChildren(...(scaleOverlay ? [scaleOverlay] : []));
