@@ -10,7 +10,7 @@
     { id: "office", href: "office.html" },
     { id: "news", href: "news.html" },
     { id: "works-list", href: "./" },
-    { id: "works-gallery", href: "./?view=gallery" },
+    { id: "works-gallery", href: "works-gallery.html" },
   ];
 
   // The FILT mark from runtime/common-menu-v2.js, cropped to its own bounds.

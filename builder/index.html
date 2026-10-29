@@ -648,7 +648,6 @@
     const setPreviewView = (view) => {
       previewView = view;
       document.querySelectorAll("#previewPanel [data-view]").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
-      window.FiltHeader.setActive(`works-${view}`);
       history.replaceState(null, "", view === "gallery" ? "?view=gallery" : location.pathname);
       renderPreview();
     };
@@ -659,14 +658,6 @@
     });
     $("#closePreview").addEventListener("click", () => { $("#previewPanel").hidden = true; });
     document.querySelectorAll("#previewPanel [data-view]").forEach((button) => button.addEventListener("click", () => setPreviewView(button.dataset.view)));
-    // Both tabs edit this sheet; they switch the preview instead of reloading the page.
-    window.FiltHeader.tabs.querySelectorAll('[data-tab^="works-"]').forEach((tab) => tab.addEventListener("click", (event) => {
-      event.preventDefault();
-      const view = tab.dataset.tab.slice("works-".length);
-      if (view === "gallery") $("#previewPanel").hidden = false;
-      setPreviewView(view);
-      if (!$("#previewPanel").hidden) layoutStage();
-    }));
     // The frame's own list/gallery icons link to "#"; the published runtime may not handle that
     // yet, so the builder catches the click and re-renders the other view itself.
     $("#previewFrame").addEventListener("load", () => {

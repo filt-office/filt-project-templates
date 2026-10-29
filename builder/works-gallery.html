@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WORKS GALLERY · FILT. BUILDER</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/suit-font@1.0.0/dist/suit.min.css">
+  <style>
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .card { display: grid; grid-template-rows: auto auto; border: 1px solid #111; background: #fff; }
+    .card.drop-before { box-shadow: -5px 0 0 #111; }
+    .card.drop-after { box-shadow: 5px 0 0 #111; }
+    .card-media { position: relative; aspect-ratio: 4 / 3; background: #eee center / cover no-repeat; cursor: grab; }
+    .card-media.empty { background-image: linear-gradient(to top right, transparent calc(50% - .6px), #d4d4d4 50%, transparent calc(50% + .6px)), linear-gradient(to bottom right, transparent calc(50% - .6px), #d4d4d4 50%, transparent calc(50% + .6px)); }
+    .card-media .no { position: absolute; top: 0; left: 0; padding: 2px 7px; background: #111; color: #fff; font-size: 11px; }
+    .card-media.busy { opacity: .45; pointer-events: none; }
+    .card-media.file-over { box-shadow: inset 0 0 0 3px var(--key); }
+    .card-name { overflow: hidden; padding: 6px 8px; border-top: 1px solid #111; text-overflow: ellipsis; white-space: nowrap; }
+    /* Works not in the gallery: smaller, faded; a click puts them back at the end. */
+    .cards.out { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .cards.out .card { border-color: var(--line); opacity: .55; cursor: pointer; }
+    .cards.out .card:hover { border-color: #111; opacity: 1; }
+    .cards.out .card-media { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header class="fb-header" data-active="works-gallery">
+    <div class="fb-actions" id="account">
+      <span class="dirty" id="dirty" title="저장 안 됨">●</span>
+      <button class="fb-act" disabled title="WORKS는 임시저장이 없습니다. save가 바로 게시 대상에 저장합니다.">draft</button>
+      <button id="save" class="fb-act" title="저장 (Ctrl+S)">save</button>
+    </div>
+  </header>
+  <script src="header.js"></script>
+  <script src="store.js"></script>
+  <script src="row-menu.js"></script>
+  <script src="page-editor.js"></script>
+  <script>
+  (() => {
+    "use strict";
+
+    // Same works.json as the WORKS sheet. The gallery shows works with show.gallery, ordered by
+    // galleryOrder (rows without one follow in sheet order), and the card picture is cardThumb,
+    // falling back to the list thumbnail, as in runtime/works.js.
+    const byGalleryOrder = (works) => works
+      .map((work, index) => ({ work, index }))
+      .sort((a, b) => (a.work.galleryOrder ?? Infinity) - (b.work.galleryOrder ?? Infinity) || a.index - b.index)
+      .map(({ work }) => work);
+    const renumber = (ordered) => ordered.forEach((work, index) => { work.galleryOrder = index + 1; });
+    const nameOf = (work) => [work.nameKo, work.nameEn].filter(Boolean).join(" | ") || work.id || "(이름 없음)";
+
+    FiltPageEditor({
+      page: "works-gallery",
+      load: () => FiltStore.getWorks(),
+      save: (data) => FiltStore.saveWorks(data),
+      previewBody: (dataUrl, runtimeUrl) => `<div data-filt-works></div><script src="${runtimeUrl("works.js")}" data-view="gallery" data-works-src="${dataUrl}" data-list-url="#" data-gallery-url="#"><\/script>`,
+      assetKeys: ["thumb", "cardThumb"],
+      render: (ctx) => {
+        const { h, data } = ctx;
+        data.works = data.works || [];
+        const shown = byGalleryOrder(data.works.filter((work) => work.show?.gallery));
+        const hidden = data.works.filter((work) => !work.show?.gallery);
+        const setGallery = (work, on) => {
+          work.show = { ...work.show, gallery: on };
+          renumber(byGalleryOrder(data.works.filter((other) => other.show?.gallery && other !== work)).concat(on ? [work] : []));
+          if (!on) work.galleryOrder = null;
+          ctx.rerender();
+          ctx.markDirty();
+        };
+
+        const media = (work, index) => {
+          const src = work.cardThumb || work.thumb;
+          const el = h("div", { class: `card-media${src ? "" : " empty"}` }, index === null ? null : h("span", { class: "no" }, String(index + 1)));
+          if (src) FiltStore.assetUrl(src).then((url) => { if (url) el.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`; });
+          return el;
+        };
+
+        const card = (work, index) => {
+          const pic = media(work, index);
+          // Click (or drop a file on) the picture to replace the gallery card image.
+          const replace = async (file) => {
+            if (!file) return;
+            pic.classList.add("busy");
+            try {
+              ctx.toast("업로드 중…");
+              // Works thumbnails go to both PC/ and MOB/, as in the WORKS sheet.
+              work.cardThumb = (await FiltStore.upload("works", "both", file)).PC;
+              ctx.rerender();
+              ctx.markDirty();
+              ctx.toast("교체했습니다");
+            } catch (error) {
+              pic.classList.remove("busy");
+              ctx.toast(error.message, true);
+            }
+          };
+          const isFile = (event) => event.dataTransfer?.types.includes("Files");
+          pic.title = "눌러서 카드 이미지 교체 · 끌어서 순서 변경 · 우클릭으로 빼기";
+          pic.addEventListener("click", async () => replace((await ctx.pickFiles())[0]));
+          pic.addEventListener("dragover", (event) => { if (isFile(event)) { event.preventDefault(); pic.classList.add("file-over"); } });
+          pic.addEventListener("dragleave", () => pic.classList.remove("file-over"));
+          pic.addEventListener("drop", (event) => {
+            if (!isFile(event)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            pic.classList.remove("file-over");
+            replace(event.dataTransfer.files[0]);
+          });
+          const el = h("div", { class: `card${work.archived ? " archived" : ""}` }, pic, h("div", { class: "card-name", title: nameOf(work) }, nameOf(work)));
+          FiltRowMenu.attach(el, {
+            label: nameOf(work),
+            items: [{ text: "갤러리에서 빼기", hint: "WORKS 목록에는 그대로 남습니다", run: () => setGallery(work, false) }],
+          });
+          return ctx.draggable(el, { list: shown, index, handle: pic, axis: "x", onMove: renumber });
+        };
+
+        const outCard = (work) => h("div", {
+          class: `card${work.archived ? " archived" : ""}`,
+          title: "눌러서 갤러리 맨 뒤에 넣기",
+          onclick: () => setGallery(work, true),
+        }, media(work, null), h("div", { class: "card-name" }, nameOf(work)));
+
+        return [
+          ctx.section(`WORKS GALLERY (${shown.length})`, null,
+            shown.length ? h("div", { class: "cards" }, shown.map(card)) : h("p", { class: "muted" }, "갤러리에 나오는 작업이 없습니다.")),
+          hidden.length ? ctx.section(`갤러리에 없는 작업 (${hidden.length})`, null, h("div", { class: "cards out" }, hidden.map(outCard))) : null,
+        ];
+      },
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -2,6 +2,7 @@
 // An archived item stays in the builder (greyed out) with archived: true; previews leave it out,
 // and publishing must drop it too.
 // Usage: FiltRowMenu.attach(element, { list, item, label, onChange }).
+// Pass items: [{ text, hint, danger, run }] instead to show other actions.
 (() => {
   "use strict";
 
@@ -30,7 +31,7 @@
   window.addEventListener("blur", close);
   window.addEventListener("scroll", close, true);
 
-  const open = (event, { list, item, label, onChange }) => {
+  const open = (event, { list, item, label, onChange, items }) => {
     close();
     const button = (text, hint, className, action) => {
       const el = document.createElement("button");
@@ -51,9 +52,9 @@
     const title = document.createElement("div");
     title.className = "fb-menu-label";
     title.textContent = label;
-    menu.append(
-      title,
-      item.archived
+    menu.append(title, ...(items
+      ? items.map((entry) => button(entry.text, entry.hint, entry.danger ? "danger" : "", entry.run))
+      : [item.archived
         ? button("보관 해제", "다시 게시에 나옵니다", "", () => { delete item.archived; onChange(); })
         : button("보관", "목록에는 남고 게시에서는 빠집니다", "", () => { item.archived = true; onChange(); }),
       button("삭제", "", "danger", () => {
@@ -61,8 +62,7 @@
         const index = list.indexOf(item);
         if (index !== -1) list.splice(index, 1);
         onChange();
-      }),
-    );
+      })]));
     document.body.append(menu);
     const box = menu.getBoundingClientRect();
     menu.style.left = `${Math.min(event.clientX, innerWidth - box.width - 8)}px`;
@@ -71,8 +71,10 @@
   };
 
   const attach = (el, options) => {
-    el.classList.toggle("archived", Boolean(options.item.archived));
-    if (options.item.archived) el.title = "보관됨 · 우클릭으로 보관 해제";
+    if (options.item) {
+      el.classList.toggle("archived", Boolean(options.item.archived));
+      if (options.item.archived) el.title = "보관됨 · 우클릭으로 보관 해제";
+    }
     el.addEventListener("contextmenu", (event) => {
       // Selected text in a field keeps the browser's own menu (copy).
       const field = event.target.closest("input, textarea");

@@ -1,12 +1,13 @@
-// Shared editor for HOME, OFFICE and NEWS (runtime/pages/<page>.json).
+// Shared editor for HOME, OFFICE and NEWS (runtime/pages/<page>.json) and the WORKS gallery.
 // A page calls FiltPageEditor({ page, render }) after store.js, header.js and row-menu.js;
 // render(ctx) returns the editor's elements and is called again on ctx.rerender(). The preview
 // draws the unsaved data, minus archived items, with the real runtime/pages.js.
+// Pages with other data pass load / save / previewBody(dataUrl, runtimeUrl) and assetKeys.
 (() => {
   "use strict";
 
   const css = `
-    :root { --line: #d9d9d9; --muted: #777; --bg: #f4f4f2; --danger: #c62828; --row-h: 32px; }
+    :root { --key: #BD005E; --line: #d9d9d9; --muted: #777; --bg: #f4f4f2; --danger: #c62828; --row-h: 32px; }
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
     body { display: grid; grid-template-rows: auto 1fr; font: 12px/1.4 "SUIT", system-ui, sans-serif; color: #111; background: var(--bg); }
@@ -78,7 +79,8 @@
     .pe-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; align-content: start; overflow-y: auto; padding: 12px 14px; }
     .pe-picker-grid button { display: grid; grid-template-rows: 1fr auto; gap: 4px; height: 128px; padding: 0; border: 1px solid var(--line); background: #fff; color: #111; text-align: left; }
     .pe-picker-grid button:hover { border-color: #111; background: #fff; color: #111; }
-    .pe-picker-grid button.on { box-shadow: 0 0 0 3px #111; border-color: #111; }
+    .pe-picker-grid button.on { box-shadow: 0 0 0 3px var(--key); border-color: var(--key); }
+    .pe-picker-foot button.active { border-color: var(--key); background: var(--key); }
     .pe-picker-grid .img { background: #f0f0ee center / cover no-repeat; }
     .pe-picker-grid .name { overflow: hidden; padding: 0 5px 4px; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
     .pe-picker-foot { justify-content: flex-end; border-top: 1px solid #111; }
@@ -105,7 +107,14 @@
   // Uploaded page images go to runtime/assets/pages/PC/.
   const ASSET_FOLDER = "pages";
 
-  window.FiltPageEditor = ({ page, render }) => {
+  window.FiltPageEditor = ({
+    page,
+    render,
+    load = () => window.FiltStore.getPage(page),
+    save: saveData = (data) => window.FiltStore.savePage(page, data),
+    previewBody = (dataUrl, runtimeUrl) => `<div data-filt-page></div><script src="${runtimeUrl("pages.js")}" data-page="${page}" data-page-src="${dataUrl}" data-works-url="#"><\/script>`,
+    assetKeys = ["src", "image"], // fields that hold image paths
+  }) => {
     const store = window.FiltStore;
     const $ = (selector) => document.querySelector(selector);
     const style = document.createElement("style");
@@ -212,7 +221,6 @@
         h("div", { class: "pe-picker-card", role: "dialog", "aria-label": "저장소 이미지에서 선택" },
           h("div", { class: "pe-picker-head" },
             h("h2", {}, "저장소 이미지에서 선택"),
-            h("span", { class: "muted" }, "빌더로 올린 이미지들입니다"),
             h("span", { class: "spacer" }),
             h("button", { onclick: () => done([]) }, "닫기")),
           folders,
@@ -268,7 +276,7 @@
       h,
       toast,
       markDirty,
-      rerender: () => $("#peEditor").replaceChildren(...[render(ctx)].flat()),
+      rerender: () => $("#peEditor").replaceChildren(...[render(ctx)].flat(Infinity).filter(Boolean)),
       pickFiles,
       pickExisting,
       upload,
@@ -309,7 +317,8 @@
       }),
       // Reorders list[index] by dragging el from its handle. Drops only land on items with the same
       // scope; the drop goes before or after the target depending on which half the pointer is in.
-      draggable: (el, { list, index, scope = list, handle = el, axis = "y" }) => {
+      // onMove(list) runs after the move, before the editor redraws.
+      draggable: (el, { list, index, scope = list, handle = el, axis = "y", onMove }) => {
         handle.classList.add("grip");
         handle.title = handle.title || "끌어서 순서 변경";
         handle.addEventListener("mousedown", () => { el.draggable = true; });
@@ -345,6 +354,7 @@
           dragging = null;
           if (to === from) return;
           list.splice(to, 0, list.splice(from, 1)[0]);
+          onMove?.(list);
           ctx.rerender();
           markDirty();
         });
@@ -384,7 +394,7 @@
       if (!value || typeof value !== "object") return value;
       const out = {};
       await Promise.all(Object.entries(value).map(async ([key, item]) => {
-        out[key] = (key === "src" || key === "image") && typeof item === "string" ? await store.assetUrl(item) : await resolveAssets(item);
+        out[key] = assetKeys.includes(key) && typeof item === "string" ? await store.assetUrl(item) : await resolveAssets(item);
       }));
       return out;
     };
@@ -394,8 +404,7 @@
       const copy = await resolveAssets(window.FiltRowMenu.withoutArchived(ctx.data));
       if (token !== previewToken) return;
       const nextUrl = URL.createObjectURL(new Blob([JSON.stringify(copy)], { type: "application/json" }));
-      const src = store.runtimeUrl("pages.js");
-      $("#peFrame").srcdoc = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0}</style></head><body><div data-filt-page></div><script src="${src}" data-page="${page}" data-page-src="${nextUrl}" data-works-url="#"><\/script></body></html>`;
+      $("#peFrame").srcdoc = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0}</style></head><body>${previewBody(nextUrl, store.runtimeUrl)}</body></html>`;
       if (previewUrl) setTimeout(URL.revokeObjectURL.bind(URL, previewUrl), 5000);
       previewUrl = nextUrl;
     };
@@ -411,7 +420,7 @@
 
     const save = async () => {
       try {
-        const result = await store.savePage(page, ctx.data);
+        const result = await saveData(ctx.data);
         setClean();
         toast(`저장했습니다: ${result.path}\n공개 페이지에는 deploy를 누르면 반영됩니다.`);
       } catch (error) {
@@ -433,7 +442,7 @@
       try {
         await store.ready();
         store.mountHeader($("#account"));
-        ctx.data = await store.getPage(page);
+        ctx.data = await load();
         ctx.rerender();
         layoutStage();
         renderPreview();

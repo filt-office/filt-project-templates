@@ -12,12 +12,13 @@
     .slide.drop-after { box-shadow: 5px 0 0 #111; }
     .slide-media { position: relative; aspect-ratio: 16 / 10; background: #eee center / cover no-repeat; cursor: grab; }
     .slide-media .no { position: absolute; top: 0; left: 0; padding: 2px 7px; background: #111; color: #fff; font-size: 11px; }
-    .slide-media .tools { position: absolute; top: 4px; right: 4px; display: flex; gap: 2px; }
-    .slide-media .tools button { background: rgba(255,255,255,.92); }
-    .slide-body { display: grid; gap: 4px; padding: 6px; border-top: 1px solid #111; }
-    .slide-body input, .slide-body select { width: 100%; padding: 3px 5px; border: 1px solid var(--line); background: #fff; }
-    .slide-body input:focus, .slide-body select:focus { outline: none; border-color: #111; }
-    .slide-body .src { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .slide-media.busy { opacity: .45; pointer-events: none; }
+    .slide-media.file-over { box-shadow: inset 0 0 0 3px var(--key); }
+    /* Inputs sit flush in the card: no labels, no padding around them. */
+    .slide-body { display: grid; border-top: 1px solid #111; }
+    .slide-body input, .slide-body select { width: 100%; height: 30px; padding: 0 8px; border: 0; background: #fff; }
+    .slide-body select { border-top: 1px solid var(--line); }
+    .slide-body input:focus, .slide-body select:focus { outline: 2px solid #111; outline-offset: -2px; }
   </style>
 </head>
 <body>
@@ -37,7 +38,7 @@
     "use strict";
 
     // Where each slide is anchored when the screen crops it (CSS object-position).
-    const POSITIONS = [["center top", "위"], ["center center", "가운데"], ["center bottom", "아래"]];
+    const POSITIONS = [["center top", "잘릴 때 기준: 위"], ["center center", "잘릴 때 기준: 가운데"], ["center bottom", "잘릴 때 기준: 아래"]];
 
     FiltPageEditor({
       page: "home",
@@ -71,26 +72,36 @@
         };
 
         const card = (slide, index) => {
-          const media = h("div", { class: "slide-media", title: "끌어서 순서 변경" },
-            h("span", { class: "no" }, String(index + 1)),
-            h("div", { class: "tools" },
-              h("button", {
-                class: "small",
-                title: "이미지 교체",
-                onclick: async () => {
-                  const [file] = await ctx.pickFiles();
-                  if (!file) return;
-                  try {
-                    ctx.toast("업로드 중…");
-                    slide.src = await ctx.upload(file);
-                    ctx.rerender();
-                    ctx.markDirty();
-                    ctx.toast("교체했습니다");
-                  } catch (error) {
-                    ctx.toast(error.message, true);
-                  }
-                },
-              }, "교체")));
+          // Click (or drop a file on) the image to replace it; drag it to reorder.
+          const replace = async (file) => {
+            if (!file) return;
+            media.classList.add("busy");
+            try {
+              ctx.toast("업로드 중…");
+              slide.src = await ctx.upload(file);
+              ctx.rerender();
+              ctx.markDirty();
+              ctx.toast("교체했습니다");
+            } catch (error) {
+              media.classList.remove("busy");
+              ctx.toast(error.message, true);
+            }
+          };
+          const isFile = (event) => event.dataTransfer?.types.includes("Files");
+          const media = h("div", {
+            class: "slide-media",
+            title: "눌러서 이미지 교체 · 끌어서 순서 변경 · 우클릭으로 보관/삭제",
+            onclick: async () => replace((await ctx.pickFiles())[0]),
+            ondragover: (event) => { if (isFile(event)) { event.preventDefault(); media.classList.add("file-over"); } },
+            ondragleave: () => media.classList.remove("file-over"),
+            ondrop: (event) => {
+              if (!isFile(event)) return;
+              event.preventDefault();
+              event.stopPropagation();
+              media.classList.remove("file-over");
+              replace(event.dataTransfer.files[0]);
+            },
+          }, h("span", { class: "no" }, String(index + 1)));
           media.style.backgroundPosition = slide.position || "center center";
           FiltStore.assetUrl(slide.src).then((url) => { if (url) media.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`; });
 
@@ -99,8 +110,8 @@
           const el = h("div", { class: "slide" },
             media,
             h("div", { class: "slide-body" },
-              h("label", {}, h("span", { class: "muted" }, "설명 (alt)"), ctx.input(slide, "alt", { placeholder: "예: Tempin Project", keepEmpty: true })),
-              h("label", {}, h("span", { class: "muted" }, "잘릴 때 기준"), h("select", {
+              ctx.input(slide, "alt", { placeholder: "설명 (alt)", keepEmpty: true }),
+              h("select", {
                 onchange: (event) => {
                   slide.position = event.target.value;
                   media.style.backgroundPosition = slide.position;
@@ -108,19 +119,15 @@
                 },
               },
               POSITIONS.map(([value, label]) => h("option", { value, selected: value === position }, label)),
-              known ? null : h("option", { value: position, selected: true }, position))),
-              h("div", { class: "src", title: slide.src }, slide.src)));
+              known ? null : h("option", { value: position, selected: true }, position))));
 
           ctx.menu(el, slides, index, `${index + 1}번 슬라이드`);
           return ctx.draggable(el, { list: slides, index, handle: media, axis: "x" });
         };
 
         return [
-          ctx.section("HOME 링크", null,
-            h("label", { class: "pe-field" }, h("span", {}, "클릭 시 이동"), ctx.input(data, "worksLink", { placeholder: "/works_list" }))),
           ctx.section(`슬라이드 (${slides.length})`,
             [
-              h("span", { class: "muted" }, "끌어서 순서 변경 · 우클릭으로 보관/삭제 · 1번이 처음 보입니다"),
               h("button", { onclick: addFiles }, "+ 이미지 업로드"),
               h("button", { onclick: addExisting }, "+ 저장소 이미지"),
             ],
