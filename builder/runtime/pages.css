@@ -7,8 +7,8 @@
   --accent: var(--filt-key, #BD005E);
   --bg-color: #fff;
   --panel-hide-width: 210px;
-  font-family: "Suit", "Pretendard Variable", "Pretendard", "Noto Sans KR", sans-serif !important;
-  font-weight: 300;
+  font-family: var(--filt-font-family, "Suit", "Pretendard Variable", "Pretendard", "Noto Sans KR", sans-serif) !important;
+  font-weight: var(--filt-font-weight, 300);
   letter-spacing: 0.4px;
   color: #000;
   -webkit-font-smoothing: antialiased;
@@ -153,16 +153,16 @@ body.menu-open .filt-page .info-desktop .left {
   column-gap: 10px;
   margin-left: 20px;
   padding: 0;
-  font-family: "Pretendard Variable", "Pretendard", "Noto Sans", sans-serif !important;
-  font-size: 12px;
-  font-weight: 300;
+  font-family: var(--filt-font-family, "Pretendard Variable", "Pretendard", "Noto Sans", sans-serif) !important;
+  font-size: var(--filt-size-list, 12px);
+  font-weight: var(--filt-weight-list, 300);
   letter-spacing: 0.4px;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: color var(--filt-motion-hover, 0.2s) ease;
 }
 .filt-page .item:hover { color: var(--accent); }
-.filt-page .item p { margin: 0; padding: 0; line-height: 1.8; }
-.filt-page .item a { color: inherit; text-decoration: none; line-height: 1.8; }
+.filt-page .item p { margin: 0; padding: 0; line-height: calc(var(--filt-line-list, 1.6) * 1.125); }
+.filt-page .item a { color: inherit; text-decoration: none; line-height: calc(var(--filt-line-list, 1.6) * 1.125); }
 
 /* PEOPLE */
 .filt-page .sec.people .item.person {

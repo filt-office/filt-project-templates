@@ -7,16 +7,18 @@
   --panel-width: clamp(300px, 28vw, 430px);
   --panel-hide-width: 210px;
   --panel-padding: clamp(12px, 1vw, 18px);
-  --body-text-size: clamp(11px, 0.82vw, 12px);
-  --caption-size: clamp(8.5px, 0.62vw, 9px);
-  --overview-font-size: clamp(8px, 0.7vw, 10px);
-  --overview-title-font-size: clamp(9px, 0.7vw, 10px);
+  /* Type sizes come from the design system (--filt-size-<id>, design.js); each PC size shrinks with
+     the window down to the same distance below it as the original clamp(). */
+  --body-text-size: clamp(calc(var(--filt-size-body, 12px) - 1px), calc(var(--filt-size-body, 12px) - 12px + 0.82vw), var(--filt-size-body, 12px));
+  --caption-size: clamp(calc(var(--filt-size-caption, 9px) - 0.5px), calc(var(--filt-size-caption, 9px) - 9px + 0.62vw), var(--filt-size-caption, 9px));
+  --overview-font-size: clamp(calc(var(--filt-size-overview, 10px) - 2px), calc(var(--filt-size-overview, 10px) - 10px + 0.7vw), var(--filt-size-overview, 10px));
+  --overview-title-font-size: clamp(calc(var(--filt-size-overview-title, 12px) - 1px), calc(var(--filt-size-overview-title, 12px) - 12px + 0.84vw), var(--filt-size-overview-title, 12px));
   --overview-row-height: clamp(24px, 2.4vw, 35px);
 }
 
 .filt-project-mount {
-  font-family: "Suit","Pretendard Variable", "Noto Sans KR", sans-serif !important;
-  font-weight: 300 !important;
+  font-family: var(--filt-font-family, "Suit","Pretendard Variable", "Noto Sans KR", sans-serif) !important;
+  font-weight: var(--filt-font-weight, 300) !important;
   letter-spacing: 0.4px;
   color: #000;
   background: var(--bg-color);
@@ -119,13 +121,13 @@
   object-fit: cover !important;
 }
 
-/* 여백 (builder): contain with a margin of 5% / 12% of the frame's short side. */
+/* 여백 (builder): contain with a margin of 3% / 12% of the frame's short side. */
 .filt-project-mount .img-section img[data-fit^="pad-"],
 .filt-project-mount .img-section.portrait-mode img[data-fit^="pad-"] {
   object-fit: contain !important;
   box-sizing: border-box !important;
 }
-.filt-project-mount .img-section img[data-fit="pad-s"] { padding: 5vmin !important; }
+.filt-project-mount .img-section img[data-fit="pad-s"] { padding: 3vmin !important; }
 .filt-project-mount .img-section img[data-fit="pad-l"] { padding: 12vmin !important; }
 
 .filt-project-mount .mobile-drawing-section {
@@ -252,7 +254,7 @@
 .filt-project-mount .side-section .text-content * {
   opacity: 1 !important;
   visibility: visible !important;
-  line-height: 1.8 !important;
+  line-height: var(--filt-line-body, 1.8) !important;
 }
 
 .filt-project-mount .side-section .text-content {
@@ -276,7 +278,7 @@
 
 .filt-project-mount .side-section .text-content p {
   margin: 0 !important;
-  font-weight: 500 !important;
+  font-weight: var(--filt-weight-body, 500) !important;
   font-size: inherit !important;
   line-height: inherit !important;
 }
@@ -312,7 +314,8 @@
    smaller and lighter like the original pages (caption 12px at 0.75 opacity next to 16px text). */
 .filt-project-mount .side-section .text-content .side-caption {
   font-size: var(--caption-size) !important;
-  line-height: 1.25 !important;
+  font-weight: var(--filt-weight-caption, 300) !important;
+  line-height: var(--filt-line-caption, 1.25) !important;
   color: #888 !important;
   opacity: 1 !important;
 }
@@ -354,7 +357,7 @@
 }
 
 .filt-project-mount .fixed-table td {
-  font-weight: 400;
+  font-weight: var(--filt-weight-overview, 400);
   text-align: right;
   vertical-align: top;
   border-right: 0.5px solid #000 !important;
@@ -380,13 +383,13 @@
 }
 
 .filt-project-mount .project-title-en {
-  font-weight: 700;
+  font-weight: var(--filt-weight-overview-title, 700);
   font-size: var(--overview-title-font-size);
-  line-height: 1.3;
+  line-height: var(--filt-line-overview-title, 1.3);
 }
 .filt-project-mount .project-subtitle {
   display: block;
-  font-weight: 400;
+  font-weight: var(--filt-weight-overview, 400);
   font-size: var(--overview-font-size);
   margin-top: 2px;
 }
@@ -438,8 +441,8 @@
   left: 20px;
 }
 #filt-common-menu-v2 .panel-menu a {
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: var(--filt-size-menu, 12px);
+  line-height: var(--filt-line-menu, 1.6);
   letter-spacing: 0.3px;
 }
 #filt-common-menu-v2 .panel-footer {
@@ -495,10 +498,10 @@ body.filt-menu-open .filt-project-mount .img-section {
   .filt-project-mount {
     --panel-width: 100vw;
     --panel-padding: 12px;
-    --body-text-size: 13.5px;
-    --caption-size: clamp(9px, 2.4vw, 10px);
-    --overview-font-size: 10px;
-    --overview-title-font-size: 12px;
+    --body-text-size: var(--filt-size-body-mobile, 13.5px);
+    --caption-size: clamp(calc(var(--filt-size-caption-mobile, 10px) - 1px), calc(var(--filt-size-caption-mobile, 10px) - 10px + 2.4vw), var(--filt-size-caption-mobile, 10px));
+    --overview-font-size: var(--filt-size-overview-mobile, 10px);
+    --overview-title-font-size: var(--filt-size-overview-title-mobile, 12px);
     --overview-row-height: 35px;
     position: relative !important;
     /* Full-bleed: project-template.js measures the host page's side offset (e.g. Imweb widget padding). */
@@ -617,7 +620,7 @@ body.filt-menu-open .filt-project-mount .img-section {
     height: var(--overview-row-height) !important;
     padding: 3px 5px;
     font-size: var(--overview-font-size);
-    line-height: 1.6;
+    line-height: var(--filt-line-overview, 1.6);
     border: 0 !important;
     box-shadow: inset 0 -0.5px 0 #000;
     overflow-wrap: break-word;
@@ -660,7 +663,7 @@ body.filt-menu-open .filt-project-mount .img-section {
   }
 
   .filt-project-mount .project-title-en {
-    line-height: 1.4;
+    line-height: calc(var(--filt-line-overview-title, 1.3) * 1.0769);
     white-space: nowrap;
   }
 
@@ -677,12 +680,12 @@ body.filt-menu-open .filt-project-mount .img-section {
     padding: 12px 18px 18px !important;
     border-bottom: 0;
     font-size: var(--body-text-size) !important;
-    line-height: 1.5 !important;
+    line-height: calc(var(--filt-line-body, 1.8) * 0.8333) !important;
   }
 
   .filt-project-mount .side-section .text-content,
   .filt-project-mount .side-section .text-content * {
-    line-height: 1.5 !important;
+    line-height: calc(var(--filt-line-body, 1.8) * 0.8333) !important;
   }
 
   .filt-project-mount .side-section .text-content br {
@@ -702,7 +705,7 @@ body.filt-menu-open .filt-project-mount .img-section {
   .filt-project-mount .side-section .side-caption {
     margin-top: 6px;
     font-size: var(--caption-size) !important;
-    line-height: 1.25 !important;
+    line-height: var(--filt-line-caption, 1.25) !important;
     white-space: normal;
   }
 
