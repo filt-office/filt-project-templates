@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NEWS · FILT. BUILDER</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/suit-font@1.0.0/dist/suit.min.css">
+  <style>
+    .recruit-sheet textarea { display: block; width: 100%; min-width: 240px; min-height: 76px; padding: 8px; border: 0; background: #fff; color: inherit; font: inherit; line-height: 1.5; resize: vertical; }
+    .recruit-note { margin-top: 8px; border: 1px solid #111; }
+    .recruit-note textarea { display: block; width: 100%; min-height: 72px; padding: 8px; border: 0; background: #fff; color: inherit; font: inherit; line-height: 1.5; resize: vertical; }
+  </style>
 </head>
 <body>
   <header class="fb-header" data-active="news">
@@ -16,6 +21,7 @@
   </header>
   <script src="header.js"></script>
   <script src="store.js"></script>
+  <script src="add-controls.js"></script>
   <script src="row-menu.js"></script>
   <script src="page-editor.js"></script>
   <script>
@@ -31,8 +37,13 @@
         data.news = data.news || [];
         data.recruit = data.recruit || [];
         const cell = (obj, key, size = "mid", props) => h("td", { class: size }, ctx.input(obj, key, props));
+        const textBox = (obj, key, props = {}) => h("textarea", {
+          rows: 3,
+          oninput: (event) => { obj[key] = event.target.value; ctx.markDirty(); },
+          ...props,
+        }, obj[key] ?? "");
 
-        // News and recruit rows share one shape; the list is newest first, so new rows go on top.
+        // NEWS retains its editorial fields; RECRUIT has dedicated hiring fields.
         // Drag a row by its number to reorder; right-click it to archive or delete.
         const sheet = (list) => ctx.sheet(
           ["#", "제목", "모바일 제목 (다를 때만)", "날짜", "종류", "작성자", "이미지", "본문 (모바일에서 펼침)", "링크"],
@@ -51,21 +62,40 @@
             ctx.menu(tr, list, index, entry.title ? `"${entry.title}"` : "이 행");
             return ctx.draggable(tr, { list, index, handle: num });
           }));
-        const addTop = (list) => h("button", {
-          onclick: () => {
-            list.unshift({ title: "", date: today(), type: "", author: "" });
+        const recruitSheet = (list) => {
+          const table = ctx.sheet(
+            ["#", "제목", "모바일 제목 (다를 때만)", "모집 분야", "모집 요건", "제출물", "마감일", "이미지 (썸네일)"],
+            list.map((entry, index) => {
+              const num = h("td", { class: "num" }, String(index + 1));
+              const name = `RECRUIT ${index + 1}번`;
+              const tr = h("tr", {},
+                num,
+                cell(entry, "title", "wide", { keepEmpty: true, placeholder: "예: 건축설계 신입·경력 모집", "aria-label": `${name} 제목` }),
+                cell(entry, "mobileTitle", "mid", { placeholder: "비우면 제목과 동일", "aria-label": `${name} 모바일 제목` }),
+                cell(entry, "field", "mid", { placeholder: "예: 건축설계 / 인턴", "aria-label": `${name} 모집 분야` }),
+                h("td", { class: "wide" }, textBox(entry, "requirements", { placeholder: "경력, 자격, 사용 프로그램 등", "aria-label": `${name} 모집 요건` })),
+                h("td", { class: "wide" }, textBox(entry, "submissions", { placeholder: "이력서, 포트폴리오, 제출 방법 등", "aria-label": `${name} 제출물` })),
+                cell(entry, "deadline", "mid", { placeholder: "상시모집 / YYYY/MM/DD", "aria-label": `${name} 마감일` }),
+                h("td", { class: "img" }, ctx.image(entry, "image")));
+              ctx.menu(tr, list, index, entry.title ? `"${entry.title}"` : "이 공고");
+              return ctx.draggable(tr, { list, index, handle: num });
+            }));
+          table.classList.add("recruit-sheet");
+          return table;
+        };
+        const addTop = (list, label, makeEntry) => FiltAdd.line(label, () => {
+            list.unshift(makeEntry());
             ctx.rerender();
             ctx.markDirty();
-          },
-        }, "+ 맨 위에 추가");
+          });
 
         return [
-          ctx.section(`NEWS (${data.news.length})`, addTop(data.news), sheet(data.news)),
-          ctx.section(`RECRUIT (${data.recruit.length})`, addTop(data.recruit),
-            sheet(data.recruit),
-            h("label", { class: "pe-field", style: "margin-top:8px" },
-              h("span", {}, "공고 없을 때 문구"),
-              ctx.input(data, "recruitEmpty", { placeholder: "진행중인 채용 공고가 없습니다." }))),
+          ctx.section(`NEWS (${data.news.length})`, null, sheet(data.news), addTop(data.news, "NEWS 행 추가 (맨 위)", () => ({ title: "", date: today(), type: "", author: "" }))),
+          ctx.section(`RECRUIT (${data.recruit.length})`, null,
+            recruitSheet(data.recruit),
+            addTop(data.recruit, "RECRUIT 공고 추가 (맨 위)", () => ({ title: "", mobileTitle: "", field: "", requirements: "", submissions: "", deadline: "", image: "" })),
+            h("div", { class: "recruit-note" },
+              textBox(data, "recruitEmpty", { placeholder: "채용 관련 안내를 자유롭게 입력하세요.", "aria-label": "RECRUIT 안내 텍스트" }))),
         ];
       },
     });

@@ -30,6 +30,7 @@
   </header>
   <script src="header.js"></script>
   <script src="store.js"></script>
+  <script src="add-controls.js"></script>
   <script src="row-menu.js"></script>
   <script src="page-editor.js"></script>
   <script>
@@ -55,7 +56,7 @@
         const add = (list, item) => () => { list.push(item()); ctx.rerender(); ctx.markDirty(); };
 
         const contact = ctx.section("OFFICE · 연락처",
-          h("button", { onclick: add(data.contact, () => ({ text: "" })) }, "+ 행 추가"),
+          null,
           ctx.sheet(["#", "표시 문구", "모바일 문구 (다를 때만)", "링크"], data.contact.map((entry, index) => {
             const num = h("td", { class: "num" }, String(index + 1));
             const tr = h("tr", {},
@@ -65,7 +66,8 @@
               cell(entry, "link", "mid", { placeholder: "https:// · mailto:" }));
             ctx.menu(tr, data.contact, index, entry.text ? `"${entry.text}"` : "이 행");
             return ctx.draggable(tr, { list: data.contact, index, handle: num });
-          })));
+          })),
+          FiltAdd.line("연락처 행 추가", add(data.contact, () => ({ text: "" }))));
 
         const careerRows = (person) => {
           person.career = person.career || [];
@@ -100,9 +102,8 @@
           return [
             h("tr", { class: "sub-head" }, ["#", "기간", "기관", "직함", "모바일 기관", "모바일 직함", "현재"].map((label) => h("td", {}, label))),
             rows,
-            h("tr", { class: "add" }, h("td", { colspan: 7 },
-              h("button", { class: "small", onclick: add(person.career, () => ({ gap: true })) }, "+ 경력"),
-              h("span", { class: "muted" }, "  빈 행은 간격(빈 줄)으로 표시됩니다 · 번호를 끌어서 순서 변경 · 우클릭으로 보관/삭제"))),
+            h("tr", { class: "filt-add-row" }, h("td", { colspan: 7 },
+              FiltAdd.line(`${person.nameKo || "직원"} 경력 행 추가`, add(person.career, () => ({ gap: true }))))),
           ];
         };
 
@@ -135,14 +136,12 @@
         };
         const newPerson = (principal) => () => ({ ...(principal ? { principal: true } : {}), nameKo: "", roleKo: "", nameEn: "", roleEn: "", email: "", career: [] });
 
-        const people = ctx.section("PEOPLE",
-          [
-            h("button", { onclick: add(data.people, newPerson(true)) }, "+ 대표 추가"),
-            h("button", { onclick: add(data.people, newPerson(false)) }, "+ 스탭 추가"),
-          ],
+        const people = ctx.section("PEOPLE", null,
           table(true),
+          FiltAdd.line("대표 추가", add(data.people, newPerson(true))),
           h("div", { class: "people-gap" }),
-          table(false));
+          table(false),
+          FiltAdd.line("스탭 추가", add(data.people, newPerson(false))));
 
         return [contact, people];
       },

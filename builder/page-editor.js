@@ -20,12 +20,15 @@
     button.small:hover { border-color: #111; }
     button.danger:hover { background: var(--danger); border-color: var(--danger); }
     button:disabled { opacity: .35; pointer-events: none; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--key); outline-offset: 2px; }
     .dirty { color: var(--danger); visibility: hidden; }
     .dirty.show { visibility: visible; }
     .spacer { flex: 1; }
     .muted { color: var(--muted); }
 
     .pe-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 38%); min-height: 0; }
+    .pe-layout.fb-preview-collapsed { grid-template-columns: minmax(0, 1fr) 0; }
+    .pe-layout.fb-preview-collapsed .pe-preview { display: none; }
     .pe-layout.no-preview { grid-template-columns: minmax(0, 1fr) 0; }
     .pe-layout.no-preview .pe-preview { display: none; }
     .pe-editor { overflow: auto; min-height: 0; padding: 0 0 40px; background: #fff; border-right: 1px solid #111; }
@@ -35,7 +38,7 @@
     .pe-field { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
     .pe-field > span { width: 120px; flex: none; color: var(--muted); }
     .pe-field input { flex: 1; min-width: 0; padding: 4px 6px; border: 1px solid var(--line); }
-    .pe-field input:focus { outline: none; border-color: #111; }
+    .pe-field input:focus { outline: 2px solid var(--key); outline-offset: -2px; border-color: var(--key); }
 
     .pe-sheet-wrap { overflow-x: auto; border: 1px solid #111; }
     table.pe-sheet { border-collapse: separate; border-spacing: 0; min-width: 100%; background: #fff; }
@@ -47,14 +50,14 @@
     .pe-sheet td.num { width: 30px; padding: 0 6px; color: var(--muted); text-align: right; }
     .pe-sheet td.check { width: 44px; text-align: center; }
     .pe-sheet td input[type="text"], .pe-sheet td select { width: 100%; height: var(--row-h); padding: 0 6px; border: 0; background: transparent; }
-    .pe-sheet td input:focus, .pe-sheet td select:focus { outline: 2px solid #111; outline-offset: -2px; background: #fff; }
+    .pe-sheet td input:focus, .pe-sheet td select:focus { outline: 2px solid var(--key); outline-offset: -2px; background: #fff; }
     .pe-sheet td.wide input { min-width: 320px; }
     .pe-sheet td.mid input { min-width: 160px; }
     .pe-sheet td.short input { min-width: 90px; }
     /* Image cell: a faint X marks an empty placeholder; an image fills the cell (cover). */
     .thumb { position: relative; display: block; width: 100%; min-width: 56px; height: var(--row-h); background: center / cover no-repeat; cursor: pointer; }
     .thumb.empty { background-image: linear-gradient(to top right, transparent calc(50% - .6px), #d4d4d4 50%, transparent calc(50% + .6px)), linear-gradient(to bottom right, transparent calc(50% - .6px), #d4d4d4 50%, transparent calc(50% + .6px)); }
-    .thumb:hover, .thumb:focus-visible, .thumb.drop { box-shadow: inset 0 0 0 2px #111; outline: none; }
+    .thumb:hover, .thumb:focus-visible, .thumb.drop { box-shadow: inset 0 0 0 2px var(--key); outline: none; }
     .thumb.busy { opacity: .45; pointer-events: none; }
     .thumb .x { position: absolute; top: 0; right: 0; display: none; width: 15px; height: 15px; padding: 0; border: 0; background: #111; color: #fff; font-size: 9px; line-height: 15px; }
     .thumb:hover .x { display: block; }
@@ -127,7 +130,7 @@
     document.body.append(
       h("div", { class: `pe-layout${preview ? "" : " no-preview"}`, id: "peLayout" },
         h("main", { class: "pe-editor", id: "peEditor" }, h("p", { class: "pe-section muted" }, "불러오는 중…")),
-        h("section", { class: "pe-preview", "aria-label": "미리보기" },
+        h("section", { class: "pe-preview", id: "pePreview", "aria-label": "미리보기" },
           h("div", { class: "pe-preview-bar" },
             h("strong", {}, "미리보기"),
             h("button", { class: "active", dataset: { device: "desktop" } }, "PC"),
@@ -153,9 +156,12 @@
     };
 
     let dirty = false;
+    let editRevision = 0;
+    let saving = null;
     let dragging = null;
     let previewTimer = null;
     const markDirty = () => {
+      editRevision += 1;
       dirty = true;
       $("#dirty").classList.add("show");
       clearTimeout(previewTimer);
@@ -170,11 +176,12 @@
       picker.click();
     });
     const upload = async (file) => (await store.upload(ASSET_FOLDER, "PC", file)).PC;
-    const imageSlot = (src, { upload, clear, resolve }) => {
+    const imageSlot = (src, { upload, clear, resolve, select, label = "이미지" }) => {
       const box = h("div", {
         class: `thumb ${src ? "filled" : "empty"}`,
         tabindex: 0,
         role: "button",
+        "aria-label": `${label} ${src ? "교체" : "업로드"}. Enter 또는 Space로 파일 선택, Shift+F10으로 메뉴 열기`,
         title: src ? `${src}
 클릭하거나 파일을 끌어다 놓으면 교체` : "클릭하거나 파일을 끌어다 놓아 업로드",
       });
@@ -187,16 +194,28 @@
           await upload(file);
           toast("업로드 완료");
         } catch (error) {
+          toast(`${file.name}: ${error.message || "업로드하지 못했습니다."}`, true);
+        } finally {
           box.classList.remove("busy");
-          toast(error.message, true);
         }
       };
       const pick = () => {
         const picker = h("input", { type: "file", accept: "image/*", onchange: () => run(picker.files[0]) });
         picker.click();
       };
+      const chooseExisting = async () => {
+        try {
+          const [picked] = await pickExisting({ multiple: false });
+          if (picked) await select?.(picked);
+        } catch (error) {
+          toast(error.message || "저장소 이미지를 선택하지 못했습니다.", true);
+        }
+      };
       box.addEventListener("click", (event) => { if (!event.target.closest(".x")) pick(); });
-      box.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); pick(); } });
+      box.addEventListener("keydown", (event) => {
+        if (event.target.closest(".x")) return;
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); pick(); }
+      });
       const isFile = (event) => event.dataTransfer?.types.includes("Files");
       box.addEventListener("dragover", (event) => { if (!isFile(event)) return; event.preventDefault(); box.classList.add("drop"); });
       box.addEventListener("dragleave", () => box.classList.remove("drop"));
@@ -207,7 +226,23 @@
         box.classList.remove("drop");
         run(event.dataTransfer.files[0]);
       });
-      if (src) box.append(h("button", { class: "x", title: "이미지 빼기", onclick: () => { if (confirm("이미지를 뺄까요?")) clear(); } }, "✕"));
+      if (src) box.append(h("button", {
+        type: "button",
+        class: "x",
+        "aria-label": `${label} 비우기`,
+        title: "이미지 빼기",
+        onkeydown: (event) => { if (event.key === "Enter" || event.key === " ") event.stopPropagation(); },
+        onclick: (event) => { event.stopPropagation(); if (confirm("이미지를 뺄까요?")) clear(); },
+      }, "✕"));
+      // Existing row-menu items provide the keyboard ContextMenu/Shift+F10 path without adding controls.
+      window.FiltRowMenu?.attach?.(box, {
+        label,
+        items: [
+          { text: src ? "이미지 교체" : "이미지 업로드", hint: "파일을 선택합니다", run: pick },
+          ...(select ? [{ text: "저장소에서 선택", hint: "이미 올린 이미지를 연결합니다", run: chooseExisting }] : []),
+          ...(src ? [{ text: "이미지 비우기", hint: "원본 파일은 삭제하지 않습니다", danger: true, run: () => { if (confirm("이미지를 뺄까요?")) clear(); } }] : []),
+        ],
+      });
       return box;
     };
 
@@ -275,12 +310,34 @@
         .catch((error) => { grid.replaceChildren(h("p", { class: "muted" }, error.message)); });
     });
 
+    const labelSheetFields = (root = $("#peEditor")) => {
+      root.querySelectorAll("table.pe-sheet").forEach((table, tableIndex) => {
+        const headers = [...table.querySelectorAll("thead th")];
+        headers.forEach((header, columnIndex) => {
+          header.scope = "col";
+          if (!header.id) header.id = `pe-sheet-${tableIndex}-col-${columnIndex}`;
+        });
+        [...table.querySelectorAll("tbody tr")].forEach((row, rowIndex) => {
+          [...row.cells].forEach((cell, columnIndex) => {
+            const column = headers[columnIndex]?.textContent?.trim() || "입력";
+            cell.querySelectorAll("input, select, textarea").forEach((field) => {
+              if (field.hasAttribute("aria-label") || field.hasAttribute("aria-labelledby") || field.hasAttribute("title")) return;
+              field.setAttribute("aria-label", `${column} · ${row.dataset.label || `${rowIndex + 1}행`}`);
+            });
+          });
+        });
+      });
+    };
+
     const ctx = {
       data: { version: 1 },
       h,
       toast,
       markDirty,
-      rerender: () => $("#peEditor").replaceChildren(...[render(ctx)].flat(Infinity).filter(Boolean)),
+      rerender: () => {
+        $("#peEditor").replaceChildren(...[render(ctx)].flat(Infinity).filter(Boolean));
+        labelSheetFields();
+      },
       pickFiles,
       pickExisting,
       refreshPreview: () => renderPreview(),
@@ -310,7 +367,9 @@
       // Image placeholder for obj[key]: click or drop a file to upload, ✕ to clear.
       image: (obj, key) => imageSlot(obj[key], {
         resolve: store.assetUrl,
+        label: `${key} 이미지`,
         upload: async (file) => { obj[key] = await upload(file); ctx.rerender(); markDirty(); },
+        select: async (src) => { obj[key] = src; ctx.rerender(); markDirty(); },
         clear: () => { delete obj[key]; ctx.rerender(); markDirty(); },
       }),
       // Right-click menu (보관 / 삭제) for list[index]; see row-menu.js.
@@ -326,7 +385,9 @@
       draggable: (el, { list, index, scope = list, handle = el, axis = "y", onMove }) => {
         handle.classList.add("grip");
         handle.title = handle.title || "끌어서 순서 변경";
-        handle.addEventListener("mousedown", () => { el.draggable = true; });
+        handle.tabIndex = handle.tabIndex >= 0 ? handle.tabIndex : 0;
+        if (!handle.hasAttribute("aria-label")) handle.setAttribute("aria-label", "행 순서 변경. 끌어서 순서를 바꾸고 Shift+F10으로 행 메뉴를 엽니다.");
+        handle.addEventListener("mousedown", (event) => { if (event.button === 0) el.draggable = true; });
         handle.addEventListener("mouseup", () => { el.draggable = false; });
         const after = (event) => {
           const box = el.getBoundingClientRect();
@@ -334,7 +395,7 @@
         };
         const clear = () => el.classList.remove("drop-before", "drop-after");
         el.addEventListener("dragstart", (event) => {
-          if (event.target !== el) return;
+          if (event.target !== el && !handle.contains(event.target)) return;
           dragging = { list, index, scope };
           el.classList.add("dragging");
           event.dataTransfer.effectAllowed = "move";
@@ -370,7 +431,7 @@
         body),
       sheet: (headers, rows) => h("div", { class: "pe-sheet-wrap" },
         h("table", { class: "pe-sheet" },
-          h("thead", {}, h("tr", {}, headers.map((label) => h("th", {}, label)))),
+          h("thead", {}, h("tr", {}, headers.map((label) => h("th", { scope: "col" }, label)))),
           h("tbody", {}, rows))),
     };
 
@@ -382,7 +443,7 @@
 
     const layoutStage = () => {
       const stage = $("#peStage");
-      if (!stage.clientWidth) return;
+      if (!stage.clientWidth || !stage.clientHeight) return;
       const size = VIEWPORTS[device];
       const scale = Math.min(1, (stage.clientWidth - 24) / size.width);
       const height = device === "mobile" ? Math.min(size.height, (stage.clientHeight - 24) / scale) : (stage.clientHeight - 24) / scale;
@@ -421,21 +482,53 @@
       layoutStage();
     }));
     new ResizeObserver(layoutStage).observe($("#peStage"));
+    if (preview) window.FiltHeader?.mountPreviewToggle?.({
+      layout: $("#peLayout"),
+      pane: $("#pePreview"),
+      onChange: () => requestAnimationFrame(layoutStage),
+    });
     // Colours loaded (or changed on the design page): redraw with them.
     document.addEventListener("filt-design", () => { clearTimeout(previewTimer); previewTimer = setTimeout(renderPreview, 300); });
 
     // ---------- load / save ----------
 
-    const save = async () => {
-      try {
-        const result = await saveData(ctx.data);
-        setClean();
-        toast(`저장했습니다: ${result.path}\n공개 페이지에는 deploy를 누르면 반영됩니다.`);
-        return true;
-      } catch (error) {
-        toast(error.message, true);
-        return false;
-      }
+    const save = () => {
+      if (saving) return saving;
+      const revision = editRevision;
+      const snapshot = JSON.parse(JSON.stringify(ctx.data));
+      const button = $("#save");
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      saving = (async () => {
+        try {
+          // Defer invocation so even a synchronous failure reaches the same cleanup path.
+          const result = await Promise.resolve().then(() => saveData(snapshot));
+          // WORKS storage stamps saved rows; merge only that metadata, never replace live edits.
+          if (Array.isArray(snapshot.works) && Array.isArray(ctx.data.works)) {
+            const savedRows = new Map(snapshot.works.map((work) => [work.id, work]));
+            ctx.data.works.forEach((work) => {
+              const saved = savedRows.get(work.id);
+              if (saved?.edited) work.edited = saved.edited;
+            });
+          }
+          if (editRevision === revision) {
+            setClean();
+            toast(`저장했습니다: ${result.path}\n공개 페이지에는 deploy를 누르면 반영됩니다.`);
+          } else {
+            toast(`저장했습니다: ${result.path}\n저장 중 수정한 내용은 아직 미저장입니다. 다시 save를 눌러주세요.`);
+          }
+          // A "save and leave" request must not discard edits made while the save was pending.
+          return !dirty;
+        } catch (error) {
+          toast(error.message, true);
+          return false;
+        } finally {
+          saving = null;
+          button.disabled = false;
+          button.removeAttribute("aria-busy");
+        }
+      })();
+      return saving;
     };
     window.FiltHeader.guard({ isDirty: () => dirty, save, discard: setClean });
     $("#save").addEventListener("click", save);

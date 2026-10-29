@@ -101,6 +101,89 @@
     .fb-modal-actions button.primary { background: #111; color: #fff; }
     .fb-modal-actions button.primary:hover { background: var(--filt-key, #BD005E); }
     .fb-modal-actions button.danger:hover { background: #c62828; }
+    /* Editor-only interaction theme; follows the key colour from DESIGN. */
+    ::selection { background: var(--filt-key, #BD005E); color: #fff; }
+    button, input, select, textarea, .thumb, .fb-modal-card, .pe-picker-card, .filt-add-menu { border-radius: 0 !important; }
+    input[type="color"]::-webkit-color-swatch, input[type="color"]::-webkit-color-swatch-wrapper { border-radius: 0; }
+    input[type="color"]::-moz-color-swatch { border-radius: 0; }
+    /* The same square key-colour focus cue is used for named and unnamed editor controls. */
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
+    a:focus-visible, [role="button"]:focus-visible, [tabindex]:focus-visible {
+      outline: 2px solid var(--filt-key, #BD005E) !important;
+      outline-offset: 2px !important;
+      border-radius: 0 !important;
+    }
+    body input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-grid;
+      place-content: center;
+      flex: none;
+      width: 14px;
+      height: 14px;
+      padding: 0 !important;
+      border: 1px solid #111 !important;
+      background: #fff !important;
+      vertical-align: middle;
+      cursor: pointer;
+      accent-color: var(--filt-key, #BD005E);
+    }
+    body input[type="checkbox"]::before {
+      content: "";
+      width: 7px;
+      height: 4px;
+      margin-top: -2px;
+      border-left: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      transform: rotate(-45deg);
+      visibility: hidden;
+    }
+    body input[type="checkbox"]:checked {
+      border-color: var(--filt-key, #BD005E) !important;
+      background: var(--filt-key, #BD005E) !important;
+    }
+    body input[type="checkbox"]:checked::before { visibility: visible; }
+    body input[type="checkbox"]:hover { border-color: var(--filt-key, #BD005E) !important; }
+    body input[type="checkbox"]:focus-visible { outline: 2px solid var(--filt-key, #BD005E) !important; outline-offset: 2px !important; }
+    body input[type="checkbox"]:disabled { opacity: .35; cursor: default; }
+    button.hide-toggle.on {
+      border-color: var(--filt-key, #BD005E) !important;
+      background-color: var(--filt-key, #BD005E) !important;
+    }
+    button.show-toggle.on { border-color: #111 !important; background-color: #111 !important; box-shadow: none !important; }
+    .dragging { opacity: 1 !important; background-color: var(--filt-key, #BD005E) !important; color: #fff !important; }
+    tr.dragging > td, .dragging .slide-body, .dragging .card-name,
+    .dragging input:not([type="checkbox"]), .dragging select, .dragging textarea,
+    .dragging .block-text, .dragging .text-tools {
+      background-color: var(--filt-key, #BD005E) !important;
+      color: #fff !important;
+    }
+    tr.drop-before > td { box-shadow: inset 0 2px 0 var(--filt-key, #BD005E) !important; }
+    tr.drop-after > td { box-shadow: inset 0 -2px 0 var(--filt-key, #BD005E) !important; }
+    .slide.drop-before, .card.drop-before, .color.drop-before { box-shadow: -5px 0 0 var(--filt-key, #BD005E) !important; }
+    .slide.drop-after, .card.drop-after, .color.drop-after { box-shadow: 5px 0 0 var(--filt-key, #BD005E) !important; }
+    tr.drop-before > td, tr.drop-after > td, .slide.drop-before .slide-body,
+    .slide.drop-after .slide-body, .card.drop-before .card-name, .card.drop-after .card-name,
+    .thumb.drop, .file-over, .card-media.over, .gallery-group.over {
+      background-color: color-mix(in srgb, var(--filt-key, #BD005E) 12%, #fff) !important;
+    }
+    .thumb.drop, .file-over { box-shadow: inset 0 0 0 3px var(--filt-key, #BD005E) !important; }
+    .slide-media.file-over::before, .card-media.file-over::before, .card-media.over::before, .thumb.drop::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: color-mix(in srgb, var(--filt-key, #BD005E) 18%, transparent);
+      pointer-events: none;
+    }
+    /* Preview collapse keeps the existing iframe in place and expands the editor grid. */
+    .fb-preview-collapsed { grid-template-columns: minmax(0, 1fr) !important; }
+    [hidden] { display: none !important; }
+    /* Same first control below the tabs as WORKS-LIST; never part of save/deploy actions. */
+    .fb-preview-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--line, #d9d9d9); background: #fff; }
+    body.fb-has-preview-tools { grid-template-rows: auto auto minmax(0, 1fr); }
+    button.fb-preview-toggle { flex: none; align-self: flex-start; margin: 0; padding: 4px 9px; border: 1px solid #111; border-radius: 0; background: #fff; color: #111; font: 12px/1.4 "SUIT", system-ui, sans-serif; white-space: nowrap; cursor: pointer; }
+    button.fb-preview-toggle:hover { background: #111; color: #fff; }
   `;
 
   const font = document.createElement("link");
@@ -139,6 +222,57 @@
 
   header.prepend(logo);
   header.append(nav);
+
+  // A page opts in only when it has an existing preview pane. The iframe is never removed.
+  const previewToggleState = new WeakMap();
+  const mountPreviewToggle = ({ layout, pane, onChange } = {}) => {
+    if (!layout || !pane) return null;
+    let tools = document.querySelector(".filters, .bar, .fb-preview-tools");
+    if (!tools) {
+      tools = document.createElement("div");
+      tools.className = "fb-preview-tools";
+      header.after(tools);
+      document.body.classList.add("fb-has-preview-tools");
+    }
+    if (!pane.id) pane.id = "fb-preview-pane";
+
+    let toggle = tools.querySelector("[data-fb-preview-toggle]");
+    let state = toggle && previewToggleState.get(toggle);
+    if (!toggle) {
+      toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "fb-preview-toggle";
+      toggle.setAttribute("data-fb-preview-toggle", "");
+      toggle.setAttribute("aria-controls", pane.id || "");
+      tools.prepend(toggle);
+      state = { layout, pane, onChange, expanded: !pane.hidden };
+      previewToggleState.set(toggle, state);
+      toggle.addEventListener("click", (event) => {
+        if (event.defaultPrevented) return;
+        state.expanded = !state.expanded;
+        state.apply(true);
+      });
+    } else {
+      state = state || { expanded: toggle.getAttribute("aria-expanded") !== "false" };
+      state.layout = layout;
+      state.pane = pane;
+      state.onChange = onChange;
+      previewToggleState.set(toggle, state);
+      toggle.setAttribute("aria-controls", pane.id || "");
+    }
+
+    state.apply = (notify) => {
+      state.layout.classList.toggle("fb-preview-collapsed", !state.expanded);
+      state.pane.hidden = !state.expanded;
+      toggle.setAttribute("aria-expanded", String(state.expanded));
+      toggle.textContent = "미리보기";
+      toggle.setAttribute("aria-label", "미리보기");
+      toggle.title = state.expanded ? "미리보기 접기" : "미리보기 펼치기";
+      if (notify) state.onChange?.(state.expanded);
+    };
+    state.apply(false);
+    return toggle;
+  };
 
   // ---------- unsaved changes ----------
   // A page registers guard({ isDirty, save, discard, saveLabel }). Leaving through a builder link,
@@ -188,5 +322,5 @@
     if (await leave()) location.href = link.href;
   });
 
-  window.FiltHeader = { setActive, tabs: nav, guard: (options) => { guard = options; }, leave };
+  window.FiltHeader = { setActive, tabs: nav, guard: (options) => { guard = options; }, leave, mountPreviewToggle };
 })();

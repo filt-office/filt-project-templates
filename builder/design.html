@@ -8,16 +8,23 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
   <style>
     /* The page is the design guide itself: chapters with the live specimen and its values. */
-    .guide { max-width: 1120px; margin: 0 auto; padding: 8px 24px 80px; }
+    .guide { --header-edge: 200px; --header-edge-width: 1.5px; --label-width: 150px; --guide-inset: 24px; --label-gap: calc(var(--header-edge) - var(--guide-inset) - var(--label-width)); position: relative; min-height: 100%; margin: 0; padding: 8px 0 80px var(--guide-inset); }
+    /* Preserve the device-pixel width when getComputedStyle rounds fractional borders. */
+    .guide::before { content: ""; position: absolute; top: 0; bottom: 0; left: calc(var(--header-edge) - var(--header-edge-width)); border-left: calc(var(--header-edge-width) + 0.001px) solid #111; z-index: 3; pointer-events: none; }
     .preview-page { height: 26px; padding: 0 6px; border: 1px solid #111; background: #fff; }
-    .chapter { display: grid; grid-template-columns: 150px 1fr; gap: 20px; padding: 36px 0; border-bottom: 1.5px solid #111; }
+    .chapter { display: grid; grid-template-columns: var(--label-width) 1fr; column-gap: var(--label-gap); row-gap: 0; padding: 0; }
+    .chapter + .chapter { margin-top: 25px; }
+    .chapter-body { position: relative; }
     .chapter > header h2 { margin: 0; font: 700 13px/1.3 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .02em; }
     .chapter > header .no { display: block; margin-bottom: 6px; color: var(--filt-key, #BD005E); font: 700 28px/1 "IBM Plex Mono", ui-monospace, monospace; }
     .chapter > header p { margin: 10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
     .chapter > header button { margin-top: 12px; }
 
     /* values: label / input pairs in one hairline sheet */
-    .values { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); border: 1px solid #111; border-right: 0; border-bottom: 0; }
+    .values { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); border-top: 1px solid #111; }
+    .values.two-columns { grid-template-columns: repeat(2, minmax(260px, 1fr)); }
+    .values.three-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .values.three-columns .value { grid-template-columns: minmax(0, 1fr) minmax(72px, min(140px, 40%)); }
     .value { display: grid; grid-template-columns: 1fr 140px; align-items: center; border-right: 1px solid #111; border-bottom: 1px solid #111; }
     .value > span { padding: 0 10px; font-size: 12px; }
     .value input, .value select { width: 100%; height: 34px; padding: 0 8px; border: 0; border-left: 1px solid var(--line); background: #fff; font: 12px ui-monospace, Consolas, monospace; }
@@ -25,8 +32,8 @@
     .value.wide { grid-column: 1 / -1; grid-template-columns: 180px 1fr; }
 
     /* 01 colour */
-    .colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
-    .color { display: grid; border: 1px solid #111; background: #fff; }
+    .colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0; border-top: 1px solid #111; }
+    .color { display: grid; border-right: 1px solid #111; border-bottom: 1px solid #111; background: #fff; }
     .color.drop-before { box-shadow: -5px 0 0 #111; }
     .color.drop-after { box-shadow: 5px 0 0 #111; }
     .swatch { position: relative; height: 120px; cursor: grab; }
@@ -37,23 +44,30 @@
     .color input:focus { outline: 2px solid #111; outline-offset: -2px; }
 
     /* 02 logo */
-    .logo-stage { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-    .logo-box { position: relative; display: grid; place-items: center; height: 300px; border: 1px solid #111; background: #fff; }
+    .logo-stage { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; margin-bottom: 0; border-top: 1px solid #111; }
+    .logo-box { position: relative; display: grid; place-items: center; height: 300px; border-right: 1px solid #111; border-bottom: 1px solid #111; background: #fff; }
     .logo-box span { position: absolute; top: 6px; left: 8px; color: var(--muted); font-size: 11px; }
     .logo-box svg { width: auto; height: 240px; overflow: visible; fill: none; stroke: var(--filt-logo-color, #000); stroke-width: var(--filt-logo-stroke, 5); }
     .logo-box.mark svg { height: 72px; }
     .logo-box.play { cursor: pointer; }
-    .logo-box.play:hover { border-color: var(--filt-key, #BD005E); }
+    .logo-box.play:hover { outline: 1px solid var(--filt-key, #BD005E); outline-offset: -1px; }
     .logo-box .copy { position: absolute; right: 6px; bottom: 6px; padding: 2px 7px; font-size: 11px; }
     .logo-box.intro { grid-column: 1 / -1; height: 360px; overflow: hidden; }
     .logo-box.intro svg { position: absolute; inset: 0; width: 100%; height: 100%; stroke-width: initial; }
+    .logo-box.intro > span, .logo-box.intro .copy { z-index: 2; background: #fff; }
+    .logo-box.intro > span { padding: 2px 4px; }
+    .logo-box.play:focus-visible { outline: 2px solid var(--filt-key, #BD005E); outline-offset: -2px; }
     .chapter > header .copy-all { display: block; margin-top: 8px; }
     .color input.hex { cursor: copy; }
 
     /* 03 type family / 04 scale */
-    .family-sample { margin: 0 0 14px; font-family: var(--filt-font-family); font-weight: var(--filt-font-weight); font-size: 44px; line-height: 1.15; letter-spacing: .01em; }
+    .family-sample { margin: 0; font-family: var(--filt-font-family); font-weight: var(--filt-font-weight); font-size: 44px; line-height: 1.15; letter-spacing: .01em; }
     .family-sample small { display: block; margin-top: 6px; font-size: 15px; line-height: 1.6; }
-    table.scale { width: 100%; border-collapse: collapse; border: 1px solid #111; background: #fff; }
+    .font-field { min-width: 0; }
+    .font-field select { display: block; }
+    .font-field .font-upload-status { margin: 0; padding: 4px 8px; color: var(--danger); font-size: 11px; line-height: 1.35; white-space: pre-line; }
+    table.scale { width: 100%; border-collapse: collapse; border: 1px solid #111; border-left: 0; background: #fff; }
+    .scale tr > :first-child { border-left: 0; }
     .scale th { padding: 6px 8px; background: #111; color: #fff; font-weight: 500; text-align: left; white-space: nowrap; }
     .scale td { height: 40px; padding: 0; border-top: 1px solid #111; border-left: 1px solid var(--line); vertical-align: middle; }
     .scale td.name { padding: 0 10px; white-space: nowrap; }
@@ -62,21 +76,25 @@
     .scale td input:focus { outline: 2px solid #111; outline-offset: -2px; background: #fff; }
 
     /* 05 motion */
-    .motion-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-    .motion-box { position: relative; height: 140px; overflow: hidden; border: 1px solid #111; background: #fff; }
+    .motion-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 0; border-top: 1px solid #111; }
+    .motion-box { position: relative; height: 140px; overflow: hidden; border-right: 1px solid #111; border-bottom: 1px solid #111; background: #fff; }
     .motion-box > span { position: absolute; z-index: 2; top: 6px; right: 8px; color: var(--muted); font-size: 11px; }
-    .motion-box .panel { position: absolute; top: 0; bottom: 0; left: -70%; width: 80%; border-right: 1px solid #111; background: #fafaf8; transition: left var(--filt-motion-panel, .35s) ease; cursor: pointer; }
+    .motion-box .panel { position: absolute; top: 0; bottom: 0; left: -80%; width: 80%; border-right: 1px solid #111; background: #fafaf8; transition: left var(--filt-motion-panel, .35s) ease; cursor: pointer; }
     .motion-box.open .panel { left: 0; }
     .motion-box .links { position: absolute; inset: 40px 0 0 24px; display: grid; align-content: start; gap: 4px; font-size: 12px; }
     .motion-box .links a { width: max-content; color: #111; text-decoration: none; transition: all var(--filt-motion-hover, .2s) ease; }
     .motion-box .links a:hover { color: var(--filt-key, #BD005E); font-weight: 700; transform: translateX(3px); }
 
     /* 06 layout */
-    .facts { margin: 0; padding: 0; border: 1px solid #111; border-bottom: 0; list-style: none; background: #fff; }
+    .facts { margin: 0; padding: 0; border-top: 1px solid #111; border-right: 1px solid #111; list-style: none; background: #fff; }
     .facts li { display: grid; grid-template-columns: 180px 1fr; border-bottom: 1px solid #111; }
     .facts li > * { padding: 9px 10px; font-size: 12px; }
     .facts li b { border-right: 1px solid var(--line); font-weight: 500; }
     .facts code { font-size: 11px; }
+
+    /* Bodies own the continuous left edge; adjacent frames share right/bottom edges. */
+    .logo-stage + .values, .motion-demo + .values { border-top: 0; }
+    table.scale, .facts, .guide .frame-right-edge { border-right: 0; }
   </style>
 </head>
 <body>
@@ -89,6 +107,7 @@
   </header>
   <script src="header.js"></script>
   <script src="store.js"></script>
+  <script src="add-controls.js"></script>
   <script src="row-menu.js"></script>
   <script src="page-editor.js"></script>
   <script>
@@ -144,19 +163,24 @@
       if (dir === "out") return 1 - (1 - t) ** n;
       return t < 0.5 ? (2 * t) ** n / 2 : 1 - (2 - 2 * t) ** n / 2;
     };
-    // Morphs svg's lines from one stage to the other, as the site's menu does.
+    const sampleFrames = new WeakMap();
+    // Start from the current paths, including when a previous menu morph is still running.
     const morph = (svg, from, to, seconds, easeName) => {
-      const a = SHAPES[from].map(ends);
-      const b = SHAPES[to].map(ends);
+      cancelAnimationFrame(sampleFrames.get(svg));
       const paths = [...svg.children];
-      const start = performance.now();
+      const a = paths.map((path) => path.getAttribute("d").match(/-?\d*\.?\d+/g).map(Number));
+      const b = SHAPES[to].map(ends);
+      let start;
       const step = (now) => {
-        const t = Math.min(1, (now - start) / (seconds * 1000));
+        if (!svg.isConnected) { sampleFrames.delete(svg); return; }
+        if (start === undefined) start = now;
+        const t = seconds > 0 ? Math.min(1, (now - start) / (seconds * 1000)) : 1;
         const k = ease(easeName, t);
         paths.forEach((path, i) => path.setAttribute("d", lineD(a[i].map((v, j) => v + (b[i][j] - v) * k))));
-        if (t < 1) requestAnimationFrame(step);
+        if (t < 1) sampleFrames.set(svg, requestAnimationFrame(step));
+        else sampleFrames.delete(svg);
       };
-      requestAnimationFrame(step);
+      sampleFrames.set(svg, requestAnimationFrame(step));
     };
 
     // HOME intro, from the principal's home widget: 12 lines start scattered (a 1200 × 2600 reference
@@ -172,26 +196,89 @@
       [552, 1265.5, 592, 1265.5], [627, 1265.5, 667, 1265.5], [677, 1163, 677, 1248], [609.5, 1163, 609.5, 1393],
       [677, 1283, 677, 1393], [667, 1265.5, 727, 1265.5], [552, 1283, 552, 1393], [659.5, 1380.5, 597, 1380.5],
     ];
+    const introScenes = new WeakMap();
     const playIntro = (box, svg, intro) => {
-      const w = box.clientWidth;
-      const hgt = box.clientHeight;
+      cancelAnimationFrame(sampleFrames.get(svg));
+      // Render a scaled PC scene; the menu keeps its real 240 × 410 coordinate system.
+      const hgt = 900;
+      const w = hgt * box.clientWidth / Math.max(1, box.clientHeight);
       const s1 = (hgt / 2600) * 1.1;
       const starts = INTRO_START.map((line) => line.map((v, i) => (i % 2 ? (v - 1300) * s1 + hgt / 2 : (v - 600) * s1 + w / 2)));
       const s2 = (Math.min(150, Math.max(110, w * 0.09), hgt * 0.24) / 275) * intro.scale;
       const marks = INTRO_MARK.map((line) => line.map((v, i) => (i % 2 ? (v - 1278) * s2 + hgt / 2 : (v - 589.5) * s2 + w / 2)));
       svg.setAttribute("viewBox", `0 0 ${w} ${hgt}`);
-      svg.style.strokeWidth = 25 * s2;
-      const paths = [...svg.children];
-      const t0 = performance.now();
+      let scene = introScenes.get(svg);
+      if (!scene) {
+        const node = (tag, attrs = {}, text) => {
+          const el = document.createElementNS(SVG_NS, tag);
+          Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+          if (text !== undefined) el.textContent = text;
+          return el;
+        };
+        const backdrop = node("rect", { fill: "#fff", stroke: "none", class: "intro-backdrop" });
+        const menu = node("g");
+        menu.append(node("rect", { x: 230, y: 0, width: 10, height: 410, fill: "#000", stroke: "none" }),
+          node("path", { d: `M240,0V${hgt}M0,410H240`, stroke: "#000", "stroke-width": 1 }));
+        const text = (x, y, label, color = "#000") => node("text", { x, y, fill: color, stroke: "none", "font-size": 12 }, label);
+        menu.append(text(20, 342, "필트아키텍츠"), text(20, 354, "건축사사무소"),
+          text(20, 434, "OFFICE"), text(20, 453, "NEWS"), text(20, 472, "WORKS"),
+          node("rect", { x: 0, y: hgt - 35, width: 240, height: 35, fill: "#000", stroke: "none" }),
+          text(20, hgt - 13, "ESSAYS AND DRAWINGS", "#999"));
+        const mark = node("g", { class: "intro-menu-mark" });
+        mark.style.strokeWidth = "var(--filt-logo-stroke, 5)";
+        SHAPES.panel.forEach((d) => mark.append(node("path", { d: lineD(ends(d)) })));
+        const white = node("rect", { fill: "#fff", stroke: "none", class: "intro-white" });
+        const moving = node("g", { class: "intro-moving" });
+        const paths = INTRO_START.map(() => node("path"));
+        moving.append(...paths);
+        svg.replaceChildren(backdrop, menu, mark, white, moving);
+        scene = { backdrop, mark, white, moving, paths };
+        introScenes.set(svg, scene);
+      }
+      [scene.backdrop, scene.white].forEach((el) => { el.setAttribute("width", w); el.setAttribute("height", hgt); });
+      const { mark, white, moving, paths } = scene;
+      // The operating HOME uses each menu path once, in this intro-to-menu order.
+      const dock = [0, 1, 2, 3, 4, 5, 9, 7, 8, 6, 10, 11].map((index) => ends(SHAPES.panel[index]));
+      const duration = (key, fallback) => Number.isFinite(intro[key]) && intro[key] >= 0 ? intro[key] : fallback;
+      const appear = duration("appear", 0.1), gather = duration("gather", 1.8), hold = duration("hold", 0.1), transfer = duration("dock", 1);
+      const still = appear + gather + hold + transfer === 0;
+      mark.style.opacity = "0";
+      moving.style.opacity = "0";
+      white.style.opacity = "1";
+      let t0, dockStart;
+      const draw = (from, to, amount) => paths.forEach((path, i) => path.setAttribute("d", lineD(from[i].map((v, j) => v + (to[i][j] - v) * amount))));
       const step = (now) => {
+        if (!box.isConnected) { sampleFrames.delete(svg); return; }
+        if (t0 === undefined) t0 = now;
         const elapsed = (now - t0) / 1000;
-        svg.style.opacity = Math.min(1, elapsed / Math.max(intro.appear, 0.001));
-        const t = Math.min(1, Math.max(0, (elapsed - intro.appear) / intro.gather));
-        const k = ease("power2.inOut", t);
-        paths.forEach((path, i) => path.setAttribute("d", lineD(starts[i].map((v, j) => v + (marks[i][j] - v) * k))));
-        if (t < 1) requestAnimationFrame(step);
+        const t = gather > 0 ? Math.min(1, Math.max(0, (elapsed - appear) / gather)) : elapsed >= appear ? 1 : 0;
+        if (dockStart === undefined) {
+          draw(starts, marks, ease("power2.inOut", t));
+          moving.style.strokeWidth = 25 * s2;
+          moving.style.opacity = appear > 0 ? Math.min(1, elapsed / appear) : "1";
+          svg.dataset.phase = elapsed < appear ? "appear" : t < 1 ? "gather" : "hold";
+          if (still || elapsed >= appear + gather + hold) dockStart = now;
+        }
+        if (dockStart !== undefined) {
+          const progress = transfer > 0 ? Math.min(1, (now - dockStart) / (transfer * 1000)) : 1;
+          const amount = ease("power2.inOut", progress);
+          draw(marks, dock, amount);
+          const stroke = Number.parseFloat(getComputedStyle(mark).strokeWidth) || 5;
+          moving.style.strokeWidth = 25 * s2 + (stroke - 25 * s2) * amount;
+          moving.style.opacity = "1";
+          white.style.opacity = 1 - amount; // Reveal only the menu; the SAMPLE background stays white.
+          svg.dataset.phase = "dock";
+          if (progress === 1) {
+            mark.style.opacity = "1";
+            moving.style.opacity = "0";
+            svg.dataset.phase = "done";
+            sampleFrames.delete(svg);
+            return;
+          }
+        }
+        sampleFrames.set(svg, requestAnimationFrame(step));
       };
-      requestAnimationFrame(step);
+      sampleFrames.set(svg, requestAnimationFrame(step));
     };
 
     // Copy as SVG / CSS for use elsewhere.
@@ -211,6 +298,33 @@
       let n = 2;
       while (colors.some((color) => color.id === `key-${n}`)) n += 1;
       return `key-${n}`;
+    };
+
+    // Grid column counts can change with the editor width; remove only the outside right edge.
+    let frameEdgeObserver = null;
+    const alignFrameEdges = (guide) => {
+      requestAnimationFrame(() => {
+        if (!guide.isConnected) return;
+        frameEdgeObserver?.disconnect();
+        const update = () => {
+          const logo = document.querySelector(".fb-logo");
+          const width = logo && parseFloat(getComputedStyle(logo).borderRightWidth);
+          if (width > 0) {
+            guide.style.setProperty("--header-edge", `${logo.getBoundingClientRect().right - guide.getBoundingClientRect().left}px`);
+            guide.style.setProperty("--header-edge-width", `${width}px`);
+          }
+          guide.querySelectorAll(".chapter-body").forEach((body) => {
+            const right = body.getBoundingClientRect().right;
+            body.querySelectorAll(".color, .logo-box, .value, .motion-box").forEach((frame) => {
+              frame.classList.toggle("frame-right-edge", Math.abs(frame.getBoundingClientRect().right - right) < 0.5);
+            });
+          });
+        };
+        frameEdgeObserver = new ResizeObserver(update);
+        frameEdgeObserver.observe(guide);
+        update();
+      });
+      return guide;
     };
 
     // ---------- preview: a real page of the site, drawn with the unsaved design ----------
@@ -247,6 +361,7 @@
     const previewData = {};
     let previewPage = "home";
     let editor = null;
+    let fontUploadInFlight = false;
     const showPage = async (page) => {
       previewPage = page;
       if (!previewData[page]) {
@@ -287,7 +402,7 @@
 
         const chapter = (no, title, note, tools, ...body) => h("section", { class: "chapter" },
           h("header", {}, h("span", { class: "no" }, no), h("h2", {}, title), note ? h("p", {}, note) : null, tools),
-          h("div", {}, body));
+          h("div", { class: "chapter-body" }, body));
         const num = (obj, key, { step = 1, min = 0, max = 999 } = {}) => h("input", {
           type: "number", step, min, max, value: obj[key],
           oninput: (event) => {
@@ -340,7 +455,7 @@
         };
 
         // ---------- 02 logo ----------
-        const morphBox = h("div", { class: "logo-box play", title: "눌러서 애니메이션 재생" }, h("span", {}, "애니메이션 · 눌러서 재생"));
+        const morphBox = h("div", { class: "logo-box play", title: "메뉴바 로고 SAMPLE · 눌러서 접기/펼치기", role: "button", tabindex: 0, "aria-label": "메뉴바 로고 SAMPLE 접기/펼치기" }, h("span", {}, "메뉴바 로고 SAMPLE · 눌러서 접기/펼치기"));
         const morphSvg = markSvg("panel", "-10 -10 260 430");
         let stage = "panel";
         morphBox.append(morphSvg);
@@ -349,19 +464,96 @@
           morph(morphSvg, stage, next, data.logo.duration, data.logo.ease);
           stage = next;
         });
+        morphBox.addEventListener("keydown", (event) => { if (event.target === morphBox && ["Enter", " "].includes(event.key)) { event.preventDefault(); morphBox.click(); } });
         const copyButton = (label, what, make) => h("button", { class: "small copy", onclick: (event) => { event.stopPropagation(); copyText(make(), what, ctx.toast); } }, label);
-        // The HOME intro, played in the box: scattered lines gather into the large mark.
+        // PC HOME first loading: gather, hold, dock onto the menu, and reveal the photograph.
         const introSvg = document.createElementNS(SVG_NS, "svg");
-        INTRO_START.forEach(() => introSvg.append(document.createElementNS(SVG_NS, "path")));
-        const introBox = h("div", { class: "logo-box intro play", title: "눌러서 인트로 재생" }, h("span", {}, "HOME 인트로 · 눌러서 재생"), introSvg,
+        const introBox = h("div", { class: "logo-box intro play", title: "PC HOME 첫 로딩 SAMPLE · 눌러서 다시 재생", role: "button", tabindex: 0, "aria-label": "PC HOME 첫 로딩 SAMPLE 다시 재생" }, h("span", {}, "PC HOME 첫 로딩 SAMPLE · 눌러서 다시 재생"), introSvg,
           copyButton("SVG 복사", "인트로 큰 마크 SVG", () => svgMarkup(INTRO_MARK, "437 1148 305 260", 25, strokeColor(data))));
         introBox.addEventListener("click", () => playIntro(introBox, introSvg, data.logo.intro));
-        requestAnimationFrame(() => { if (introBox.isConnected) playIntro(introBox, introSvg, { ...data.logo.intro, appear: 0, gather: 0.001 }); });
+        introBox.addEventListener("keydown", (event) => { if (event.target === introBox && ["Enter", " "].includes(event.key)) { event.preventDefault(); introBox.click(); } });
+        requestAnimationFrame(() => { if (introBox.isConnected) playIntro(introBox, introSvg, { ...data.logo.intro, appear: 0, gather: 0, hold: 0, dock: 0 }); });
         const logoColors = [["black", "검정"], ...colors.map((color) => [color.id, color.name || color.value])];
+
+        // ---------- 03 typeface ----------
+        // Uploads are validated and decoded before this mutates data.type, so any failure leaves the
+        // currently selected family and its saved metadata alone.
+        const fontInput = h("input", { type: "file", accept: ".woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf", hidden: true });
+        const fontStatus = h("p", { class: "font-upload-status", id: "font-upload-status", role: "status", "aria-live": "polite", hidden: true });
+        const chooseLocalFont = () => {
+          if (fontUploadInFlight) return;
+          fontInput.value = "";
+          fontInput.click();
+        };
+        fontInput.addEventListener("change", async () => {
+          const file = fontInput.files?.[0];
+          if (!file || fontUploadInFlight) return;
+          fontUploadInFlight = true;
+          typefaceSelect.disabled = true;
+          fontStatus.hidden = false;
+          fontStatus.setAttribute("role", "status");
+          fontStatus.textContent = "글꼴 확인 및 업로드 중…";
+          try {
+            const font = await FiltStore.uploadFont(file);
+            data.type.font = font;
+            data.type.family = FiltStore.fontStack(font.family);
+            apply();
+            ctx.markDirty();
+            ctx.rerender();
+            ctx.toast(`글꼴을 선택했습니다: ${font.name || font.family}`);
+          } catch (error) {
+            // Do not rerender or alter data.type here: the previous selection remains usable.
+            fontStatus.setAttribute("role", "alert");
+            fontStatus.textContent = `업로드하지 못했습니다. ${error.message}`;
+            ctx.toast(error.message, true);
+          } finally {
+            fontUploadInFlight = false;
+            const currentSelect = document.getElementById("filt-font-select");
+            if (currentSelect) currentSelect.disabled = false;
+          }
+        });
+        const typefaceSelect = h("select", {
+          id: "filt-font-select",
+          title: `사이트 기본 글꼴 선택 · ${FiltStore.fontFormats} 파일 업로드 가능`,
+          "aria-label": "사이트 기본 글꼴",
+          "aria-describedby": "font-upload-help font-upload-status",
+          onchange: (event) => {
+            const selected = event.target.value;
+            if (selected === "__upload__") {
+              event.target.value = data.type.font ? "__uploaded" : data.type.family;
+              chooseLocalFont();
+              return;
+            }
+            if (selected === "__uploaded" && data.type.font) {
+              const family = FiltStore.fontStack(data.type.font.family);
+              if (data.type.family === family) return;
+              data.type.family = family;
+            } else {
+              if (data.type.family === selected && !data.type.font) return;
+              data.type.family = selected;
+              delete data.type.font;
+            }
+            changed();
+            ctx.rerender();
+          },
+        }, [
+          ["'Suit', 'Pretendard Variable', 'Noto Sans KR', sans-serif", "SUIT"],
+          ["'Pretendard Variable', 'Pretendard', 'Noto Sans KR', sans-serif", "Pretendard"],
+          ...(data.type.font ? [["__uploaded", `업로드 글꼴 · ${data.type.font.name || data.type.font.family}`]] : []),
+          ["__upload__", "로컬 글꼴 파일 업로드…"],
+        ].map(([value, label]) => {
+          const selected = value === "__uploaded" ? Boolean(data.type.font) : !data.type.font && value === data.type.family;
+          return h("option", { value, ...(selected ? { selected: true } : {}) }, label);
+        }));
+        const typefaceField = h("div", { class: "font-field" },
+          typefaceSelect,
+          fontInput,
+          h("span", { id: "font-upload-help", hidden: true }, `${FiltStore.fontFormats} · 웹 사용이 허용된 폰트 파일만 업로드하세요`),
+          fontStatus);
 
         // ---------- 04 type scale ----------
         const scaleRow = (entry) => {
-          const sample = h("td", { class: "sample" }, "건축은 장소를 읽는 일에서 시작한다 FILT Architects 2026");
+          const sample = h("td", { class: "sample" }, "필트아키텍츠 건축사사무소 FILT. ARCHITECTS 20260716");
           const paint = () => Object.assign(sample.style, { fontSize: `${entry.pc}px`, fontWeight: entry.weight, lineHeight: entry.line });
           paint();
           const cell = (key, step, min, max) => h("td", {}, h("input", {
@@ -386,11 +578,11 @@
         const hoverBox = h("div", { class: "motion-box" }, h("span", {}, "메뉴 hover · 마우스를 올려 보세요"),
           h("div", { class: "links" }, ["OFFICE", "NEWS", "WORKS"].map((label) => h("a", { href: "#", onclick: (event) => event.preventDefault() }, label))));
 
-        return h("div", { class: "guide" },
+        return alignFrameEdges(h("div", { class: "guide" },
           chapter("01", "COLOR", "맨 앞 색이 키컬러(--filt-key)입니다. 메뉴 hover, 링크, 강조에 쓰입니다.",
-            [h("button", { onclick: () => { colors.push({ id: nextId(colors), name: "", value: "#111111" }); ctx.rerender(); ctx.markDirty(); } }, "+ 색 추가"),
-              h("button", { class: "copy-all", title: "색·로고·글씨·움직임 값 전체를 CSS 변수로 복사", onclick: () => copyText(cssMarkup(data), "디자인 시스템 CSS", ctx.toast) }, "CSS 전체 복사")],
-            h("div", { class: "colors" }, colors.map(colorCard))),
+            [h("button", { class: "copy-all", title: "색·로고·글씨·움직임 값 전체를 CSS 변수로 복사", onclick: () => copyText(cssMarkup(data), "디자인 시스템 CSS", ctx.toast) }, "CSS 전체 복사")],
+            h("div", { class: "colors" }, colors.map(colorCard)),
+            FiltAdd.line("색 추가", () => { colors.push({ id: nextId(colors), name: "", value: "#111111" }); ctx.rerender(); ctx.markDirty(); })),
 
           chapter("02", "LOGO", "FILT 마크는 선 12개로 그립니다. 메뉴 패널에서 접힌 마크와 펼쳐진 로고 사이를 오갑니다.", null,
             h("div", { class: "logo-stage" },
@@ -400,7 +592,7 @@
                 copyButton("SVG 복사", "로고 SVG", () => svgMarkup(SHAPES.logo.map(ends), "-10 -10 260 430", data.logo.stroke, strokeColor(data)))),
               morphBox,
               introBox),
-            h("div", { class: "values" },
+            h("div", { class: "values three-columns" },
               value("선 두께", num(data.logo, "stroke", { step: 0.5, min: 0.5, max: 20 })),
               value("선 색", select(data.logo, "color", logoColors)),
               value("애니메이션 시간 (초)", num(data.logo, "duration", { step: 0.05, min: 0.1, max: 5 })),
@@ -413,11 +605,8 @@
 
           chapter("03", "TYPEFACE", "사이트 전체의 글꼴과 기본 굵기입니다.", null,
             h("p", { class: "family-sample" }, "FILT. Architects 건축사사무소", h("small", {}, "가나다라마바사 ABCDEFG abcdefg 0123456789")),
-            h("div", { class: "values" },
-              value("글꼴", select(data.type, "family", [
-                ["'Suit', 'Pretendard Variable', 'Noto Sans KR', sans-serif", "SUIT"],
-                ["'Pretendard Variable', 'Pretendard', 'Noto Sans KR', sans-serif", "Pretendard"],
-              ])),
+            h("div", { class: "values two-columns" },
+              value("글꼴", typefaceField),
               value("기본 굵기", select(data.type, "weight", [[200, "200 Light"], [300, "300 (기본)"], [400, "400 Regular"], [500, "500 Medium"]])))),
 
           chapter("04", "TYPE SCALE", "글씨 크기 체계입니다. PC 크기는 넓은 화면 기준의 최대값이고, 좁은 화면에서는 같은 비율로 줄어듭니다.", null,
@@ -427,7 +616,7 @@
 
           chapter("05", "MOTION", "패널이 열리고 닫히는 시간과 메뉴 hover 시간입니다.", null,
             h("div", { class: "motion-demo" }, panelBox, hoverBox),
-            h("div", { class: "values" },
+            h("div", { class: "values two-columns" },
               value("패널 (초)", num(data.motion, "panel", { step: 0.05, min: 0, max: 3 })),
               value("hover (초)", num(data.motion, "hover", { step: 0.05, min: 0, max: 3 })),
               value("HOME 슬라이드 넘김 (초)", num(data.motion, "slide", { step: 0.1, min: 0, max: 5 })),
@@ -437,7 +626,7 @@
             h("ul", { class: "facts" },
               [["모바일 기준", "화면 너비 768px 이하"], ["상세페이지 오른쪽 패널", "300 – 430px (화면의 28%)"], ["접힌 메뉴 패널", "210px 숨김, 30px 보임"],
                 ["이미지 크기", "PC 2560px, 모바일 1600px로 줄여서 게시"], ["이미지 여백", "작은 여백 7vmin, 큰 여백 15vmin"]]
-                .map(([label, text]) => h("li", {}, h("b", {}, label), h("span", {}, text))))));
+                .map(([label, text]) => h("li", {}, h("b", {}, label), h("span", {}, text)))))));
       },
     });
     // First preview after sign-in: the design is applied once the header is mounted.

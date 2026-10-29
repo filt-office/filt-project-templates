@@ -15,6 +15,13 @@
   const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg", ".avif"]);
   const MIME = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif", ".svg": "image/svg+xml", ".avif": "image/avif" };
   const MAX_UPLOAD = 20 * 1024 * 1024; // jsDelivr serves GitHub files up to 20MB
+  const FONT_EXT = new Set([".woff2", ".woff", ".ttf", ".otf"]);
+  const FONT_MIME = { ".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf", ".otf": "font/otf" };
+  const MAX_FONT_UPLOAD = 20 * 1024 * 1024;
+  const FONT_FORMATS = "WOFF2 · WOFF · TTF · OTF (20MB 이하)";
+  // This is a live public folder: publish-images.js copies unknown extensions byte-for-byte.
+  const FONT_ASSET_FOLDER = "pages";
+  const FONT_ASSET_DEVICE = "PC";
   // Pages caches files for 10 minutes; a per-load query makes previews use the template just deployed.
   const PAGE_LOAD = Date.now();
   const IMAGE_FORMATS = "JPG · PNG · WEBP · GIF · SVG · AVIF (20MB 이하)";
@@ -83,6 +90,82 @@
     }
   };
 
+  const ascii = (bytes, start, length) => String.fromCharCode(...bytes.slice(start, start + length));
+  const uint16 = (bytes, start) => (bytes[start] << 8) | bytes[start + 1];
+  const uint32 = (bytes, start) => ((bytes[start] * 0x1000000) + (bytes[start + 1] << 16) + (bytes[start + 2] << 8) + bytes[start + 3]) >>> 0;
+  const sfntHeaderError = (bytes) => {
+    if (bytes.length < 12) return "글꼴 헤더가 완전하지 않습니다.";
+    const tables = uint16(bytes, 4);
+    return !tables || tables > 4096 || 12 + tables * 16 > bytes.length ? "글꼴 테이블 헤더가 올바르지 않습니다." : "";
+  };
+  // The client repeats the server-side signature check before it starts an upload. It never rasterizes
+  // or converts a font; FontFace below is the browser's final decoder validation.
+  const fontHeaderError = (bytes, fileSize, ext) => {
+    if (ext === ".woff" || ext === ".woff2") {
+      const minimum = ext === ".woff" ? 44 : 48;
+      const signature = ext === ".woff" ? "wOFF" : "wOF2";
+      if (bytes.length < minimum) return "글꼴 헤더가 완전하지 않습니다.";
+      if (ascii(bytes, 0, 4) !== signature) return `${ext.slice(1).toUpperCase()} 실제 파일이 아닙니다.`;
+      if (uint32(bytes, 8) !== fileSize) return "글꼴 헤더의 파일 길이가 실제 파일과 다릅니다.";
+      return uint16(bytes, 12) ? "" : "글꼴 테이블이 없습니다.";
+    }
+    if (bytes.length < 12) return "글꼴 헤더가 완전하지 않습니다.";
+    const signature = ascii(bytes, 0, 4);
+    if (ext === ".otf" && signature !== "OTTO") return "OTF 실제 파일이 아닙니다.";
+    if (ext === ".ttf" && !["\u0000\u0001\u0000\u0000", "true", "typ1"].includes(signature)) return "TTF 실제 파일이 아닙니다.";
+    return sfntHeaderError(bytes);
+  };
+  const safeFontFamily = (family) => typeof family === "string" && /^[A-Za-z0-9 ._-]{1,90}$/.test(family) ? family.trim() : "";
+  const fontStack = (family) => `'${safeFontFamily(family).replace(/'/g, "\\'")}', 'Noto Sans KR', sans-serif`;
+  const fontFamilyFromName = (name) => {
+    const base = safeAssetName(name).base.replace(/[._-]+/g, " ").trim().slice(0, 64) || "custom";
+    return `FILT Upload ${base}`.slice(0, 90);
+  };
+  const savedFont = (value) => {
+    if (!value || typeof value !== "object") return null;
+    const src = typeof value.src === "string" ? value.src : "";
+    const ext = extOf(src);
+    const family = safeFontFamily(value.family);
+    if (!FONT_EXT.has(ext) || value.format !== ext.slice(1) || !family || !new RegExp(`^assets/${FONT_ASSET_FOLDER}/${FONT_ASSET_DEVICE}/font-[a-z0-9][a-z0-9.-]*\\${ext}$`).test(src)) return null;
+    return { src, family, format: ext.slice(1), name: typeof value.name === "string" ? value.name.slice(0, 160) : "" };
+  };
+  const inspectFont = async (file) => {
+    const ext = extOf(file?.name || "");
+    if (!FONT_EXT.has(ext)) throw new Error(`지원하지 않는 글꼴 형식입니다 (${ext || "확장자 없음"}).\n올릴 수 있는 형식: ${FONT_FORMATS}`);
+    if (!Number.isFinite(file.size) || !file.size) throw new Error("비어 있는 글꼴 파일입니다.");
+    if (file.size > MAX_FONT_UPLOAD) throw new Error("20MB보다 큰 글꼴은 올릴 수 없습니다.");
+    if (typeof file.slice !== "function") throw new Error("글꼴 파일을 읽을 수 없습니다.");
+    let head = new Uint8Array(await file.slice(0, 64).arrayBuffer());
+    // A normal SFNT often has more than three table records, so its complete directory extends
+    // beyond the first 64 bytes. Read only that bounded directory, not the full font file.
+    if ([".ttf", ".otf"].includes(ext) && head.length >= 6) {
+      const directoryLength = Math.min(file.size, 12 + uint16(head, 4) * 16);
+      if (directoryLength > head.length) head = new Uint8Array(await file.slice(0, directoryLength).arrayBuffer());
+    }
+    const error = fontHeaderError(head, file.size, ext);
+    if (error) throw new Error(error);
+    return { family: fontFamilyFromName(file.name), format: ext.slice(1), name: file.name.slice(0, 160) };
+  };
+  const fontSources = new Map();
+  const fontFaces = new Map();
+  const fontFaceKey = (font, url) => `${font.family}\u0000${font.format}\u0000${url}`;
+  const loadFontFace = (font, url) => {
+    const key = fontFaceKey(font, url);
+    if (!fontFaces.has(key)) {
+      fontFaces.set(key, (async () => {
+        if (typeof FontFace !== "function") throw new Error("이 브라우저는 웹 글꼴 검사를 지원하지 않습니다.");
+        const face = new FontFace(font.family, `url(${JSON.stringify(url)}) format("${font.format}")`, { style: "normal", weight: "100 900", display: "swap" });
+        return face.load();
+      })());
+    }
+    return fontFaces.get(key);
+  };
+  const useFontFace = async (font, url) => {
+    const face = await loadFontFace(font, url);
+    document.fonts?.add(face);
+    return face;
+  };
+
   // ---------------------------------------------------------------- local
 
   const localApi = async (url, options) => {
@@ -115,6 +198,10 @@
     }),
     upload: async (projectId, device, file) => (await localApi(
       `/api/upload?project=${encodeURIComponent(projectId)}&device=${device}&name=${encodeURIComponent(file.name)}`,
+      { method: "POST", body: file },
+    )).src,
+    uploadFont: async (file) => (await localApi(
+      `/api/font-upload?name=${encodeURIComponent(file.name)}`,
       { method: "POST", body: file },
     )).src,
     copyAsset: async (projectId, from, to) => (await localApi(
@@ -293,6 +380,18 @@
         src[name2] = `assets/${projectId}/${name2}/${name}`;
         assetCache.set(src[name2], Promise.resolve(URL.createObjectURL(file)));
       });
+      return src;
+    },
+    // Fonts are deliberately separate from upload(): no image preparation, canvas conversion or
+    // image picker listing. The public images release already copies files in pages/PC verbatim.
+    uploadFont: async (file) => {
+      const { base, ext } = safeAssetName(file.name);
+      if (!FONT_EXT.has(ext)) throw new Error(`지원하지 않는 글꼴 형식입니다 (${ext || file.name}).`);
+      if (file.size > MAX_FONT_UPLOAD) throw new Error("20MB보다 큰 글꼴은 올릴 수 없습니다.");
+      const dir = `runtime/assets/${FONT_ASSET_FOLDER}/${FONT_ASSET_DEVICE}`;
+      const name = await freeName([dir], `font-${base}`, ext);
+      await commitFiles([{ path: `${dir}/${name}`, content: file }], `builder: 디자인 글꼴 업로드 (${name})`);
+      const src = `assets/${FONT_ASSET_FOLDER}/${FONT_ASSET_DEVICE}/${name}`;
       return src;
     },
     copyAsset: async (projectId, from, to) => {
@@ -558,17 +657,39 @@
     },
     motion: { panel: 0.35, hover: 0.2, slide: 1, slideInterval: 10, slideEase: "cubic-bezier(.45,0,.55,1)" },
   };
+  const publicFontUrl = (src) => (mode === "local"
+    ? new URL(`/runtime/${src.replace(/^\.?\//, "")}`, location.href).href
+    : new URL(src, "https://filt-office.github.io/filt-website-images/").href);
+  const previewFontUrl = (font) => fontSources.get(font.src) || publicFontUrl(font.src);
+  const loadDesignFont = async (design) => {
+    const font = savedFont(design?.type?.font);
+    if (!font) return null;
+    let url = fontSources.get(font.src);
+    if (!url) {
+      try { url = await backend.assetUrl(font.src); } catch { /* public URL below is still useful after deploy */ }
+      url = url || publicFontUrl(font.src);
+      fontSources.set(font.src, url);
+    }
+    return useFontFace(font, url);
+  };
   // Saved files may predate a section; missing parts take the defaults.
   const fullDesign = (design) => {
     const base = JSON.parse(JSON.stringify(DEFAULT_DESIGN));
     if (!design) return base;
     const scale = base.type.scale.map((entry) => ({ ...entry, ...(design.type?.scale || []).find((saved) => saved.id === entry.id) }));
+    const type = { ...base.type, ...design.type, scale };
+    const font = savedFont(design.type?.font);
+    if (font) {
+      type.font = font;
+      // A saved custom family always wins over a stale hand-written type.family declaration.
+      type.family = fontStack(font.family);
+    } else delete type.font;
     return {
       ...base,
       ...design,
       colors: design.colors?.length ? design.colors : base.colors,
       logo: { ...base.logo, ...design.logo, intro: { ...base.logo.intro, ...design.logo?.intro } },
-      type: { ...base.type, ...design.type, scale },
+      type,
       motion: { ...base.motion, ...design.motion },
     };
   };
@@ -599,10 +720,15 @@
     return vars;
   };
   const applyDesign = (design) => {
+    const current = fullDesign(design);
     const root = document.documentElement.style;
-    Object.entries(designVars(design)).forEach(([name, value]) => root.setProperty(name, value));
-    window.FiltDesign = fullDesign(design);
+    Object.entries(designVars(current)).forEach(([name, value]) => root.setProperty(name, value));
+    window.FiltDesign = current;
     document.dispatchEvent(new CustomEvent("filt-design", { detail: window.FiltDesign }));
+    // Do not hold page rendering on a remote font, but refresh previews once its actual face is ready.
+    if (current.type.font) loadDesignFont(current)
+      .then(() => document.dispatchEvent(new CustomEvent("filt-design", { detail: window.FiltDesign })))
+      .catch((error) => console.warn("FILT uploaded font could not be loaded.", error));
   };
 
   const mountHeader = (container) => {
@@ -677,14 +803,43 @@
     userName,
     applyDesign,
     // Attributes for a preview's <html>: the current (maybe unsaved) colours, and the flag that tells
-    // runtime/design.js not to load pages/design.json over them.
+    // runtime/design.js not to load pages/design.json over them. The font details let that early-return
+    // route install a real FontFace inside the iframe instead of only inheriting a CSS declaration.
     designAttrs: () => {
-      const vars = Object.entries(designVars(window.FiltDesign)).map(([name, value]) => `${name}: ${value}`).join("; ");
-      return ` data-filt-design="builder" style="${vars.replace(/"/g, "&quot;")}"`;
+      const design = fullDesign(window.FiltDesign);
+      const vars = Object.entries(designVars(design)).map(([name, value]) => `${name}: ${value}`).join("; ");
+      const font = savedFont(design.type.font);
+      const escapeAttr = (value) => String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+      const fontAttrs = font ? ` data-filt-font-src="${escapeAttr(previewFontUrl(font))}" data-filt-font-family="${escapeAttr(font.family)}" data-filt-font-format="${font.format}"` : "";
+      return ` data-filt-design="builder"${fontAttrs} style="${vars.replace(/"/g, "&quot;")}"`;
     },
     fullDesign,
     designVars,
     upload: async (projectId, device, file) => backend.upload(projectId, device, await prepareUpload(file)),
+    fontFormats: FONT_FORMATS,
+    fontStack,
+    uploadFont: async (file) => {
+      const meta = await inspectFont(file);
+      const blobUrl = URL.createObjectURL(file);
+      let face;
+      try {
+        // Decode before writing. A failed FontFace leaves the selected design object untouched.
+        face = await loadFontFace(meta, blobUrl);
+      } catch (error) {
+        URL.revokeObjectURL(blobUrl);
+        throw new Error(`글꼴을 불러올 수 없습니다: ${error.message || "지원하지 않는 글꼴 파일입니다."}`);
+      }
+      let src;
+      try {
+        src = await backend.uploadFont(file);
+      } catch (error) {
+        URL.revokeObjectURL(blobUrl);
+        throw error;
+      }
+      fontSources.set(src, blobUrl);
+      document.fonts?.add(face);
+      return { src, ...meta };
+    },
     getWorks: async () => {
       const data = await backend.getWorks();
       loadedWorks = copy(data);

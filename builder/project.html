@@ -40,6 +40,7 @@
     button.small:hover { border-color: #111; }
     button.danger:hover { background: var(--danger); border-color: var(--danger); }
     button:disabled { opacity: .4; cursor: default; pointer-events: none; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [contenteditable="true"]:focus-visible { outline: 2px solid var(--filt-key, #BD005E); outline-offset: 2px; }
     input[type="text"], input[type="number"], select, textarea {
       width: 100%;
       padding: 5px 7px;
@@ -47,7 +48,7 @@
       border-radius: 0;
       background: #fff;
     }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: #111; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--filt-key, #BD005E); outline-offset: -2px; border-color: var(--filt-key, #BD005E); }
     textarea { resize: vertical; }
     .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
 
@@ -71,6 +72,8 @@
     .dirty.show { visibility: visible; }
 
     .layout { display: grid; grid-template-columns: minmax(440px, 560px) 1fr; min-height: 0; }
+    .layout.fb-preview-collapsed { grid-template-columns: minmax(0, 1fr); }
+    .layout.fb-preview-collapsed .preview { display: none; }
     .editor { overflow-y: auto; border-right: 1px solid #111; background: #fff; }
     details { border-bottom: 1px solid var(--line); }
     summary {
@@ -161,7 +164,8 @@
       border: 0;
       background: #eee center / contain no-repeat;
     }
-    button.thumb:hover { background-color: #ddd; color: inherit; outline: 1px solid #111; outline-offset: -1px; }
+    button.thumb:hover, button.thumb.over { background-color: #ddd; color: inherit; outline: 2px solid var(--filt-key, #BD005E); outline-offset: -2px; }
+    button.thumb.busy { opacity: .45; pointer-events: none; }
     .thumb.broken { background-image: none !important; }
     .thumb.broken::after { content: "이미지 없음"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 10px; }
     .thumb.small { flex: none; width: 52px; min-height: 0; height: 32px; }
@@ -198,6 +202,8 @@
     .card.placeholder svg { position: absolute; inset: 0; width: 100%; height: 100%; }
     .card.placeholder:hover path { stroke: var(--filt-key, #BD005E); }
     .card-media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; cursor: pointer; }
+    .card-media:focus-visible { outline: 2px solid var(--filt-key, #BD005E); outline-offset: -2px; }
+    .card-media.busy { opacity: .45; pointer-events: none; }
     .card-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none; }
     .card-media.broken::after { content: "이미지 없음"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 11px; }
     .card-media.over { outline: 2px solid var(--filt-key, #BD005E); outline-offset: -2px; }
@@ -217,9 +223,10 @@
     .fit-menu button.icon-btn.on { background: #111; color: #fff; }
     .card-media img.pad-s { padding: 7%; box-sizing: border-box; }
     .card-media img.pad-l { padding: 15%; box-sizing: border-box; }
-    button.show-toggle { width: 18px; height: 18px; padding: 0; border: 1.5px solid #111; background: #fff; }
-    button.show-toggle.on { background: #111; box-shadow: inset 0 0 0 2.5px #fff; }
-    button.show-toggle:hover { border-color: var(--filt-key, #BD005E); }
+    button.show-toggle { width: 18px; height: 18px; padding: 0; border: 1.5px solid #111; background: transparent; }
+    button.show-toggle.on { background: #111; box-shadow: none; }
+    button.show-toggle:hover { border-color: #111; }
+    button.show-toggle:not(.on):hover { background: transparent; }
     .card-strip { display: grid; grid-template-columns: 16% 44% 40%; height: 44px; border-top: 1px solid #111; }
     .card-strip > div { position: relative; min-width: 0; overflow: hidden; }
     .card-strip > div + div { border-left: 1px solid #111; }
@@ -295,11 +302,11 @@
     </div>
   </div>
 
-  <div class="layout">
+  <div class="layout" id="projectLayout">
     <main class="editor" id="editor">
       <div class="empty">프로젝트를 불러오는 중…</div>
     </main>
-    <section class="preview" aria-label="미리보기">
+    <section class="preview" id="projectPreview" aria-label="미리보기">
       <div class="preview-bar">
         <button data-device="desktop">PC</button>
         <button data-device="mobile">모바일</button>
@@ -316,6 +323,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="store.js"></script>
+  <script src="add-controls.js"></script>
   <script src="row-menu.js"></script>
   <script>
   (() => {
@@ -342,6 +350,8 @@
     let project = null;
     let saved = { draft: false, runtime: false };
     let dirty = false;
+    let editRevision = 0;
+    let saving = null;
     let viewport = new URLSearchParams(location.search).get("device") === "mobile" ? "mobile" : "desktop";
     let previewUrl = null;
     let previewTimer = null;
@@ -388,14 +398,17 @@
     };
 
     const markDirty = () => {
+      editRevision += 1;
       dirty = true;
       $("#dirty").classList.add("show");
       schedulePreview();
     };
 
-    const setClean = () => {
+    const setClean = (revision = editRevision) => {
+      if (revision !== editRevision) return false;
       dirty = false;
       $("#dirty").classList.remove("show");
+      return true;
     };
 
     // ---------- data model ----------
@@ -789,7 +802,7 @@
           await onEach(file, await upload(file, device));
           done += 1;
         } catch (error) {
-          toast(`${file.name}: ${error.message}`, true);
+          toast(`${original.name}: ${error.message}`, true);
         }
       }
       if (done) toast(`${done}개 업로드 완료`);
@@ -835,11 +848,29 @@
       h("span", { class: "label" }, label),
       h("div", { class: "cell" }, controls));
 
+    const labelEditorFields = () => {
+      editor.querySelectorAll('input:not([type="hidden"]), select, textarea, [contenteditable="true"]').forEach((field) => {
+        if (field.hasAttribute("aria-label") || field.hasAttribute("aria-labelledby") || field.hasAttribute("title") || field.closest("label")) return;
+        const row = field.closest(".form-row, .sheet-row");
+        const rowIndex = Number(row?.dataset.index);
+        const label = row && [...row.children].find((child) => child.classList.contains("label"))?.textContent?.trim();
+        let name = label || field.getAttribute("data-placeholder") || field.placeholder || "프로젝트 입력";
+        if (Number.isInteger(rowIndex)) {
+          if (row.classList.contains("field-row")) name = `개요 ${rowIndex + 1} ${field.tagName === "TEXTAREA" ? "내용" : "항목"}`;
+          else if (row.classList.contains("block-row")) name = `설명 글 ${rowIndex + 1}`;
+          else if (row.classList.contains("image-row")) name = `설명 이미지 ${rowIndex + 1} 캡션`;
+        }
+        const kind = field.type === "checkbox" ? "선택" : field.tagName === "SELECT" ? "선택" : "입력";
+        field.setAttribute("aria-label", `${name} ${kind}`);
+      });
+    };
+
     const textInput = (getValue, setValue, props = {}) => h("input", {
       type: "text",
       class: props.class,
       placeholder: props.placeholder,
       title: props.title,
+      "aria-label": props["aria-label"],
       value: getValue() ?? "",
       oninput: (event) => { setValue(event.target.value); markDirty(); },
     });
@@ -852,6 +883,7 @@
       min: props.min,
       step: props.step || "any",
       placeholder: props.placeholder,
+      "aria-label": props["aria-label"],
       value: getValue() ?? "",
       oninput: (event) => { setValue(numberValue(event.target.value)); markDirty(); props.onInput?.(); },
     });
@@ -864,9 +896,12 @@
       onChange: () => { rerender(); markDirty(); },
     });
 
-    const addButton = (label, onclick) => h("button", { type: "button", class: "add-row", onclick }, label);
-
-    const dragHandle = () => h("span", { class: "handle", title: "끌어서 순서 바꾸기" }, "⋮⋮");
+    const dragHandle = () => h("span", {
+      class: "handle",
+      tabindex: 0,
+      title: "끌어서 순서 바꾸기",
+      "aria-label": "행 순서 변경. 끌어서 순서를 바꾸고 Shift+F10으로 행 메뉴를 엽니다.",
+    }, "⋮⋮");
 
     // Drag-to-reorder: container children carry data-index into list (an array, or a function returning
     // the current one) and are dragged by their handle. axis "x" suits grids: left/right half decides.
@@ -912,8 +947,30 @@
     };
 
     // A thumbnail that replaces its image when clicked.
-    const thumbButton = (src, label, title, onclick) => {
-      const thumb = h("button", { type: "button", class: "thumb", title, onclick }, label ? h("span", { class: "thumb-label" }, label) : null);
+    const thumbButton = (src, label, title, onclick, onFiles) => {
+      const thumb = h("button", {
+        type: "button",
+        class: "thumb",
+        title,
+        onclick: async (event) => {
+          if (thumb.classList.contains("busy")) return;
+          thumb.classList.add("busy");
+          try { await onclick(event); } finally { thumb.classList.remove("busy"); }
+        },
+      }, label ? h("span", { class: "thumb-label" }, label) : null);
+      if (onFiles) {
+        const isFile = (event) => event.dataTransfer?.types.includes("Files");
+        thumb.addEventListener("dragover", (event) => { if (isFile(event)) { event.preventDefault(); thumb.classList.add("over"); } });
+        thumb.addEventListener("dragleave", () => thumb.classList.remove("over"));
+        thumb.addEventListener("drop", async (event) => {
+          if (!isFile(event)) return;
+          event.preventDefault();
+          event.stopPropagation();
+          thumb.classList.remove("over");
+          thumb.classList.add("busy");
+          try { await onFiles([...event.dataTransfer.files].slice(0, 1)); } finally { thumb.classList.remove("busy"); }
+        });
+      }
       setThumb(thumb, src);
       return thumb;
     };
@@ -921,9 +978,9 @@
     // Under an image grid: the + button picks files; the label only says the whole grid takes drops.
     const addLine = (onFiles) => {
       const picker = h("input", { type: "file", accept: "image/*", multiple: true, hidden: true, onchange: () => onFiles(picker.files) });
-      const plus = h("button", { type: "button", class: "plus", title: "이미지 추가", onclick: () => { picker.value = ""; picker.click(); } });
-      plus.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="5"/></svg>';
-      return h("div", { class: "add-drop" }, plus, h("span", {}, "OR DRAG AND DROP"), picker);
+      const line = FiltAdd.line("이미지 추가", () => { picker.value = ""; picker.click(); }, { hint: "OR DRAG AND DROP" });
+      line.append(picker);
+      return line;
     };
 
     // ---------- drawing tools (north dial, scale calibration) ----------
@@ -1214,8 +1271,8 @@
       render();
       sortable(list, fields, () => { render(); markDirty(); });
       return section("개요표", null, [
-        h("div", { class: "sheet" }, list, h("div", { class: "add-line" },
-          addButton("+ 항목", () => { fields.push({ label: "", value: "" }); render(); markDirty(); }))),
+        h("div", { class: "sheet" }, list),
+        FiltAdd.line("개요 항목 추가", () => { fields.push({ label: "", value: "" }); render(); markDirty(); }),
       ]);
     };
 
@@ -1288,24 +1345,54 @@
       type: "button",
       class: `show-toggle${slot[HIDE_KEY[device]] ? "" : " on"}`,
       title: `${DEVICE_LABEL[device]}에 표시`,
+      "aria-label": `${DEVICE_LABEL[device]} 이미지 포함`,
+      "aria-pressed": String(!slot[HIDE_KEY[device]]),
       onclick: () => { slot[HIDE_KEY[device]] = !slot[HIDE_KEY[device]]; rerender(); markDirty(); },
     });
 
     // The card's picture for one device: click or drop a file on it to replace that device's image.
     const cardMedia = (slot, device, rerender) => {
       const key = SLOT_KEY[device];
-      const media = h("div", { class: "card-media", title: `${DEVICE_LABEL[device]} 이미지 교체` });
+      const media = h("div", {
+        class: "card-media",
+        tabindex: 0,
+        role: "button",
+        title: `${DEVICE_LABEL[device]} 이미지 교체`,
+        "aria-label": `${DEVICE_LABEL[device]} 이미지 교체. Enter 또는 Space로 파일 선택, Shift+F10으로 이미지 메뉴 열기`,
+      });
       const img = h("img", { alt: "", draggable: false });
       const turn = Number(slot.rotation) || 0;
       if (turn) img.style.transform = `rotate(${turn}deg)${turn % 180 ? " scale(.625)" : ""}`;
       img.onerror = () => media.classList.add("broken");
       media.append(img);
       store.assetUrl(slot[key]).then((url) => { if (url) img.src = url; else media.classList.add("broken"); });
-      const replace = (files) => uploadMany([...files].slice(0, 1), device, (_, src) => { slot[key] = src[device]; rerender(); markDirty(); });
-      media.addEventListener("click", async () => {
+      const replace = async (files) => {
+        if (calibrating.has(slot)) return;
+        media.classList.add("busy");
+        try {
+          await uploadMany([...files].slice(0, 1), device, (_, src) => { slot[key] = src[device]; rerender(); markDirty(); });
+        } finally {
+          media.classList.remove("busy");
+        }
+      };
+      const pickReplacement = async () => {
         if (calibrating.has(slot)) return;
         const file = await pickFile();
-        if (file) replace([file]);
+        if (file) await replace([file]);
+      };
+      media.addEventListener("click", pickReplacement);
+      media.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); pickReplacement(); }
+      });
+      const isFile = (event) => event.dataTransfer?.types.includes("Files");
+      media.addEventListener("dragover", (event) => { if (isFile(event) && !calibrating.has(slot)) { event.preventDefault(); media.classList.add("over"); } });
+      media.addEventListener("dragleave", () => media.classList.remove("over"));
+      media.addEventListener("drop", (event) => {
+        if (!isFile(event) || calibrating.has(slot)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        media.classList.remove("over");
+        replace(event.dataTransfer.files);
       });
       return { media, img };
     };
@@ -1386,11 +1473,16 @@
       };
 
       let dial;
-      const northField = numberInput(() => slot.north, (value) => { slot.north = value; }, { placeholder: "NUM", onInput: () => dial.redraw() });
+      const northField = numberInput(() => slot.north, (value) => { slot.north = value; }, {
+        placeholder: "NUM",
+        "aria-label": `도면 ${index + 1} 북쪽 방향`,
+        onInput: () => dial.redraw(),
+      });
       dial = compassDial(() => slot.north, (degrees) => { slot.north = degrees; northField.value = degrees; markDirty(); });
       const scaleField = numberInput(() => slot.scale, (value) => { slot.scale = value; }, {
         min: "1",
         placeholder: "NUM",
+        "aria-label": `도면 ${index + 1} 축척`,
         onInput: () => { drawBar(); redrawCalibrator?.(); },
       });
       const card = h("div", { class: `card drawing-card${slot[HIDE_KEY[device]] ? " off" : ""}${calibrating.has(slot) ? " calibrating" : ""}`, dataset: { index } },
@@ -1418,7 +1510,7 @@
             }, "SCALE"),
             h("label", { class: "strip-num" }, "1 : ", scaleField),
             bar),
-          h("div", { class: "strip-title" }, textInput(() => slot.title, (value) => { slot.title = value; }, { placeholder: "TITLE" }))));
+          h("div", { class: "strip-title" }, textInput(() => slot.title, (value) => { slot.title = value; }, { placeholder: "TITLE", "aria-label": `도면 ${index + 1} 제목` }))));
 
       store.assetUrl(slot[SLOT_KEY[device]]).then((url) => (url ? drawingViewBox(url) : null)).then((found) => {
         box = found;
@@ -1452,9 +1544,16 @@
       });
       const card = h("div", {
         class: `card placeholder${kind === "drawing" ? " drawing" : ""}`,
+        tabindex: 0,
+        role: "button",
+        "aria-label": "이미지 추가. Enter 또는 Space로 파일 선택",
         title: "이미지 추가",
         onclick: () => { picker.value = ""; picker.click(); },
       }, picker);
+      card.addEventListener("keydown", (event) => {
+        if (event.target !== card) return;
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); picker.value = ""; picker.click(); }
+      });
       card.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 100 100M100 0 0 100" fill="none" stroke="#bbb" stroke-width="1" vector-effect="non-scaling-stroke"/></svg>');
       return card;
     };
@@ -1591,9 +1690,10 @@
       const imageBlock = (block, index) => {
         const caption = textInput(() => block.caption, (value) => { block.caption = value; }, { placeholder: "캡션" });
         previewStyle(caption, block.captionAlign, block.captionIndent);
+        const replace = (files) => uploadMany([...files].slice(0, 1), PC, (_, src) => { block.src = src[PC]; render(); markDirty(); }, DESCRIPTION_SHRINK);
         return rowMenu(h("div", { class: "sheet-row image-row", dataset: { index } },
           dragHandle(),
-          thumbButton(block.src, null, "이미지 교체", () => uploadDescriptionImage((src) => { block.src = src; render(); markDirty(); })),
+          thumbButton(block.src, null, "이미지 교체", () => uploadDescriptionImage((src) => { block.src = src; render(); markDirty(); }), replace),
           h("div", { class: "text-cell" }, textTools(block, ["captionAlign", "captionIndent"], render), caption)), blocks, block, render, "이미지");
       };
       const render = () => list.replaceChildren(...blocks.map((block, index) => (block.type === "image" ? imageBlock(block, index) : textBlock(block, index))));
@@ -1606,9 +1706,7 @@
       render();
       sortable(list, blocks, () => { render(); markDirty(); });
       // Image files dropped on the description become image blocks after the row they land on.
-      const sheetBox = h("div", { class: "sheet" }, list, h("div", { class: "add-line" },
-        addButton("+ 글", () => add({ type: "text", html: "" })),
-        addButton("+ 이미지", () => uploadDescriptionImage((src) => add({ type: "image", src, caption: "" })))));
+      const sheetBox = h("div", { class: "sheet" }, list);
       const isFile = (event) => event.dataTransfer?.types.includes("Files");
       sheetBox.addEventListener("dragover", (event) => { if (isFile(event)) { event.preventDefault(); sheetBox.classList.add("file-over"); } });
       sheetBox.addEventListener("dragleave", (event) => { if (!sheetBox.contains(event.relatedTarget)) sheetBox.classList.remove("file-over"); });
@@ -1625,7 +1723,14 @@
           markDirty();
         }, DESCRIPTION_SHRINK);
       });
-      return section("설명", null, sheetBox);
+      return section("설명", null, [sheetBox,
+        FiltAdd.line("본문 추가", null, {
+          actions: [
+            ["글 추가", () => add({ type: "text", html: "" })],
+            ["이미지 추가", () => uploadDescriptionImage((src) => add({ type: "image", src, caption: "" }))],
+          ],
+        }),
+      ]);
     };
 
     const jsonSection = () => {
@@ -1663,6 +1768,7 @@
         jsonSection(),
       );
       updateBadges();
+      labelEditorFields();
       schedulePreview(0);
     };
 
@@ -1670,6 +1776,7 @@
 
     const layoutStage = () => {
       const stage = $("#stage");
+      if (!stage.clientWidth || !stage.clientHeight) return;
       const inner = $("#stageInner");
       const size = VIEWPORTS[viewport];
       const availableWidth = stage.clientWidth - 24;
@@ -1723,6 +1830,11 @@
     }));
     $("#reloadPreview").addEventListener("click", renderPreview);
     new ResizeObserver(layoutStage).observe($("#stage"));
+    window.FiltHeader?.mountPreviewToggle?.({
+      layout: $("#projectLayout"),
+      pane: $("#projectPreview"),
+      onChange: () => requestAnimationFrame(layoutStage),
+    });
 
     // ---------- load / save ----------
 
@@ -1746,7 +1858,7 @@
     window.FiltHeader.guard({
       isDirty: () => dirty,
       saveLabel: "임시저장하고 이동",
-      save: () => saveProject("draft").then(() => true, (error) => { toast(error.message, true); return false; }),
+      save: () => saveProject("draft").then((clean) => clean, (error) => { toast(error.message || "저장하지 못했습니다.", true); return false; }),
       discard: setClean,
     });
 
@@ -1768,20 +1880,41 @@
       setClean();
     };
 
-    const saveProject = async (target, { quiet = false } = {}) => {
-      if (!project) return;
+    const saveProject = (target, { quiet = false } = {}) => {
+      if (!project) return Promise.resolve(false);
+      if (saving) return saving;
       if (target === "runtime" && !confirm(
         "게시용으로 저장할까요?\n\n다음에 deploy를 누르면 공개 페이지에 반영됩니다.",
-      )) return;
-      const result = await store.saveProject(project.id, target, compile(project));
-      project.edited = result.edited;
-      $("#editedRow")?.replaceWith(editedRow());
-      const row = await syncWorks();
-      await refreshList(project.id);
-      setClean();
-      if (row) $("#worksField")?.replaceWith(worksField());
-      const category = row && works.categories.find((entry) => entry.id === row.category)?.label;
-      if (!quiet || row) toast(`저장했습니다: ${result.path}${row ? `\nWORKS 목록 반영: ${category}` : ""}`);
+      )) return Promise.resolve(false);
+      const revision = editRevision;
+      const snapshot = JSON.parse(JSON.stringify(project));
+      const projectId = snapshot.id;
+      const buttons = [$("#saveDraft"), $("#saveRuntime")];
+      buttons.forEach((button) => { button.disabled = true; button.setAttribute("aria-busy", "true"); });
+      saving = (async () => {
+        try {
+          const result = await store.saveProject(projectId, target, compile(snapshot));
+          // Local backends may omit edited; in that case retain the history already shown to the editor.
+          if (project?.id === projectId && result?.edited) {
+            project.edited = result.edited;
+            $("#editedRow")?.replaceWith(editedRow());
+          }
+          // WORKS mapping is part of this snapshot only. A selection made while saving remains dirty.
+          const row = project?.id === projectId && editRevision === revision ? await syncWorks() : null;
+          await refreshList(projectId);
+          const clean = setClean(revision);
+          if (row) $("#worksField")?.replaceWith(worksField());
+          const category = row && works.categories.find((entry) => entry.id === row.category)?.label;
+          if (!quiet || row) toast(clean
+            ? `저장했습니다: ${result.path}${row ? `\nWORKS 목록 반영: ${category}` : ""}`
+            : `저장했습니다: ${result.path}\n저장 중 수정한 내용은 아직 미저장입니다. 다시 draft 또는 save를 눌러주세요.`);
+          return clean;
+        } finally {
+          saving = null;
+          buttons.forEach((button) => { button.disabled = false; button.removeAttribute("aria-busy"); });
+        }
+      })();
+      return saving;
     };
 
     const guarded = (fn) => async (...args) => {

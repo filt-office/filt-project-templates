@@ -764,8 +764,14 @@
   // ---------- NEWS ----------
   const renderNews = (data) => {
     const news = data.news || [];
-    const recruit = data.recruit || [];
-    const empty = data.recruitEmpty || "진행중인 채용 공고가 없습니다.";
+    const recruit = (data.recruit || []).map((entry) => {
+      const details = [["모집 분야", entry.field], ["모집 요건", entry.requirements], ["제출물", entry.submissions], ["마감일", entry.deadline]]
+        .filter(([, value]) => typeof value === "string" && value.trim())
+        .map(([label, value]) => `${label}\n${value}`);
+      if (entry.text) details.push(entry.text); // Preserve legacy notices without migrating their saved data.
+      return { ...entry, date: entry.deadline ?? entry.date, type: entry.field ?? entry.type, text: details.join("\n\n") };
+    });
+    const empty = data.recruitEmpty ?? "진행중인 채용 공고가 없습니다.";
 
     // PC: rows with a hover preview on the right.
     const right = el("div", "right");
@@ -794,7 +800,7 @@
     const newsSec = section("NEWS");
     newsSec.inner.append(...news.map(desktopRow));
     const recruitSec = section("RECRUIT");
-    recruitSec.inner.append(...(recruit.length ? recruit.map(desktopRow) : [el("div", "item", empty)]));
+    recruitSec.inner.append(...(recruit.length ? recruit.map(desktopRow) : empty ? [el("div", "item", empty)] : []));
     const desktop = desktopFrame([newsSec.sec, recruitSec.sec], right);
     desktop.dataset.page = "news";
 
@@ -805,7 +811,7 @@
       row.append(
         el("div", "list-title", entry.mobileTitle || entry.title),
         el("div", "list-date", entry.date || "-"),
-        el("div", "list-extra", entry.author || "-"),
+        el("div", "list-extra", (category === "Recruit" ? entry.type : entry.author) || "-"),
       );
       const timeline = el("div", "timeline");
       const body = el("div", "news-body");
@@ -816,6 +822,7 @@
         img.loading = "lazy";
         body.append(img);
       }
+      if (category === "Recruit") body.style.whiteSpace = "pre-line";
       body.append(document.createTextNode(entry.text ? `- ${entry.text}` : "-"));
       timeline.append(el("div", "gap-6"), body, el("div", "gap-10"));
       const pair = { row, timeline, category };
@@ -832,7 +839,7 @@
     };
     const grid = el("div", "news-grid");
     news.forEach((entry) => grid.append(...mobileRow(entry, "News")));
-    (recruit.length ? recruit : [{ title: empty }]).forEach((entry) => grid.append(...mobileRow(entry, "Recruit")));
+    (recruit.length ? recruit : empty ? [{ title: empty }] : []).forEach((entry) => grid.append(...mobileRow(entry, "Recruit")));
 
     const mobile = mobileFrame(
       [{ id: "all", label: "All" }, { id: "News", label: "News" }, { id: "Recruit", label: "Recruit" }],

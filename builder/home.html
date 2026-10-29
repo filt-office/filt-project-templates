@@ -31,6 +31,7 @@
   </header>
   <script src="header.js"></script>
   <script src="store.js"></script>
+  <script src="add-controls.js"></script>
   <script src="row-menu.js"></script>
   <script src="page-editor.js"></script>
   <script>
@@ -126,14 +127,13 @@
         };
 
         return [
-          ctx.section(`슬라이드 (${slides.length})`,
-            [
-              h("button", { onclick: addFiles }, "+ 이미지 업로드"),
-              h("button", { onclick: addExisting }, "+ 저장소 이미지"),
-            ],
+          ctx.section(`슬라이드 (${slides.length})`, null,
             slides.length
               ? h("div", { class: "slides" }, slides.map(card))
-              : h("p", { class: "muted" }, "슬라이드가 없습니다. 이미지를 업로드하세요.")),
+              : h("p", { class: "muted" }, "슬라이드가 없습니다. 이미지를 업로드하세요."),
+            FiltAdd.line("슬라이드 이미지 추가", null, {
+              actions: [["이미지 업로드", addFiles], ["저장소 이미지 선택", addExisting]],
+            })),
         ];
       },
     });
