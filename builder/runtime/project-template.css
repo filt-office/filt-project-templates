@@ -4,8 +4,8 @@
 .filt-project-mount {
   --accent: var(--filt-key, #BD005E);
   --bg-color: #fff;
-  --panel-width: clamp(300px, 28vw, 430px);
-  --panel-hide-width: 210px;
+  --panel-width: var(--filt-panel-width, clamp(300px, 28vw, 430px));
+  --panel-hide-width: var(--filt-menu-hide, 210px);
   --panel-padding: clamp(12px, 1vw, 18px);
   /* Type sizes come from the design system (--filt-size-<id>, design.js); each PC size shrinks with
      the window down to the same distance below it as the original clamp(). */
@@ -127,8 +127,8 @@
   object-fit: contain !important;
   box-sizing: border-box !important;
 }
-.filt-project-mount .img-section img[data-fit="pad-s"] { padding: 7vmin !important; }
-.filt-project-mount .img-section img[data-fit="pad-l"] { padding: 15vmin !important; }
+.filt-project-mount .img-section img[data-fit="pad-s"] { padding: var(--filt-pad-s, 7vmin) !important; }
+.filt-project-mount .img-section img[data-fit="pad-l"] { padding: var(--filt-pad-l, 15vmin) !important; }
 
 .filt-project-mount .mobile-drawing-section {
   display: none;
@@ -411,7 +411,7 @@
 
 /* 공통 메뉴 유지 + 이전 모델의 "꽉 찬 느낌" 보강 */
 #filt-common-menu-v2 .side-panel {
-  left: -210px;
+  left: calc(var(--filt-menu-hide, 210px) * -1);
   width: 240px;
   background: transparent !important;
   border-right: 1px solid #000;

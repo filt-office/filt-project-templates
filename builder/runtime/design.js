@@ -2,7 +2,8 @@
 //   { colors: [{ id, name, value }],
 //     logo: { stroke, color, duration, ease, intro: { scale, appear, gather, hold, dock } },
 //     type: { family, weight, font?: { src, family, format, name }, scale: [{ id, pc, mobile, weight, line }] },
-//     motion: { panel, hover, slide, slideInterval, slideEase } }
+//     motion: { panel, hover, slide, slideInterval, slideEase },
+//     layout: { panelMin, panelVw, panelMax, menuHide, padSmall, padLarge, photoPC, photoMOB } }
 // Sets the --filt-* variables on :root (builder/store.js designVars() uses the same names). Only values
 // present in the file are set; every style falls back to the original value, e.g. var(--filt-key, #BD005E),
 // so a missing or older file (colours only) leaves the rest of the site as it was.
@@ -93,6 +94,15 @@
     if (isNumber(motion.slide)) set("--filt-motion-slide", `${motion.slide}s`);
     if (isNumber(motion.slideInterval)) set("--filt-slide-interval", `${motion.slideInterval}s`);
     if (/^[a-z0-9.,() -]+$/i.test(motion.slideEase || "")) set("--filt-motion-slide-ease", motion.slideEase);
+
+    // photoPC / photoMOB are for scripts/publish-images.js; the 768px mobile breakpoint stays in the CSS.
+    const layout = design.layout || {};
+    if (isNumber(layout.panelMin) && isNumber(layout.panelVw) && isNumber(layout.panelMax)) {
+      set("--filt-panel-width", `clamp(${layout.panelMin}px, ${layout.panelVw}vw, ${layout.panelMax}px)`);
+    }
+    if (isNumber(layout.menuHide)) set("--filt-menu-hide", `${layout.menuHide}px`);
+    if (isNumber(layout.padSmall)) set("--filt-pad-s", `${layout.padSmall}vmin`);
+    if (isNumber(layout.padLarge)) set("--filt-pad-l", `${layout.padLarge}vmin`);
     return font ? loadFont(font) : Promise.resolve();
   };
 

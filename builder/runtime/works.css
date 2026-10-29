@@ -6,7 +6,7 @@
 .filt-works {
   --accent: var(--filt-key, #BD005E);
   --bg-color: #fff;
-  --panel-hide-width: 210px;
+  --panel-hide-width: var(--filt-menu-hide, 210px);
   --m-top: 65px;
   --m-gap: 25px;
   --m-ratio: 120%;
