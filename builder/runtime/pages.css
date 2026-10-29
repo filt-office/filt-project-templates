@@ -230,10 +230,8 @@ body.menu-open .filt-page .info-desktop .left {
 }
 .filt-page .info-desktop .thumb.show { opacity: 1; }
 
-/* OFFICE people photo: kept at its uploaded ratio; an empty frame when there is no photo. */
+/* OFFICE people photo: kept at its uploaded ratio. */
 .filt-page .info-desktop .portrait .thumb { max-height: calc(100vh - 300px); object-fit: contain; }
-.filt-page .info-desktop .portrait.is-empty { aspect-ratio: 3 / 4; background-color: #eee; }
-.filt-page .info-desktop .portrait.is-empty .thumb { display: none; }
 
 /* ==================== Mobile ==================== */
 @media (max-width: 768px) {

@@ -292,30 +292,25 @@
     const principals = people.filter((person) => person.principal);
     const others = people.filter((person) => !person.principal);
 
-    // PC: the principal's photo on the right; hovering a person shows theirs (an empty frame when none).
+    // PC: hovering a person shows their photo on the right (nothing when they have none).
     const right = el("div", "right");
     const portrait = el("div", "thumbnail portrait");
     const photo = el("img", "thumb");
     photo.alt = "";
     portrait.append(photo);
     right.append(portrait);
-    const showPhoto = (person) => {
-      const src = resolveAsset(person && person.image);
-      portrait.classList.toggle("is-empty", !src);
-      if (!src) { photo.removeAttribute("src"); photo.classList.remove("show"); return; }
-      if (photo.getAttribute("src") === src) return;
-      photo.classList.remove("show");
-      photo.onload = () => photo.classList.add("show");
-      photo.src = src;
-      if (photo.complete) photo.classList.add("show");
-    };
-    const defaultPerson = principals[0] || people[0];
-    if (people.length) showPhoto(defaultPerson);
-    else right.replaceChildren();
     let photoTimeout = null;
     const withPhoto = (person, item) => {
-      item.addEventListener("mouseenter", () => { clearTimeout(photoTimeout); showPhoto(person); });
-      item.addEventListener("mouseleave", () => { photoTimeout = setTimeout(() => showPhoto(defaultPerson), 200); });
+      item.addEventListener("mouseenter", () => {
+        clearTimeout(photoTimeout);
+        if (!person.image) { photo.classList.remove("show"); return; }
+        photo.src = resolveAsset(person.image);
+        if (photo.complete) photo.classList.add("show");
+        else photo.onload = () => photo.classList.add("show");
+      });
+      item.addEventListener("mouseleave", () => {
+        photoTimeout = setTimeout(() => photo.classList.remove("show"), 200);
+      });
       return item;
     };
 
