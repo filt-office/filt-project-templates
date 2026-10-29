@@ -708,6 +708,9 @@
         await store.ready();
         store.mountHeader($("#account"));
         [data] = await Promise.all([store.getWorks(), loadProjects()]);
+        // Detail pages ported by hand share the row's ID; link those without asking. (projectId is
+        // only used by the builder, so this rides along with the next save.)
+        data.works.forEach((work) => { if (!work.projectId && projectInfo[work.id]) work.projectId = work.id; });
         $("#categoryFilter").replaceChildren(
           h("option", { value: "" }, "전체 분류"),
           ...data.categories.map((category) => h("option", { value: category.id }, category.label)),
