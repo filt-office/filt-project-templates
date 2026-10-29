@@ -10,11 +10,13 @@
   }
 
   const templateBase = new URL(".", script.src);
-  // Relative thumbnails are uploaded assets (assets/works/PC/...); mobile uses the MOB copy.
+  // Relative thumbnails are uploaded assets (assets/works/PC/...) served from the images repo;
+  // mobile uses the MOB copy.
+  const imagesBase = "https://filt-office.github.io/filt-website-images/";
   const resolveAsset = (src, device = "PC") => {
     if (!src) return "";
     const path = device === "MOB" ? src.replace(/^assets\/([^/]+)\/PC\//, "assets/$1/MOB/") : src;
-    return new URL(path, templateBase).href;
+    return new URL(path, /^assets\//.test(path) ? imagesBase : templateBase).href;
   };
   const listUrl = script.dataset.listUrl || "/works_list";
   const galleryUrl = script.dataset.galleryUrl || "/works_gallery";

@@ -21,6 +21,9 @@
   }
 
   const templateBase = new URL(".", script.src);
+  // Uploaded images are stored as relative paths (assets/pages/PC/x.jpg) and served from the images repo.
+  const imagesBase = "https://filt-office.github.io/filt-website-images/";
+  const resolveAsset = (src) => (src ? new URL(src, /^assets\//.test(src) ? imagesBase : templateBase).href : "");
   const worksUrl = script.dataset.worksUrl || "/works_list";
 
   const addLink = (key, href) => {
@@ -146,7 +149,7 @@
     const stack = el("section", "slides");
     const slides = (data.slides || []).map((slide, index) => {
       const img = el("img");
-      img.src = slide.src;
+      img.src = resolveAsset(slide.src);
       img.alt = slide.alt || "";
       img.style.objectPosition = slide.position || "center center";
       if (index) img.loading = "lazy";
@@ -373,7 +376,7 @@
       item.addEventListener("mouseenter", () => {
         if (!entry.image) return;
         clearTimeout(hideTimeout);
-        thumb.src = entry.image;
+        thumb.src = resolveAsset(entry.image);
         if (thumb.complete) thumb.classList.add("show");
         else thumb.onload = () => thumb.classList.add("show");
       });
@@ -403,7 +406,7 @@
       const body = el("div", "news-body");
       if (entry.image) {
         const img = el("img");
-        img.src = entry.image;
+        img.src = resolveAsset(entry.image);
         img.alt = "";
         img.loading = "lazy";
         body.append(img);

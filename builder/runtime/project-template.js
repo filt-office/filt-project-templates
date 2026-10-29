@@ -12,8 +12,9 @@
   }
 
   const templateBase = new URL(".", script.src);
-  // Uploaded assets are stored as paths relative to the template (e.g. assets/<id>/x.jpg).
-  const resolveAsset = (src) => (src ? new URL(src, templateBase).href : "");
+  // Uploaded assets are stored as relative paths (assets/<id>/PC/x.jpg) and served from the images repo.
+  const imagesBase = "https://filt-office.github.io/filt-website-images/";
+  const resolveAsset = (src) => (src ? new URL(src, /^assets\//.test(src) ? imagesBase : templateBase).href : "");
   const addLink = (key, href) => {
     const existing = document.querySelector(`link[data-filt-template="${key}"]`);
     if (existing) return existing.sheet ? Promise.resolve() : new Promise((resolve, reject) => {
