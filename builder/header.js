@@ -38,7 +38,7 @@
       color: #111;
       text-decoration: none;
     }
-    .fb-logo svg { flex: none; width: 58px; height: 48px; fill: none; stroke: #444; stroke-width: 4.2; }
+    .fb-logo svg { flex: none; width: 58px; height: 48px; fill: none; stroke: #444; stroke-width: var(--filt-logo-stroke, 5); } /* same stroke as the site (design.html) */
     .fb-logo span { font-size: 14px; }
     .fb-actions {
       display: flex;
