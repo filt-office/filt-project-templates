@@ -358,7 +358,7 @@
       const commits = await gh(`https://api.github.com/repos/${PUBLIC_REPO}/commits?path=version.json&per_page=15`);
       return commits.map((commit) => {
         const match = commit.commit.message.match(/^(publish|rollback) ([0-9a-f]{40})(?: · (.*))?/);
-        return match && { kind: match[1], sha: match[2], note: match[3] || "", date: commit.commit.committer.date };
+        return match && { kind: match[1], sha: match[2], note: match[3] || "", date: commit.commit.committer.date, url: commit.html_url };
       }).filter(Boolean);
     },
     publish: (message) => dispatch({ action: "publish", message: message || "빌더에서 게시" }),
@@ -542,6 +542,21 @@
       before(item("span", "local", "로컬 모드 · 게시는 scripts/release.sh"));
       return;
     }
+    // Last publish: version, who ran it (the note ends with "(@login)") and when; links to the
+    // public repo's commit on GitHub.
+    const version = before(item("a", "…", "마지막 게시", "version"));
+    version.href = `https://github.com/${PUBLIC_REPO}/commits/main/version.json`;
+    version.target = "_blank";
+    version.rel = "noopener";
+    publishing.history().then(([last]) => {
+      if (!last) { version.textContent = "게시 기록 없음"; return; }
+      const who = (last.note.match(/@([\w-]+)\)?\s*$/) || [])[1];
+      const when = new Date(last.date);
+      const pad = (n) => String(n).padStart(2, "0");
+      version.textContent = `v.${last.sha.slice(0, 7)}${who ? ` @${who}` : ""} ${pad(when.getMonth() + 1)}/${pad(when.getDate())} ${pad(when.getHours())}:${pad(when.getMinutes())}`;
+      version.title = `마지막 ${last.kind === "rollback" ? "되돌리기" : "게시"}: ${last.note || ""}\n${when.toLocaleString("ko-KR")}\n누르면 GitHub에서 봅니다`;
+      version.href = last.url;
+    }).catch(() => { version.textContent = "게시 기록"; });
     if (currentUser) {
       const account = before(item("button", currentUser.login, "누르면 로그아웃", "account"));
       account.addEventListener("click", () => { if (confirm(`${currentUser.login} 계정에서 로그아웃할까요?`)) logout(); });
@@ -551,6 +566,28 @@
   };
 
   const backend = mode === "github" ? github : local;
+
+  // ---------------------------------------------------------------- edit stamps
+  // Saving compares with what was loaded and stamps what changed: each changed works row and
+  // each project gets edited: { by, at, what } (who, ISO time, the changed fields or sections).
+  const userName = () => currentUser?.login || (mode === "github" ? "" : "local");
+  const stamp = (what) => ({ by: userName(), at: new Date().toISOString(), what });
+  const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+  const WORK_FIELDS = [
+    ["category", "분류"], ["nameKo", "한글명"], ["nameEn", "영문명"], ["year", "연도"], ["program", "용도"],
+    ["location", "지역"], ["status", "상태"], ["thumb", "썸네일"], ["cardThumb", "카드 이미지"],
+    ["mobileShape", "모바일 비율"], ["show.list", "목록 표시"], ["show.gallery", "갤러리 표시"], ["show.mobile", "모바일 표시"],
+    ["galleryOrder", "갤러리 순서"], ["projectId", "상세페이지"], ["link", "링크"], ["id", "ID"], ["note", "메모"],
+  ];
+  const valueAt = (obj, path) => path.split(".").reduce((value, key) => value?.[key], obj);
+  const PROJECT_PARTS = [
+    ["영문 제목", (p) => p.overview?.titleEn], ["한글 제목", (p) => p.overview?.subtitle], ["개요표", (p) => p.overview?.fields],
+    ["이미지", (p) => p.gallery], ["도면 설정", (p) => { const { images, ...rest } = p.mobile?.drawings || {}; return rest; }], ["설명", (p) => p.description],
+  ];
+  let loadedWorks = null;
+  const loadedProjects = new Map();
+  const copy = (value) => JSON.parse(JSON.stringify(value));
+
   window.FiltStore = {
     mode,
     ready,
@@ -558,6 +595,38 @@
     isExternal,
     imageFormats: IMAGE_FORMATS,
     ...backend,
+    userName,
     upload: async (projectId, device, file) => backend.upload(projectId, device, await prepareUpload(file)),
+    getWorks: async () => {
+      const data = await backend.getWorks();
+      loadedWorks = copy(data);
+      return data;
+    },
+    saveWorks: async (data) => {
+      const before = new Map((loadedWorks?.works || []).map((work) => [work.id, work]));
+      data.works.forEach((work) => {
+        const old = before.get(work.id);
+        const what = old ? WORK_FIELDS.filter(([path]) => !same(valueAt(work, path), valueAt(old, path))).map(([, label]) => label) : ["새 행"];
+        if (what.length) work.edited = stamp(what.join(", "));
+      });
+      const result = await backend.saveWorks(data);
+      loadedWorks = copy(data);
+      return result;
+    },
+    getProject: async (id) => {
+      const result = await backend.getProject(id);
+      loadedProjects.set(id, copy(result.project));
+      return result;
+    },
+    // The editor reshapes what it loads; it passes that state here as the comparison point.
+    rememberProject: (id, project) => { loadedProjects.set(id, copy(project)); },
+    saveProject: async (id, target, project) => {
+      const old = loadedProjects.get(id);
+      const what = old ? PROJECT_PARTS.filter(([, read]) => !same(read(project), read(old))).map(([label]) => label) : ["새 프로젝트"];
+      project.edited = stamp(what.length ? what.join(", ") : "변경 없음");
+      const result = await backend.saveProject(id, target, project);
+      loadedProjects.set(id, copy(project));
+      return { ...result, edited: project.edited };
+    },
   };
 })();

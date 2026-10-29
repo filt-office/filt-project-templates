@@ -1046,6 +1046,21 @@
     // The tab title is always "영문 제목 | 한글 제목" (see compile()); the ID is made from the English
     // title when the project is created and then stays, since files, images and /project?id= use it.
     const tabTitle = () => [project.overview.titleEn, project.overview.subtitle].map((part) => (part || "").trim()).filter(Boolean).join(" | ");
+    // Who saved last, when, and which parts changed (written by store.saveProject).
+    const shortDate = (iso) => {
+      const date = new Date(iso);
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    };
+    const editedRow = () => {
+      const edited = project.edited;
+      const text = edited
+        ? `${edited.by ? `@${edited.by} ` : ""}${shortDate(edited.at)} · ${edited.what}`
+        : "기록 없음 (다음 저장부터 적힙니다)";
+      const row = formRow("최종 저장", h("input", { type: "text", value: text, readOnly: true, tabIndex: -1, title: text }));
+      row.id = "editedRow";
+      return row;
+    };
     const basicSection = () => {
       const tab = h("input", { type: "text", value: tabTitle(), readOnly: true, tabIndex: -1, title: "영문 제목 | 한글 제목 (자동)" });
       const titleRow = (label, key) => formRow(label, textInput(() => project.overview[key], (value) => { project.overview[key] = value; tab.value = tabTitle(); }));
@@ -1054,6 +1069,7 @@
         titleRow("영문 제목", "titleEn"),
         titleRow("한글 제목", "subtitle"),
         formRow("탭 제목", tab),
+        editedRow(),
         worksField(),
       ));
     };
@@ -1737,6 +1753,7 @@
       const { project: data } = await store.getProject(id);
       project = ensureShape(data);
       project.id = id;
+      store.rememberProject(id, compile(project));
       worksCategory = null;
       await refreshList(id);
       setUrl(id);
@@ -1750,6 +1767,8 @@
         "게시용으로 저장할까요?\n\n다음에 deploy를 누르면 공개 페이지에 반영됩니다.",
       )) return;
       const result = await store.saveProject(project.id, target, compile(project));
+      project.edited = result.edited;
+      $("#editedRow")?.replaceWith(editedRow());
       const row = await syncWorks();
       await refreshList(project.id);
       setClean();
