@@ -1,6 +1,8 @@
 // Site design from the builder's design page (pages/design.json, version 2):
-//   { colors: [{ id, name, value }], logo: { stroke, color, duration, ease },
-//     type: { family, weight, scale: [{ id, pc, mobile, weight, line }] }, motion: { panel, hover } }
+//   { colors: [{ id, name, value }],
+//     logo: { stroke, color, duration, ease, intro: { scale, appear, gather, hold, dock } },
+//     type: { family, weight, scale: [{ id, pc, mobile, weight, line }] },
+//     motion: { panel, hover, slide, slideInterval, slideEase } }
 // Sets the --filt-* variables on :root (builder/store.js designVars() uses the same names). Only values
 // present in the file are set; every style falls back to the original value, e.g. var(--filt-key, #BD005E),
 // so a missing or older file (colours only) leaves the rest of the site as it was.
@@ -29,6 +31,12 @@
     else if (isId(logo.color)) set("--filt-logo-color", `var(--filt-${logo.color}, #000)`);
     if (isNumber(logo.duration)) set("--filt-logo-morph", `${logo.duration}s`);
     if (/^[a-z0-9.()]+$/i.test(logo.ease || "")) set("--filt-logo-ease", logo.ease);
+    // HOME entrance: lines gather into a large mark, hold, then dock on the menu logo.
+    const intro = logo.intro || {};
+    if (isNumber(intro.scale)) set("--filt-intro-scale", intro.scale);
+    ["appear", "gather", "hold", "dock"].forEach((key) => {
+      if (isNumber(intro[key])) set(`--filt-intro-${key}`, `${intro[key]}s`);
+    });
 
     const type = design.type || {};
     if (typeof type.family === "string" && type.family.trim() && !/[;{}]/.test(type.family)) set("--filt-font-family", type.family);
@@ -43,6 +51,9 @@
     const motion = design.motion || {};
     if (isNumber(motion.panel)) set("--filt-motion-panel", `${motion.panel}s`);
     if (isNumber(motion.hover)) set("--filt-motion-hover", `${motion.hover}s`);
+    if (isNumber(motion.slide)) set("--filt-motion-slide", `${motion.slide}s`);
+    if (isNumber(motion.slideInterval)) set("--filt-slide-interval", `${motion.slideInterval}s`);
+    if (/^[a-z0-9.,() -]+$/i.test(motion.slideEase || "")) set("--filt-motion-slide-ease", motion.slideEase);
   };
 
   fetch(new URL("pages/design.json", new URL(".", script.src)))
