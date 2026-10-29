@@ -236,7 +236,8 @@
     .card-strip input:focus { background: #f6f6f3; outline: none; }
     .strip-num input { width: 30px; text-align: right; color: #111; }
     .strip-north .dial { position: absolute; left: 3px; bottom: 2px; width: 28px; height: 28px; }
-    .strip-scale .strip-bar { position: absolute; left: 4px; bottom: 3px; overflow: visible; }
+    /* Display only: it overlaps the 1 : N field, so it must never take its clicks. */
+    .strip-scale .strip-bar { position: absolute; left: 4px; bottom: 3px; overflow: visible; pointer-events: none; }
     button.hide-toggle { position: absolute; top: 2px; left: 2px; z-index: 1; width: 11px; height: 11px; padding: 0; border: 1px solid #bbb; background: #fff; color: #bbb; font-size: 9px; line-height: 8px; }
     button.hide-toggle:hover { border-color: #111; color: #111; }
     button.hide-toggle.on { border-color: #111; background: #111; color: #fff; }
@@ -1455,6 +1456,9 @@
       const bar = svg("svg", { class: "strip-bar" });
       const drawBar = () => {
         bar.replaceChildren();
+        // An empty <svg> is 300 × 150 by default; keep it zero-sized until there is a bar to draw.
+        bar.setAttribute("width", 0);
+        bar.setAttribute("height", 0);
         const scale = scaleOf();
         const pixelsPerUnit = box ? Math.min(media.clientWidth / box.width, media.clientHeight / box.height) : 0;
         if (!scale || !pixelsPerUnit) return;
