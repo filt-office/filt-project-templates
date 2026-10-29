@@ -69,6 +69,19 @@
     .pe-stage-inner { position: absolute; top: 12px; left: 50%; transform-origin: top center; box-shadow: 0 0 0 1px #111, 0 6px 24px rgba(0,0,0,.12); background: #fff; }
     .pe-stage iframe { display: block; width: 100%; height: 100%; border: 0; background: #fff; }
 
+    .pe-picker { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(0,0,0,.35); }
+    .pe-picker-card { display: grid; grid-template-rows: auto auto 1fr auto; width: min(960px, calc(100vw - 32px)); height: min(720px, calc(100vh - 32px)); border: 1px solid #111; background: #fff; }
+    .pe-picker-head, .pe-picker-foot { display: flex; align-items: center; gap: 8px; padding: 10px 14px; }
+    .pe-picker-head { border-bottom: 1px solid #111; }
+    .pe-picker-head h2 { margin: 0; font-size: 13px; }
+    .pe-picker-folders { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 14px; border-bottom: 1px solid var(--line); }
+    .pe-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; align-content: start; overflow-y: auto; padding: 12px 14px; }
+    .pe-picker-grid button { display: grid; grid-template-rows: 1fr auto; gap: 4px; height: 128px; padding: 0; border: 1px solid var(--line); background: #fff; color: #111; text-align: left; }
+    .pe-picker-grid button:hover { border-color: #111; background: #fff; color: #111; }
+    .pe-picker-grid button.on { box-shadow: 0 0 0 3px #111; border-color: #111; }
+    .pe-picker-grid .img { background: #f0f0ee center / cover no-repeat; }
+    .pe-picker-grid .name { overflow: hidden; padding: 0 5px 4px; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .pe-picker-foot { justify-content: flex-end; border-top: 1px solid #111; }
     .toast { position: fixed; right: 16px; bottom: 16px; z-index: 30; max-width: 460px; padding: 10px 14px; background: #111; color: #fff; opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s; pointer-events: none; white-space: pre-line; }
     .toast.show { opacity: 1; transform: none; }
     .toast.error { background: var(--danger); }
@@ -185,6 +198,71 @@
       return box;
     };
 
+    // Popup listing every image already uploaded to the repository (runtime/assets/*/PC);
+    // resolves with the chosen paths, or [] when cancelled.
+    const pickExisting = ({ multiple = true } = {}) => new Promise((resolve) => {
+      const chosen = new Set();
+      let folder = "";
+      let assets = [];
+      const grid = h("div", { class: "pe-picker-grid" }, h("p", { class: "muted" }, "불러오는 중…"));
+      const folders = h("div", { class: "pe-picker-folders" });
+      const count = h("span", { class: "muted" });
+      const confirmButton = h("button", { class: "active", disabled: true, onclick: () => done([...chosen]) }, "추가");
+      const overlay = h("div", { class: "pe-picker", onclick: (event) => { if (event.target === overlay) done([]); } },
+        h("div", { class: "pe-picker-card", role: "dialog", "aria-label": "저장소 이미지에서 선택" },
+          h("div", { class: "pe-picker-head" },
+            h("h2", {}, "저장소 이미지에서 선택"),
+            h("span", { class: "muted" }, "빌더로 올린 이미지들입니다"),
+            h("span", { class: "spacer" }),
+            h("button", { onclick: () => done([]) }, "닫기")),
+          folders,
+          grid,
+          h("div", { class: "pe-picker-foot" }, count, confirmButton)));
+      const onKey = (event) => { if (event.key === "Escape") done([]); };
+      const done = (result) => { overlay.remove(); document.removeEventListener("keydown", onKey); resolve(result); };
+      document.addEventListener("keydown", onKey);
+      document.body.append(overlay);
+
+      // Thumbnails load as they scroll into view (on GitHub each one is an API request).
+      const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        observer.unobserve(entry.target);
+        store.assetUrl(entry.target.dataset.src).then((url) => { if (url) entry.target.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`; });
+      }), { root: grid });
+
+      const update = () => {
+        count.textContent = chosen.size ? `${chosen.size}장 선택` : "";
+        confirmButton.disabled = !chosen.size;
+        confirmButton.textContent = chosen.size ? `추가 (${chosen.size})` : "추가";
+      };
+      const draw = () => {
+        const names = [...new Set(assets.map((src) => src.split("/")[1]))];
+        folders.replaceChildren(...["", ...names].map((name) => h("button", {
+          class: `small${name === folder ? " active" : ""}`,
+          onclick: () => { folder = name; draw(); },
+        }, name || `전체 (${assets.length})`)));
+        const shown = assets.filter((src) => !folder || src.split("/")[1] === folder);
+        grid.replaceChildren(...(shown.length ? shown.map((src) => {
+          const img = h("div", { class: "img", dataset: { src } });
+          observer.observe(img);
+          return h("button", {
+            class: chosen.has(src) ? "on" : "",
+            title: src,
+            onclick: (event) => {
+              if (!multiple) { done([src]); return; }
+              if (chosen.has(src)) chosen.delete(src);
+              else chosen.add(src);
+              event.currentTarget.classList.toggle("on", chosen.has(src));
+              update();
+            },
+          }, img, h("span", { class: "name" }, src.split("/").pop()));
+        }) : [h("p", { class: "muted" }, "올린 이미지가 없습니다.")]));
+      };
+      store.listAssets()
+        .then((list) => { assets = list; draw(); })
+        .catch((error) => { grid.replaceChildren(h("p", { class: "muted" }, error.message)); });
+    });
+
     const ctx = {
       data: { version: 1 },
       h,
@@ -192,6 +270,7 @@
       markDirty,
       rerender: () => $("#peEditor").replaceChildren(...[render(ctx)].flat()),
       pickFiles,
+      pickExisting,
       upload,
 
       // A text input bound to obj[key]; empty strings are removed so the JSON stays as written by hand.

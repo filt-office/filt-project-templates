@@ -106,6 +106,7 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }),
+    listAssets: () => localApi("/api/assets"),
     getPage: (page) => localApi(`/api/pages/${page}`),
     savePage: (page, data) => localApi(`/api/pages/${page}`, {
       method: "PUT",
@@ -260,6 +261,14 @@
       if (errors.length) throw new Error(errors.join("\n"));
       await commitFiles([{ path: "runtime/works.json", content: toJson(data) }], "builder: WORKS 목록 저장");
       return { ok: true, path: "runtime/works.json", count: data.works.length };
+    },
+    // Every uploaded image (PC copy), as "assets/<folder>/PC/<file>".
+    listAssets: async () => {
+      const folders = (await listDir("runtime/assets")).filter((entry) => entry.type === "dir");
+      const lists = await Promise.all(folders.map((folder) => listDir(`runtime/assets/${folder.name}/PC`)));
+      return folders.flatMap((folder, index) => lists[index]
+        .filter((entry) => entry.type === "file" && IMAGE_EXT.has(extOf(entry.name)))
+        .map((entry) => `assets/${folder.name}/PC/${entry.name}`));
     },
     getPage: async (page) => {
       const text = await readText(`runtime/pages/${page}.json`);
