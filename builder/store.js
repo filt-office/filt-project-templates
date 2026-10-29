@@ -690,6 +690,13 @@
   //   logo.intro --filt-intro-scale, --filt-intro-appear / -gather / -hold / -dock (seconds)
   //   motion     --filt-motion-panel, --filt-motion-hover, --filt-motion-slide (seconds),
   //              --filt-motion-slide-ease, --filt-slide-interval (seconds)
+  //   layout     --filt-panel-width (clamp(min, vw, max) of the detail page's side panel),
+  //              --filt-menu-hide (px of the 240px menu panel kept off-screen), --filt-pad-s / -l (vmin);
+  //              photoPC / photoMOB (long edge of published photos) are read by scripts/publish-images.js.
+  //              The 768px mobile breakpoint lives in the templates' @media rules and is not a setting.
+  // The design system is the owner's: only these GitHub accounts may change it (local mode: anyone).
+  // A profile's public email also counts, for the owner signing up with kyong@filt.kr.
+  const DESIGN_EDITORS = { logins: ["kyong-FILT", "filtehwa"], emails: ["kyong@filt.kr"] };
   const DEFAULT_DESIGN = {
     version: 2,
     colors: [{ id: "key", name: "키컬러", value: "#BD005E" }],
@@ -709,6 +716,7 @@
       ],
     },
     motion: { panel: 0.35, hover: 0.2, slide: 1, slideInterval: 10, slideEase: "cubic-bezier(.45,0,.55,1)" },
+    layout: { panelMin: 300, panelVw: 28, panelMax: 430, menuHide: 210, padSmall: 7, padLarge: 15, photoPC: 2560, photoMOB: 1600 },
   };
   const publicFontUrl = (src) => (mode === "local"
     ? new URL(`/runtime/${src.replace(/^\.?\//, "")}`, location.href).href
@@ -744,6 +752,7 @@
       logo: { ...base.logo, ...design.logo, intro: { ...base.logo.intro, ...design.logo?.intro } },
       type,
       motion: { ...base.motion, ...design.motion },
+      layout: { ...base.layout, ...design.layout },
     };
   };
   const designVars = (input) => {
@@ -767,6 +776,11 @@
     vars["--filt-motion-slide"] = `${design.motion.slide}s`;
     vars["--filt-motion-slide-ease"] = design.motion.slideEase;
     vars["--filt-slide-interval"] = `${design.motion.slideInterval}s`;
+    const layout = design.layout;
+    vars["--filt-panel-width"] = `clamp(${layout.panelMin}px, ${layout.panelVw}vw, ${layout.panelMax}px)`;
+    vars["--filt-menu-hide"] = `${layout.menuHide}px`;
+    vars["--filt-pad-s"] = `${layout.padSmall}vmin`;
+    vars["--filt-pad-l"] = `${layout.padLarge}vmin`;
     const intro = design.logo.intro;
     vars["--filt-intro-scale"] = String(intro.scale);
     ["appear", "gather", "hold", "dock"].forEach((key) => { vars[`--filt-intro-${key}`] = `${intro[key]}s`; });
@@ -869,6 +883,10 @@
       return ` data-filt-design="builder"${fontAttrs} style="${vars.replace(/"/g, "&quot;")}"`;
     },
     fullDesign,
+    designEditors: DESIGN_EDITORS,
+    canEditDesign: () => mode !== "github"
+      || DESIGN_EDITORS.logins.some((login) => login.toLowerCase() === (currentUser?.login || "").toLowerCase())
+      || DESIGN_EDITORS.emails.some((email) => email === (currentUser?.email || "").toLowerCase()),
     designVars,
     upload: async (projectId, device, file) => backend.upload(projectId, device, await prepareUpload(file)),
     fontFormats: FONT_FORMATS,

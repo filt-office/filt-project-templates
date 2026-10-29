@@ -91,6 +91,9 @@
     .facts li > * { padding: 9px 10px; font-size: 12px; }
     .facts li b { border-right: 1px solid var(--line); font-weight: 500; }
     .facts code { font-size: 11px; }
+    .chapter-body .facts { margin-top: 12px; }
+    .locked-note { margin: 12px 0 0; padding: 10px 14px; border: 1.5px solid var(--filt-key, #BD005E); color: var(--filt-key, #BD005E); font-size: 12px; font-weight: 700; }
+    .guide.locked input:disabled, .guide.locked select:disabled { color: #555; background: #f7f7f5; }
 
     /* Bodies own the continuous left edge; adjacent frames share right/bottom edges. */
     .logo-stage + .values, .motion-demo + .values { border-top: 0; }
@@ -388,8 +391,10 @@
       onchange: (event) => showPage(event.target.value),
     }, PREVIEW_PAGES.map(([value, label]) => h("option", { value }, label)));
 
+    const LOCKED_MESSAGE = "디자인 시스템은 소유자(kyong-FILT)와 관리자(filtehwa)만 수정할 수 있어요.";
     editor = FiltPageEditor({
       page: "design",
+      save: (data) => (FiltStore.canEditDesign() ? FiltStore.savePage("design", data) : Promise.reject(new Error(LOCKED_MESSAGE))),
       previewTools: [pageSelect],
       previewBody,
       assetKeys: [],
@@ -578,7 +583,23 @@
         const hoverBox = h("div", { class: "motion-box" }, h("span", {}, "메뉴 hover · 마우스를 올려 보세요"),
           h("div", { class: "links" }, ["OFFICE", "NEWS", "WORKS"].map((label) => h("a", { href: "#", onclick: (event) => event.preventDefault() }, label))));
 
-        return alignFrameEdges(h("div", { class: "guide" },
+        // Read-only for everyone but the owner and the admin: values, add / delete, drag and font upload
+        // are switched off; copying SVG / CSS, the preview and the demos keep working.
+        const locked = !FiltStore.canEditDesign();
+        const lock = (guide) => {
+          if (!locked) return guide;
+          guide.classList.add("locked");
+          guide.prepend(h("p", { class: "locked-note", role: "note" }, `${LOCKED_MESSAGE} 지금은 보기 전용입니다.`));
+          guide.querySelectorAll("input, select, textarea, button").forEach((el) => {
+            if (!el.matches(".copy, .copy-all")) el.disabled = true;
+          });
+          ["dragstart", "contextmenu", "drop"].forEach((type) => guide.addEventListener(type, (event) => { event.preventDefault(); event.stopPropagation(); }, true));
+          const save = document.querySelector("#save");
+          if (save) { save.disabled = true; save.title = LOCKED_MESSAGE; }
+          return guide;
+        };
+
+        return alignFrameEdges(lock(h("div", { class: "guide" },
           chapter("01", "COLOR", "맨 앞 색이 키컬러(--filt-key)입니다. 메뉴 hover, 링크, 강조에 쓰입니다.",
             [h("button", { class: "copy-all", title: "색·로고·글씨·움직임 값 전체를 CSS 변수로 복사", onclick: () => copyText(cssMarkup(data), "디자인 시스템 CSS", ctx.toast) }, "CSS 전체 복사")],
             h("div", { class: "colors" }, colors.map(colorCard)),
@@ -622,11 +643,19 @@
               value("HOME 슬라이드 넘김 (초)", num(data.motion, "slide", { step: 0.1, min: 0, max: 5 })),
               value("HOME 슬라이드 간격 (초)", num(data.motion, "slideInterval", { step: 1, min: 2, max: 60 })))),
 
-          chapter("06", "LAYOUT", "템플릿에 고정된 값입니다 (여기서는 바꾸지 않습니다).", null,
+          chapter("06", "LAYOUT", "화면 구성 값입니다. 모바일 기준(768px)만 템플릿 구조에 고정돼 있습니다.", null,
+            h("div", { class: "values two-columns" },
+              value("상세 패널 최소 (px)", num(data.layout, "panelMin", { step: 10, min: 200, max: 600 })),
+              value("상세 패널 기준 (화면 %)", num(data.layout, "panelVw", { step: 1, min: 15, max: 50 })),
+              value("상세 패널 최대 (px)", num(data.layout, "panelMax", { step: 10, min: 240, max: 800 })),
+              value("접힌 메뉴: 숨기는 폭 (px, 240 중)", num(data.layout, "menuHide", { step: 5, min: 0, max: 235 })),
+              value("이미지 작은 여백 (화면 짧은 변 %)", num(data.layout, "padSmall", { step: 1, min: 0, max: 30 })),
+              value("이미지 큰 여백 (화면 짧은 변 %)", num(data.layout, "padLarge", { step: 1, min: 0, max: 40 })),
+              value("게시 사진 PC 긴 변 (px)", num(data.layout, "photoPC", { step: 80, min: 1200, max: 4000 })),
+              value("게시 사진 모바일 긴 변 (px)", num(data.layout, "photoMOB", { step: 80, min: 800, max: 3000 }))),
             h("ul", { class: "facts" },
-              [["모바일 기준", "화면 너비 768px 이하"], ["상세페이지 오른쪽 패널", "300 – 430px (화면의 28%)"], ["접힌 메뉴 패널", "210px 숨김, 30px 보임"],
-                ["이미지 크기", "PC 2560px, 모바일 1600px로 줄여서 게시"], ["이미지 여백", "작은 여백 7vmin, 큰 여백 15vmin"]]
-                .map(([label, text]) => h("li", {}, h("b", {}, label), h("span", {}, text)))))));
+              [["모바일 기준 (고정)", "화면 너비 768px 이하 — 템플릿의 화면 크기 조건에 들어 있어 여기서 바꾸지 않습니다"]]
+                .map(([label, text]) => h("li", {}, h("b", {}, label), h("span", {}, text))))))));
       },
     });
     // First preview after sign-in: the design is applied once the header is mounted.
