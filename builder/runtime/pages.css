@@ -32,7 +32,7 @@
   --panel-width: 240px;
   --footer-height: 35px; /* the panel footer and the project caption share this height */
   --project-title-width: 360px;
-  --panel-font: var(--filt-font-family, "Pretendard Variable", "Pretendard", "Noto Sans KR", sans-serif);
+  --panel-font: "Pretendard Variable", "Pretendard", "Noto Sans KR", sans-serif; /* the menu keeps Pretendard, not the design family */
   width: 100%;
   height: 100vh;
   margin: 0;
