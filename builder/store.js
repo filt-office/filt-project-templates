@@ -116,7 +116,8 @@
     return sfntHeaderError(bytes);
   };
   const safeFontFamily = (family) => typeof family === "string" && /^[A-Za-z0-9 ._-]{1,90}$/.test(family) ? family.trim() : "";
-  const fontStack = (family) => `'${safeFontFamily(family).replace(/'/g, "\\'")}', 'Noto Sans KR', sans-serif`;
+  // If the uploaded face fails, fall back to the site's SUIT before the system fonts.
+  const fontStack = (family) => `'${safeFontFamily(family).replace(/'/g, "\\'")}', 'Suit', 'Pretendard Variable', 'Noto Sans KR', sans-serif`;
   const fontFamilyFromName = (name) => {
     const base = safeAssetName(name).base.replace(/[._-]+/g, " ").trim().slice(0, 64) || "custom";
     return `FILT Upload ${base}`.slice(0, 90);

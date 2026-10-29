@@ -1362,7 +1362,8 @@
       });
       const img = h("img", { alt: "", draggable: false });
       const turn = Number(slot.rotation) || 0;
-      if (turn) img.style.transform = `rotate(${turn}deg)${turn % 180 ? " scale(.625)" : ""}`;
+      // The site's mobile drawing slider does not rotate drawings, so neither does their MOB card.
+      if (turn && !(device === MOB && slot.type === "drawing")) img.style.transform = `rotate(${turn}deg)${turn % 180 ? " scale(.625)" : ""}`;
       img.onerror = () => media.classList.add("broken");
       media.append(img);
       store.assetUrl(slot[key]).then((url) => { if (url) img.src = url; else media.classList.add("broken"); });
@@ -1515,6 +1516,9 @@
       store.assetUrl(slot[SLOT_KEY[device]]).then((url) => (url ? drawingViewBox(url) : null)).then((found) => {
         box = found;
         const ready = () => {
+          // JPG/PNG have no viewBox: use the image's pixel size, as runtime/project-template.js does,
+          // so typing 1:N and dragging the bar both work for any drawing format.
+          if (!box && img.naturalWidth) box = { width: img.naturalWidth, height: img.naturalHeight };
           drawBar();
           if (!box || !calibrating.has(slot)) return;
           const overlay = svg("svg", { viewBox: `0 0 ${box.width} ${box.height}`, class: "calibrate-overlay" });

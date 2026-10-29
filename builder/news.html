@@ -72,7 +72,7 @@
                 num,
                 cell(entry, "title", "wide", { keepEmpty: true, placeholder: "예: 건축설계 신입·경력 모집", "aria-label": `${name} 제목` }),
                 cell(entry, "mobileTitle", "mid", { placeholder: "비우면 제목과 동일", "aria-label": `${name} 모바일 제목` }),
-                cell(entry, "field", "mid", { placeholder: "예: 건축설계 / 인턴", "aria-label": `${name} 모집 분야` }),
+                cell(entry, "field", "mid", { placeholder: "짧게 · 예: 건축설계 인턴", title: "PC 목록 한 칸에 들어가므로 짧게 적어주세요", "aria-label": `${name} 모집 분야` }),
                 h("td", { class: "wide" }, textBox(entry, "requirements", { placeholder: "경력, 자격, 사용 프로그램 등", "aria-label": `${name} 모집 요건` })),
                 h("td", { class: "wide" }, textBox(entry, "submissions", { placeholder: "이력서, 포트폴리오, 제출 방법 등", "aria-label": `${name} 제출물` })),
                 cell(entry, "deadline", "mid", { placeholder: "상시모집 / YYYY/MM/DD", "aria-label": `${name} 마감일` }),

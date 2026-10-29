@@ -17,7 +17,7 @@
     /* Inputs sit flush in the card: no labels, no padding around them. */
     .slide-body { display: grid; border-top: 1px solid #111; }
     .slide-body input, .slide-body select { width: 100%; height: 30px; padding: 0 8px; border: 0; background: #fff; }
-    .slide-body select { border-top: 1px solid var(--line); }
+    .slide-body select, .slide-body input + input { border-top: 1px solid var(--line); }
     .slide-body input:focus, .slide-body select:focus { outline: 2px solid #111; outline-offset: -2px; }
   </style>
 </head>
@@ -111,6 +111,9 @@
           const el = h("div", { class: "slide" },
             media,
             h("div", { class: "slide-body" },
+              // Caption at the bottom right of HOME: English line, then Korean (runtime/pages.js).
+              ctx.input(slide, "title", { placeholder: "영문 캡션", "aria-label": `${index + 1}번 슬라이드 영문 캡션` }),
+              ctx.input(slide, "titleKo", { placeholder: "국문 캡션", "aria-label": `${index + 1}번 슬라이드 국문 캡션` }),
               ctx.input(slide, "alt", { placeholder: "설명 (alt)", keepEmpty: true }),
               h("select", {
                 onchange: (event) => {
