@@ -988,7 +988,9 @@
     // viewBox units — the same rule project-template.js uses to draw the mobile scale bar.
 
     const UNITS_PER_METER = 72 / 0.0254;
-    const barLength = (scale) => [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => (meters * UNITS_PER_METER) / scale <= 300) || 1;
+    // The bar is the longest round length within 15% of the drawing's width (300 units on a 2000-unit
+    // artboard), so large JPG / PNG drawings get a bar of the same proportion as SVG ones.
+    const barLength = (scale, width = 2000) => [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => (meters * UNITS_PER_METER) / scale <= width * 0.15) || 1;
     const SVG_NS = "http://www.w3.org/2000/svg";
     const svg = (tag, attrs = {}, text) => {
       const el = document.createElementNS(SVG_NS, tag);
@@ -1051,7 +1053,7 @@
     // scale. Returns a function that redraws the bar (e.g. after the scale is typed in).
     const attachCalibrator = (overlay, box, getScale, onScale) => {
       let origin = { x: box.width * 0.08, y: box.height * 0.92 };
-      let meters = barLength(getScale());
+      let meters = barLength(getScale(), box.width);
       const draw = () => {
         const unitsPerMeter = UNITS_PER_METER / getScale();
         const px = overlay.getScreenCTM()?.a || 1; // screen px per drawing unit
@@ -1095,13 +1097,13 @@
       const end = () => {
         if (!drag) return;
         drag = null;
-        meters = barLength(getScale());
+        meters = barLength(getScale(), box.width);
         draw();
       };
       overlay.addEventListener("pointerup", end);
       overlay.addEventListener("pointercancel", end);
       draw();
-      return () => { meters = barLength(getScale()); draw(); };
+      return () => { meters = barLength(getScale(), box.width); draw(); };
     };
 
     // ---------- sections ----------
@@ -1458,7 +1460,7 @@
         const scale = scaleOf();
         const pixelsPerUnit = box ? Math.min(media.clientWidth / box.width, media.clientHeight / box.height) : 0;
         if (!scale || !pixelsPerUnit) return;
-        const meters = barLength(scale);
+        const meters = barLength(scale, box.width);
         const pixelsPerMeter = (UNITS_PER_METER / scale) * pixelsPerUnit;
         const height = 16;
         const font = 6;
