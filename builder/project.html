@@ -215,8 +215,8 @@
     .fit-menu { position: absolute; top: 24px; left: -4px; z-index: 6; display: flex; gap: 2px; padding: 3px; border: 1px solid #111; background: #fff; }
     .fit-menu button.icon-btn { width: 24px; height: 24px; padding: 2px; }
     .fit-menu button.icon-btn.on { background: #111; color: #fff; }
-    .card-media img.pad-s { padding: 3%; box-sizing: border-box; }
-    .card-media img.pad-l { padding: 12%; box-sizing: border-box; }
+    .card-media img.pad-s { padding: 7%; box-sizing: border-box; }
+    .card-media img.pad-l { padding: 15%; box-sizing: border-box; }
     button.show-toggle { width: 18px; height: 18px; padding: 0; border: 1.5px solid #111; background: #fff; }
     button.show-toggle.on { background: #111; box-shadow: inset 0 0 0 2.5px #fff; }
     button.show-toggle:hover { border-color: var(--filt-key, #BD005E); }
@@ -1237,9 +1237,9 @@
       "pad-s": '<svg viewBox="0 0 20 20"><rect x="1" y="3.5" width="18" height="13" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="4.5" y="6.5" width="11" height="7" fill="currentColor"/></svg>',
       "pad-l": '<svg viewBox="0 0 20 20"><rect x="1" y="3.5" width="18" height="13" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="6.5" y="8" width="7" height="4" fill="currentColor"/></svg>',
     };
-    // Small / large margin: the image is contained with 3% / 12% of the frame's short side around it
+    // Small / large margin: the image is contained with 7% / 15% of the frame's short side around it
     // (drawn by project-template.css as data-fit="pad-s" / "pad-l").
-    const FITS = [["cover", "COVER — 꽉 채우기"], ["contain", "CONTAIN — 잘리지 않게"], ["pad-s", "작은 여백 (3%)"], ["pad-l", "큰 여백 (12%)"]];
+    const FITS = [["cover", "COVER — 꽉 채우기"], ["contain", "CONTAIN — 잘리지 않게"], ["pad-s", "작은 여백 (7%)"], ["pad-l", "큰 여백 (15%)"]];
 
     // Fit per device. "auto" follows the template's default: on PC landscape photos fill (cover)
     // and portrait ones fit (contain); the mobile gallery is the other way round.
