@@ -180,7 +180,8 @@
   // Same shape as the hand-made bars: an outline stepping between 0, 1/5, 2/5 and the full length,
   // which is the longest round length that stays within 15% of the drawing's width (viewBox units,
   // or pixels for JPG/PNG), so large raster drawings get a bar as long as SVG ones.
-  const scaleBar = (scale, pixelsPerUnit, height, drawingWidth) => {
+  // The bar is 0.8 of the overlay height above its numbers; the SVG shrinks with it.
+  const scaleBar = (scale, pixelsPerUnit, overlayHeight, drawingWidth) => {
     const unitsPerMeter = UNITS_PER_METER / scale;
     const length = [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => meters * unitsPerMeter <= drawingWidth * 0.15) || 1;
     const pixelsPerMeter = unitsPerMeter * pixelsPerUnit;
@@ -189,7 +190,8 @@
     const ticks = [0, length / 5, (length * 2) / 5, length];
     const [a, b, c, d] = ticks.map((meters) => start + meters * pixelsPerMeter);
     const top = 0.5;
-    const bottom = height - fontSize - 2;
+    const bottom = top + (overlayHeight - fontSize - 2.5) * 0.8;
+    const height = bottom + fontSize + 2;
     const width = d + fontSize * 1.3;
     const labels = ticks.map((meters, index) => `<text x="${start + meters * pixelsPerMeter}" y="${height - 0.5}" fill="#000" stroke="none" font-size="${fontSize}" font-weight="${LABEL_WEIGHT}" text-anchor="middle">${formatNumber(meters)}${index === 3 ? "m" : ""}</text>`);
     return svgElement(`0 0 ${width} ${height}`, width, height,
