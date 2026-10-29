@@ -423,10 +423,13 @@
         const result = await saveData(ctx.data);
         setClean();
         toast(`저장했습니다: ${result.path}\n공개 페이지에는 deploy를 누르면 반영됩니다.`);
+        return true;
       } catch (error) {
         toast(error.message, true);
+        return false;
       }
     };
+    window.FiltHeader.guard({ isDirty: () => dirty, save, discard: setClean });
     $("#save").addEventListener("click", save);
     document.addEventListener("keydown", (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {

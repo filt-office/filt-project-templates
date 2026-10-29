@@ -1718,7 +1718,14 @@
       updateBadges();
     };
 
-    const confirmDiscard = () => !dirty || confirm("저장하지 않은 변경 사항이 있습니다. 버리고 이동할까요?");
+    // Unsaved changes: the builder's own dialog (header.js) offers 임시저장 and go / go without saving / stay.
+    const confirmDiscard = () => window.FiltHeader.leave();
+    window.FiltHeader.guard({
+      isDirty: () => dirty,
+      saveLabel: "임시저장하고 이동",
+      save: () => saveProject("draft").then(() => true, (error) => { toast(error.message, true); return false; }),
+      discard: setClean,
+    });
 
     const setUrl = (id) => {
       const params = new URLSearchParams(location.search);
@@ -1758,11 +1765,11 @@
     $("#saveDraft").addEventListener("click", guarded(() => saveProject("draft")));
     $("#saveRuntime").addEventListener("click", guarded(() => saveProject("runtime")));
     $("#projectSelect").addEventListener("change", guarded(async (event) => {
-      if (!confirmDiscard()) { event.target.value = project?.id || ""; return; }
+      if (!(await confirmDiscard())) { event.target.value = project?.id || ""; return; }
       await loadProject(event.target.value);
     }));
     $("#newProject").addEventListener("click", guarded(async () => {
-      if (!confirmDiscard()) return;
+      if (!(await confirmDiscard())) return;
       // The ID follows the English title: "Seongsu House" → seongsu-house (-2, -3 … if taken).
       const titleEn = (prompt("새 프로젝트 영문 제목 (예: SEONGSU HOUSE)") || "").trim();
       if (!titleEn) return;

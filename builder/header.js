@@ -18,7 +18,7 @@
     <path d="M28.2,265.02v54.66M25.78,267.47h19.22M18,289.07h6M32.4,289.07h9.6M42,289.07h9.6M60,289.07h24M55.8,289.07v30.6M55.8,264.47v24.6M72,293.27v26.4M72,264.47v20.4M42,293.27v26.4M67.81,317.17h-14.46"/>
   </svg>`;
 
-  const css = `
+  let css = `
     .fb-header {
       display: grid;
       grid-template-columns: 200px 1fr;
@@ -87,6 +87,20 @@
     }
   `;
 
+  css += `
+    .fb-modal { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: rgba(0,0,0,.35); }
+    .fb-modal-card { width: min(420px, calc(100vw - 32px)); border: 1.5px solid #111; background: #fff; color: #111; font: 13px/1.5 "SUIT", system-ui, sans-serif; }
+    .fb-modal-card h2 { margin: 0; padding: 12px 16px; border-bottom: 1.5px solid #111; font: 700 14px/1.2 "IBM Plex Mono", ui-monospace, monospace; }
+    .fb-modal-card p { margin: 0; padding: 14px 16px; }
+    .fb-modal-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1.5px solid #111; }
+    .fb-modal-actions button { padding: 10px 6px; border: 0; border-right: 1px solid #111; background: #fff; color: #111; font: inherit; cursor: pointer; }
+    .fb-modal-actions button:last-child { border-right: 0; }
+    .fb-modal-actions button:hover, .fb-modal-actions button:focus-visible { background: #111; color: #fff; outline: none; }
+    .fb-modal-actions button.primary { background: #111; color: #fff; }
+    .fb-modal-actions button.primary:hover { background: var(--filt-key, #BD005E); }
+    .fb-modal-actions button.danger:hover { background: #c62828; }
+  `;
+
   const font = document.createElement("link");
   font.rel = "stylesheet";
   font.href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap";
@@ -123,5 +137,54 @@
 
   header.prepend(logo);
   header.append(nav);
-  window.FiltHeader = { setActive, tabs: nav };
+
+  // ---------- unsaved changes ----------
+  // A page registers guard({ isDirty, save, discard, saveLabel }). Leaving through a builder link,
+  // or a page's own FiltHeader.leave(), then asks: save and go / go without saving / stay.
+  // Closing the tab still gets the browser's own warning (beforeunload), which cannot be styled.
+  let guard = null;
+  const leave = () => new Promise((resolve) => {
+    if (!guard?.isDirty()) { resolve(true); return; }
+    const button = (text, className, action) => {
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = className;
+      el.textContent = text;
+      el.addEventListener("click", action);
+      return el;
+    };
+    const modal = document.createElement("div");
+    modal.className = "fb-modal";
+    modal.innerHTML = '<div class="fb-modal-card" role="alertdialog" aria-modal="true"><h2>저장하지 않은 변경 사항</h2><p>이대로 넘어가면 수정한 내용이 사라집니다.</p><div class="fb-modal-actions"></div></div>';
+    const done = (value) => { modal.remove(); document.removeEventListener("keydown", onKey); resolve(value); };
+    const onKey = (event) => { if (event.key === "Escape") done(false); };
+    const save = button(guard.saveLabel || "저장하고 이동", "primary", async () => {
+      save.disabled = true;
+      save.textContent = "저장 중…";
+      try {
+        if ((await guard.save()) === false) { done(false); return; }
+        done(true);
+      } catch {
+        done(false);
+      }
+    });
+    modal.querySelector(".fb-modal-actions").append(
+      save,
+      button("저장 안 하고 이동", "danger", () => { guard.discard?.(); done(true); }),
+      button("취소", "", () => done(false)),
+    );
+    modal.addEventListener("click", (event) => { if (event.target === modal) done(false); });
+    document.addEventListener("keydown", onKey);
+    document.body.append(modal);
+    save.focus();
+  });
+  document.addEventListener("click", async (event) => {
+    const link = event.target.closest?.("a[href]");
+    if (!link || event.defaultPrevented || link.target === "_blank" || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (link.origin !== location.origin || !guard?.isDirty()) return;
+    event.preventDefault();
+    if (await leave()) location.href = link.href;
+  });
+
+  window.FiltHeader = { setActive, tabs: nav, guard: (options) => { guard = options; }, leave };
 })();
