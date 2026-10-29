@@ -30,6 +30,7 @@
   </header>
   <script src="header.js"></script>
   <script src="store.js"></script>
+  <script src="row-menu.js"></script>
   <script src="page-editor.js"></script>
   <script>
   (() => {
@@ -89,8 +90,7 @@
                     ctx.toast(error.message, true);
                   }
                 },
-              }, "교체"),
-              ctx.remove(slides, index, `${index + 1}번 슬라이드`)));
+              }, "교체")));
           media.style.backgroundPosition = slide.position || "center center";
           FiltStore.assetUrl(slide.src).then((url) => { if (url) media.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`; });
 
@@ -111,6 +111,7 @@
               known ? null : h("option", { value: position, selected: true }, position))),
               h("div", { class: "src", title: slide.src }, slide.src)));
 
+          ctx.menu(el, slides, index, `${index + 1}번 슬라이드`);
           return ctx.draggable(el, { list: slides, index, handle: media, axis: "x" });
         };
 
@@ -119,7 +120,7 @@
             h("label", { class: "pe-field" }, h("span", {}, "클릭 시 이동"), ctx.input(data, "worksLink", { placeholder: "/works_list" }))),
           ctx.section(`슬라이드 (${slides.length})`,
             [
-              h("span", { class: "muted" }, "끌어서 순서 변경 · 1번이 처음 보입니다"),
+              h("span", { class: "muted" }, "끌어서 순서 변경 · 우클릭으로 보관/삭제 · 1번이 처음 보입니다"),
               h("button", { onclick: addFiles }, "+ 이미지 업로드"),
               h("button", { onclick: addUrl }, "+ URL"),
             ],

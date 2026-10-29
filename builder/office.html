@@ -16,6 +16,7 @@
     .pe-sheet tr.career.gap input::placeholder { color: transparent; }
     .pe-editor .pe-sheet td.mid input { min-width: 124px; }
     .pe-editor .pe-sheet td.wide input { min-width: 250px; }
+    .people-gap { height: 18px; }
     .pe-sheet tr.add > td { height: auto; padding: 4px 6px; background: #fafaf8; }
   </style>
 </head>
@@ -29,6 +30,7 @@
   </header>
   <script src="header.js"></script>
   <script src="store.js"></script>
+  <script src="row-menu.js"></script>
   <script src="page-editor.js"></script>
   <script>
   (() => {
@@ -54,14 +56,15 @@
 
         const contact = ctx.section("OFFICE · 연락처",
           h("button", { onclick: add(data.contact, () => ({ text: "" })) }, "+ 행 추가"),
-          ctx.sheet(["#", "표시 문구", "모바일 문구 (다를 때만)", "링크", ""], data.contact.map((entry, index) => {
+          ctx.sheet(["#", "표시 문구", "모바일 문구 (다를 때만)", "링크"], data.contact.map((entry, index) => {
             const num = h("td", { class: "num" }, String(index + 1));
-            return ctx.draggable(h("tr", {},
+            const tr = h("tr", {},
               num,
               cell(entry, "text", "wide", { keepEmpty: true }),
               cell(entry, "mobileText", "wide"),
-              cell(entry, "link", "mid", { placeholder: "https:// · mailto:" }),
-              h("td", { class: "actions" }, ctx.remove(data.contact, index))), { list: data.contact, index, handle: num });
+              cell(entry, "link", "mid", { placeholder: "https:// · mailto:" }));
+            ctx.menu(tr, data.contact, index, entry.text ? `"${entry.text}"` : "이 행");
+            return ctx.draggable(tr, { list: data.contact, index, handle: num });
           })));
 
         const careerRows = (person) => {
@@ -90,21 +93,21 @@
               text("title", "mid", ""),
               text("mobileOrg", "mid", "PC와 같음"),
               text("mobileTitle", "mid", "PC와 같음"),
-              h("td", { class: "check", title: "현재 (굵게 표시)" }, ctx.checkbox(entry, "current")),
-              h("td", { class: "actions" }, ctx.remove(person.career, index, `${index + 1}번 경력`)));
+              h("td", { class: "check", title: "현재 (굵게 표시)" }, ctx.checkbox(entry, "current")));
+            ctx.menu(tr, person.career, index, `${index + 1}번 경력`);
             return ctx.draggable(tr, { list: person.career, index, handle: num });
           });
           return [
-            h("tr", { class: "sub-head" }, ["#", "기간", "기관", "직함", "모바일 기관", "모바일 직함", "현재", ""].map((label) => h("td", {}, label))),
+            h("tr", { class: "sub-head" }, ["#", "기간", "기관", "직함", "모바일 기관", "모바일 직함", "현재"].map((label) => h("td", {}, label))),
             rows,
-            h("tr", { class: "add" }, h("td", { colspan: 8 },
+            h("tr", { class: "add" }, h("td", { colspan: 7 },
               h("button", { class: "small", onclick: add(person.career, () => ({ gap: true })) }, "+ 경력"),
-              h("span", { class: "muted" }, "  빈 행은 간격(빈 줄)으로 표시됩니다 · 번호를 끌어서 순서 변경"))),
+              h("span", { class: "muted" }, "  빈 행은 간격(빈 줄)으로 표시됩니다 · 번호를 끌어서 순서 변경 · 우클릭으로 보관/삭제"))),
           ];
         };
 
         // 대표 and 스탭 are separate tables over the same data.people list; drags stay within a table.
-        const group = (principal) => {
+        const table = (principal) => {
           const scope = principal ? "principal" : "staff";
           const members = data.people.filter((person) => Boolean(person.principal) === principal);
           const rows = members.map((person) => {
@@ -116,25 +119,32 @@
                 title: isOpen ? "경력 접기" : "경력 펼치기",
                 onclick: () => { if (isOpen) open.delete(person); else open.add(person); ctx.rerender(); },
               }, isOpen ? "−" : "+"));
-            const tr = ctx.draggable(h("tr", { class: "person" },
+            const tr = h("tr", { class: "person" },
               toggle,
               cell(person, "nameKo", "short", { keepEmpty: true }),
               cell(person, "roleKo", "mid", { keepEmpty: true }),
               cell(person, "nameEn", "mid", { keepEmpty: true }),
               cell(person, "roleEn", "mid", { keepEmpty: true }),
               cell(person, "email", "mid", { keepEmpty: true }),
-              h("td", { class: "img" }, ctx.image(person, "image")),
-              h("td", { class: "actions" }, ctx.remove(data.people, index, person.nameKo || "이 사람"))), { list: data.people, index, scope, handle: toggle });
+              h("td", { class: "img" }, ctx.image(person, "image")));
+            ctx.menu(tr, data.people, index, person.nameKo || "이 사람");
+            ctx.draggable(tr, { list: data.people, index, scope, handle: toggle });
             return isOpen ? [tr, careerRows(person)] : tr;
           });
-          return ctx.section(principal ? "PEOPLE" : "PEOPLE · 스탭",
-            h("button", {
-              onclick: add(data.people, () => ({ ...(principal ? { principal: true } : {}), nameKo: "", roleKo: "", nameEn: "", roleEn: "", email: "", career: [] })),
-            }, principal ? "+ 대표 추가" : "+ 스탭 추가"),
-            ctx.sheet(["", "이름", "직책", "영문 이름", "영문 직책", "이메일", "사진", ""], rows));
+          return ctx.sheet(["", "이름", "직책", "영문 이름", "영문 직책", "이메일", "사진"], rows);
         };
+        const newPerson = (principal) => () => ({ ...(principal ? { principal: true } : {}), nameKo: "", roleKo: "", nameEn: "", roleEn: "", email: "", career: [] });
 
-        return [contact, group(true), group(false)];
+        const people = ctx.section("PEOPLE",
+          [
+            h("button", { onclick: add(data.people, newPerson(true)) }, "+ 대표 추가"),
+            h("button", { onclick: add(data.people, newPerson(false)) }, "+ 스탭 추가"),
+          ],
+          table(true),
+          h("div", { class: "people-gap" }),
+          table(false));
+
+        return [contact, people];
       },
     });
   })();

@@ -1,7 +1,7 @@
 // Shared editor for HOME, OFFICE and NEWS (runtime/pages/<page>.json).
-// A page calls FiltPageEditor({ page, render }) after store.js and header.js; render(ctx) returns the
-// editor's elements and is called again on ctx.rerender(). The preview draws the unsaved data with
-// the real runtime/pages.js.
+// A page calls FiltPageEditor({ page, render }) after store.js, header.js and row-menu.js;
+// render(ctx) returns the editor's elements and is called again on ctx.rerender(). The preview
+// draws the unsaved data, minus archived items, with the real runtime/pages.js.
 (() => {
   "use strict";
 
@@ -44,7 +44,6 @@
     .pe-sheet tr.gap td { background: repeating-linear-gradient(-45deg, #fff 0 6px, #f0f0f0 6px 7px); }
     .pe-sheet td.num { width: 30px; padding: 0 6px; color: var(--muted); text-align: right; }
     .pe-sheet td.check { width: 44px; text-align: center; }
-    .pe-sheet td.actions { padding: 0 4px; }
     .pe-sheet td input[type="text"], .pe-sheet td select { width: 100%; height: var(--row-h); padding: 0 6px; border: 0; background: transparent; }
     .pe-sheet td input:focus, .pe-sheet td select:focus { outline: 2px solid #111; outline-offset: -2px; background: #fff; }
     .pe-sheet td.wide input { min-width: 320px; }
@@ -222,16 +221,13 @@
         upload: async (file) => { obj[key] = await upload(file); ctx.rerender(); markDirty(); },
         clear: () => { delete obj[key]; ctx.rerender(); markDirty(); },
       }),
-      remove: (list, index, label = "이 행") => h("button", {
-        class: "small danger",
-        title: "삭제",
-        onclick: () => {
-          if (!confirm(`${label}을(를) 삭제할까요?`)) return;
-          list.splice(index, 1);
-          ctx.rerender();
-          markDirty();
-        },
-      }, "✕"),
+      // Right-click menu (보관 / 삭제) for list[index]; see row-menu.js.
+      menu: (el, list, index, label = "이 행") => window.FiltRowMenu.attach(el, {
+        list,
+        item: list[index],
+        label,
+        onChange: () => { ctx.rerender(); markDirty(); },
+      }),
       // Reorders list[index] by dragging el from its handle. Drops only land on items with the same
       // scope; the drop goes before or after the target depending on which half the pointer is in.
       draggable: (el, { list, index, scope = list, handle = el, axis = "y" }) => {
@@ -316,7 +312,7 @@
 
     const renderPreview = async () => {
       const token = ++previewToken;
-      const copy = await resolveAssets(ctx.data);
+      const copy = await resolveAssets(window.FiltRowMenu.withoutArchived(ctx.data));
       if (token !== previewToken) return;
       const nextUrl = URL.createObjectURL(new Blob([JSON.stringify(copy)], { type: "application/json" }));
       const src = store.runtimeUrl("pages.js");

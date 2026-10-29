@@ -121,7 +121,6 @@
     .tag { padding: 0 5px; border: 1px solid var(--line); color: var(--muted); font-size: 10px; }
     .tag.on { border-color: #111; color: #111; }
     td.note input { min-width: 260px; color: #8a6400; }
-    td.actions { padding: 0 4px; }
 
     .toast {
       position: fixed;
@@ -185,7 +184,7 @@
     <label><input type="checkbox" id="noteOnly"> 확인 필요만</label>
     <span class="count" id="count"></span>
     <span class="spacer"></span>
-    <span class="count">셀에 엑셀 범위를 붙여넣으면 여러 칸이 한꺼번에 채워집니다 · Enter: 아래 칸</span>
+    <span class="count">엑셀 범위 붙여넣기 가능 · Enter: 아래 칸 · 번호를 끌어 순서 변경 · 우클릭: 보관/삭제</span>
   </div>
   <div class="sheet-wrap" id="sheetWrap">
     <table>
@@ -210,7 +209,6 @@
           <th title="예: /tempin_office">링크 (아임웹 주소)</th>
           <th>ID</th>
           <th>확인 필요 메모</th>
-          <th></th>
         </tr>
       </thead>
       <tbody id="rows"></tbody>
@@ -235,6 +233,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="store.js"></script>
+  <script src="row-menu.js"></script>
   <script>
     // Old builder links opened a project at ./?id=…; that editor is now project.html.
     if (new URLSearchParams(location.search).has("id")) location.replace(`project.html${location.search}`);
@@ -549,18 +548,8 @@
           placeholder: "",
           oninput: (event) => { work.note = event.target.value; tr.classList.toggle("has-note", Boolean(work.note)); markDirty(); },
         })),
-        h("td", { class: "actions" },
-          h("button", {
-            class: "small danger",
-            title: "행 삭제",
-            onclick: () => {
-              if (!confirm(`"${work.nameKo || work.nameEn || "이 행"}"을(를) 삭제할까요?`)) return;
-              data.works.splice(data.works.indexOf(work), 1);
-              render();
-              markDirty();
-            },
-          }, "✕")),
       );
+      FiltRowMenu.attach(tr, { list: data.works, item: work, label: `"${work.nameKo || work.nameEn || "이 행"}"`, onChange: () => { render(); markDirty(); } });
       return tr;
     };
 
@@ -568,7 +557,8 @@
       const visible = visibleWorks();
       $("#rows").replaceChildren(...visible.map((work, index) => rowFor(work, index, visible)));
       const notes = data.works.filter((work) => work.note).length;
-      $("#count").textContent = `${visible.length} / ${data.works.length}행${notes ? ` · 확인 필요 ${notes}` : ""}`;
+      const archived = data.works.filter((work) => work.archived).length;
+      $("#count").textContent = `${visible.length} / ${data.works.length}행${notes ? ` · 확인 필요 ${notes}` : ""}${archived ? ` · 보관 ${archived}` : ""}`;
     };
 
     // Enter moves to the same column on the next row, like a spreadsheet.
@@ -636,7 +626,7 @@
       if ($("#previewPanel").hidden) return;
       const token = ++previewToken;
       // Uploaded thumbnails are relative paths; give the preview URLs this browser can load.
-      const copy = JSON.parse(JSON.stringify(data));
+      const copy = FiltRowMenu.withoutArchived(data);
       await Promise.all(copy.works.map(async (work) => {
         work.thumb = await store.assetUrl(work.thumb);
         work.cardThumb = await store.assetUrl(work.cardThumb);
