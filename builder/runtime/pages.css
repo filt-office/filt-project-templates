@@ -32,7 +32,7 @@
   --panel-width: 240px;
   --footer-height: 35px; /* the panel footer and the project caption share this height */
   --project-title-width: 360px;
-  --panel-font: "Pretendard Variable", "Pretendard", "Noto Sans KR", sans-serif; /* the menu keeps Pretendard, not the design family */
+  --panel-font: var(--filt-font-family, "Suit", "Pretendard Variable", "Pretendard", "Noto Sans KR", sans-serif);
   width: 100%;
   height: 100vh;
   margin: 0;
@@ -340,7 +340,7 @@ body.menu-open .filt-page .info-desktop .left {
   column-gap: 10px;
   margin-left: 20px;
   padding: 0;
-  font-family: var(--filt-font-family, "Pretendard Variable", "Pretendard", "Noto Sans", sans-serif) !important;
+  font-family: var(--filt-font-family, "Suit", "Pretendard Variable", "Pretendard", "Noto Sans KR", sans-serif) !important;
   font-size: var(--filt-size-list, 12px);
   font-weight: var(--filt-weight-list, 300);
   letter-spacing: 0.4px;
