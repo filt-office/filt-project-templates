@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DESIGN · FILT. BUILDER</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/suit-font@1.0.0/dist/suit.min.css">
+  <style>
+    .colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+    .color { display: grid; grid-template-rows: auto auto auto; border: 1px solid #111; background: #fff; }
+    .color.drop-before { box-shadow: -5px 0 0 #111; }
+    .color.drop-after { box-shadow: 5px 0 0 #111; }
+    .swatch { position: relative; height: 110px; cursor: grab; }
+    .swatch .badge { position: absolute; top: 0; left: 0; padding: 2px 7px; background: #fff; color: #111; font-size: 11px; }
+    .swatch input[type="color"] { position: absolute; right: 6px; bottom: 6px; width: 28px; height: 28px; padding: 0; border: 1px solid #fff; background: none; cursor: pointer; }
+    .color input[type="text"] { width: 100%; height: 30px; padding: 0 8px; border: 0; border-top: 1px solid #111; background: #fff; }
+    .color input.hex { font-family: ui-monospace, Consolas, monospace; text-transform: uppercase; }
+    .color input:focus { outline: 2px solid #111; outline-offset: -2px; }
+  </style>
+</head>
+<body>
+  <header class="fb-header" data-active="design">
+    <div class="fb-actions" id="account">
+      <span class="dirty" id="dirty" title="저장 안 됨">●</span>
+      <button class="fb-act" disabled title="디자인 시스템은 임시저장이 없습니다. save가 바로 게시 대상에 저장합니다.">draft</button>
+      <button id="save" class="fb-act" title="저장 (Ctrl+S)">save</button>
+    </div>
+  </header>
+  <script src="header.js"></script>
+  <script src="store.js"></script>
+  <script src="row-menu.js"></script>
+  <script src="page-editor.js"></script>
+  <script>
+  (() => {
+    "use strict";
+
+    // runtime/pages/design.json: the site's colours. The first is the key colour (--filt-key);
+    // every colour is also --filt-<id>. Changes apply to the builder at once and to the site on deploy.
+    const HEX_RE = /^#[0-9a-f]{6}$/i;
+    const nextId = (colors) => {
+      let n = 2;
+      while (colors.some((color) => color.id === `key-${n}`)) n += 1;
+      return `key-${n}`;
+    };
+
+    // Preview: the colours on a sample of the site's type and links.
+    const previewBody = (dataUrl) => `<style>
+      body { margin: 0; padding: 48px; font: 14px/1.6 "SUIT", system-ui, sans-serif; color: #111; }
+      h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: .04em; }
+      .row { display: flex; flex-wrap: wrap; gap: 16px; margin: 28px 0; }
+      .chip { width: 150px; }
+      .chip div { height: 90px; }
+      .chip p { margin: 6px 0 0; font-size: 12px; }
+      a { color: inherit; text-decoration: none; border-bottom: 1px solid currentColor; }
+      .menu a { display: block; width: max-content; margin: 4px 0; border: 0; font-weight: 700; }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/suit-font@1.0.0/dist/suit.min.css">
+    <div id="out"></div>
+    <script>
+      fetch(${JSON.stringify(dataUrl)}).then((r) => r.json()).then((design) => {
+        const colors = design.colors || [];
+        const key = colors[0]?.value || "#BD005E";
+        document.getElementById("out").innerHTML =
+          '<h1>FILT ARCHITECTS</h1><p>본문 텍스트 안의 <b style="color:' + key + '">키컬러 강조</b>와 <a href="#" style="color:' + key + '">링크</a>.</p>' +
+          '<div class="menu"><a href="#">OFFICE</a><a href="#" style="color:' + key + '">NEWS (hover)</a><a href="#">WORKS</a></div>' +
+          '<div class="row">' + colors.map((c, i) => '<div class="chip"><div style="background:' + c.value + '"></div><p>' + (i ? "" : "★ ") + (c.name || "") + '<br>' + c.value.toUpperCase() + ' · --filt-' + c.id + '</p></div>').join("") + '</div>';
+      });
+    <\/script>`;
+
+    FiltPageEditor({
+      page: "design",
+      load: async () => {
+        const design = await FiltStore.getPage("design");
+        return design.colors?.length ? design : FiltStore.defaultDesign();
+      },
+      previewBody,
+      assetKeys: [],
+      render: (ctx) => {
+        const { h, data } = ctx;
+        const colors = data.colors;
+        const apply = () => FiltStore.applyDesign(data);
+        apply();
+
+        const card = (color, index) => {
+          const swatch = h("div", { class: "swatch", title: "끌어서 순서 변경 · 맨 앞이 키컬러" },
+            index === 0 ? h("span", { class: "badge" }, "키컬러") : null);
+          swatch.style.background = color.value;
+          const hex = h("input", {
+            type: "text",
+            class: "hex",
+            size: 1,
+            value: color.value,
+            title: `--filt-${color.id}`,
+            oninput: (event) => {
+              const value = event.target.value.trim();
+              if (!HEX_RE.test(value)) return;
+              color.value = value.toUpperCase();
+              swatch.style.background = color.value;
+              picker.value = color.value;
+              apply();
+              ctx.markDirty();
+            },
+          });
+          const picker = h("input", {
+            type: "color",
+            value: color.value,
+            title: "색 고르기",
+            oninput: (event) => {
+              color.value = event.target.value.toUpperCase();
+              swatch.style.background = color.value;
+              hex.value = color.value;
+              apply();
+              ctx.markDirty();
+            },
+          });
+          swatch.append(picker);
+          const el = h("div", { class: "color" }, swatch,
+            ctx.input(color, "name", { placeholder: "이름", keepEmpty: true, size: 1 }),
+            hex);
+          FiltRowMenu.attach(el, {
+            label: color.name || color.value,
+            items: [{
+              text: "삭제",
+              hint: colors.length > 1 ? "이 색을 쓰던 곳은 기본값으로 돌아갑니다" : "색이 하나뿐이라 지울 수 없습니다",
+              danger: true,
+              run: () => {
+                if (colors.length < 2 || !confirm(`${color.name || color.value}을(를) 삭제할까요?`)) return;
+                colors.splice(colors.indexOf(color), 1);
+                ctx.rerender();
+                ctx.markDirty();
+              },
+            }],
+          });
+          return ctx.draggable(el, { list: colors, index, handle: swatch, axis: "x" });
+        };
+
+        return ctx.section("키컬러",
+          h("button", {
+            onclick: () => {
+              colors.push({ id: nextId(colors), name: "", value: "#111111" });
+              ctx.rerender();
+              ctx.markDirty();
+            },
+          }, "+ 색 추가"),
+          h("div", { class: "colors" }, colors.map(card)));
+      },
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -58,8 +58,8 @@
     a.fb-act { text-decoration: none; }
     a.fb-act.version { font-size: 13px; }
     span.fb-act:hover { color: inherit; }
-    .fb-act.deploy { color: #BD005E; } /* the site's key colour */
-    .fb-act.deploy:hover, .fb-act.deploy:focus-visible { color: #8a0045; }
+    .fb-act.deploy { color: var(--filt-key, #BD005E); } /* the site's key colour (design.html) */
+    .fb-act.deploy:hover, .fb-act.deploy:focus-visible { color: color-mix(in srgb, var(--filt-key, #BD005E) 75%, #000); }
     .fb-actions .dirty { margin-right: 8px; font-size: 11px; }
     .fb-tabs {
       display: flex;
@@ -113,8 +113,8 @@
   const header = document.querySelector(".fb-header");
   const logo = document.createElement("a");
   logo.className = "fb-logo";
-  logo.href = "./";
-  logo.title = "FILT. BUILDER";
+  logo.href = "design.html";
+  logo.title = "FILT. BUILDER · 디자인 시스템";
   logo.innerHTML = `${LOGO}<span>.builder</span>`;
 
   const nav = document.createElement("nav");

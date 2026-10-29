@@ -130,7 +130,7 @@
     button.link { padding: 2px 5px; border: 0; background: none; color: var(--muted); font-size: 11px; text-decoration: underline; }
     button.link:hover { background: none; color: #111; }
     button.tool { padding: 0 8px; border: 0; background: #fafafa; color: #111; font-size: 11px; }
-    button.tool:hover, button.tool.on { background: #BD005E; color: #fff; }
+    button.tool:hover, button.tool.on { background: var(--filt-key, #BD005E); color: #fff; }
     .add-line { display: flex; }
     .add-line > * + * { border-left: 1px solid var(--rule); }
     button.add-row { flex: 1; padding: 7px 10px; border: 0; background: none; color: var(--muted); text-align: left; }
@@ -175,7 +175,7 @@
     button.text-tool.letter { width: auto; min-width: 20px; padding: 0 4px; color: #555; font: 13px/20px Georgia, serif; }
     button.text-tool.swatch { padding: 4px; }
     button.text-tool.swatch span { display: block; width: 100%; height: 100%; border: 1px solid #999; }
-    .sheet.file-over { box-shadow: inset 0 0 0 3px #BD005E; }
+    .sheet.file-over { box-shadow: inset 0 0 0 3px var(--filt-key, #BD005E); }
 
     .calibrator { grid-column: 1 / -1; padding: 8px; border-top: 1px solid var(--line); border-left: 0 !important; background: #fafafa; }
     .calibrate-stage { position: relative; border: 1px solid var(--line); background: #fff; }
@@ -186,7 +186,7 @@
     .dial.off .needle { opacity: .25; }
     /* Image grids (IMG / DWG): device tabs over 2-column cards; drawing cards carry the mobile strip. */
     .gallery-group { display: grid; gap: 8px; margin-bottom: 6px; }
-    .gallery-group.over { outline: 2px dashed #BD005E; outline-offset: 4px; }
+    .gallery-group.over { outline: 2px dashed var(--filt-key, #BD005E); outline-offset: 4px; }
     .device-tabs { display: flex; width: 50%; border: 1.5px solid #111; }
     .device-tabs button { flex: 1; padding: 3px 8px; border: 0; background: #fff; color: #111; text-align: left; }
     .device-tabs button.on { background: #111; color: #fff; }
@@ -196,11 +196,11 @@
     .card.placeholder { align-self: stretch; aspect-ratio: 16 / 10; cursor: pointer; } /* stretch: match the neighbour card's height */
     .card.placeholder.drawing { aspect-ratio: 16 / 12.6; } /* picture + strip */
     .card.placeholder svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-    .card.placeholder:hover path { stroke: #BD005E; }
+    .card.placeholder:hover path { stroke: var(--filt-key, #BD005E); }
     .card-media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; cursor: pointer; }
     .card-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none; }
     .card-media.broken::after { content: "이미지 없음"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 11px; }
-    .card-media.over { outline: 2px solid #BD005E; outline-offset: -2px; }
+    .card-media.over { outline: 2px solid var(--filt-key, #BD005E); outline-offset: -2px; }
     .card.off .card-media img { opacity: .25; }
     .card.calibrating .card-media { cursor: default; }
     .card-tools { position: absolute; top: 6px; left: 6px; display: flex; align-items: center; gap: 4px; }
@@ -209,7 +209,7 @@
     button.icon-btn { width: 20px; height: 20px; padding: 0; border: 0; background: none; color: #111; line-height: 1; }
     .card-corner button.icon-btn { background: rgba(255,255,255,.9); }
     button.icon-btn svg { display: block; width: 100%; height: 100%; overflow: visible; }
-    button.icon-btn:hover { background: none; color: #BD005E; }
+    button.icon-btn:hover { background: none; color: var(--filt-key, #BD005E); }
     /* Fit picker: the four ways an image can sit in its frame. */
     .fit-pick { position: relative; }
     .fit-menu { position: absolute; top: 24px; left: -4px; z-index: 6; display: flex; gap: 2px; padding: 3px; border: 1px solid #111; background: #fff; }
@@ -219,7 +219,7 @@
     .card-media img.pad-l { padding: 12%; box-sizing: border-box; }
     button.show-toggle { width: 18px; height: 18px; padding: 0; border: 1.5px solid #111; background: #fff; }
     button.show-toggle.on { background: #111; box-shadow: inset 0 0 0 2.5px #fff; }
-    button.show-toggle:hover { border-color: #BD005E; }
+    button.show-toggle:hover { border-color: var(--filt-key, #BD005E); }
     .card-strip { display: grid; grid-template-columns: 16% 44% 40%; height: 44px; border-top: 1px solid #111; }
     .card-strip > div { position: relative; min-width: 0; overflow: hidden; }
     .card-strip > div + div { border-left: 1px solid #111; }
@@ -235,12 +235,12 @@
     button.hide-toggle.on { border-color: #111; background: #111; color: #fff; }
     .hidden-part > :not(.hide-toggle) { opacity: .25; }
     button.scale-toggle { position: absolute; top: 2px; left: 16px; padding: 0 3px; border: 0; background: none; color: var(--muted); font-size: 9px; letter-spacing: .04em; }
-    button.scale-toggle:hover, button.scale-toggle.on { background: #BD005E; color: #fff; }
+    button.scale-toggle:hover, button.scale-toggle.on { background: var(--filt-key, #BD005E); color: #fff; }
     .strip-title input { position: absolute; right: 4px; bottom: 4px; width: calc(100% - 8px); font-size: 11px !important; font-weight: 700; text-align: right; }
     .add-drop { display: flex; align-items: flex-start; gap: 6px; margin-left: calc(50% - 13px); padding: 6px 0; }
     .add-drop > span { padding-top: 1px; color: var(--muted); font-size: 11px; font-weight: 700; line-height: 1; letter-spacing: .03em; } /* top edge on the cross's top */
     button.plus { width: 26px; height: 26px; padding: 0; border: 0; background: none; color: #111; }
-    button.plus:hover { background: none; color: #BD005E; }
+    button.plus:hover { background: none; color: var(--filt-key, #BD005E); }
     button.plus svg { display: block; width: 100%; height: 100%; }
 
     .preview { display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; }
@@ -533,8 +533,14 @@
 
     // ---------- rich text in description blocks ----------
     // A text block keeps its formatted text as block.html (inline marks and <br> only); older blocks
-    // have plain block.text. The key colour is written as a CSS variable so a new key colour applies.
-    const KEY_COLOR = "var(--filt-key, #BD005E)";
+    // have plain block.text. Design colours are written as CSS variables so a changed colour applies.
+    // Text colours: the design system's colours (written as var(--filt-<id>, value)), black and white.
+    const textColors = () => [
+      ...(window.FiltDesign?.colors || [{ id: "key", name: "키컬러", value: "#BD005E" }]).map((color) => ({ name: color.name || color.value, value: color.value, css: `var(--filt-${color.id}, ${color.value})` })),
+      { name: "검정", value: "#111111", css: "#111" },
+      { name: "흰색", value: "#ffffff", css: "#fff" },
+    ];
+    const rgbOf = (hex) => { const n = parseInt(hex.slice(1), 16); return `rgb(${n >> 16},${(n >> 8) & 255},${n & 255})`; };
     const textToHtml = (text) => escapeHtml(text || "").replace(/\n/g, "<br>");
     const blockHtml = (block) => (block.html != null ? block.html : textToHtml(block.text));
     const STYLE_KEYS = ["color", "font-size", "font-weight", "font-style", "text-decoration-line"];
@@ -543,7 +549,8 @@
       if (!value) return "";
       if (key === "color") {
         const color = value.replace(/\s/g, "").toLowerCase();
-        value = /rgb\(189,0,94\)|#bd005e|--filt-key/.test(color) ? KEY_COLOR : /rgb\(255,255,255\)|#fff/.test(color) ? "#fff" : "#111";
+        if (color.startsWith("var(")) return `${key}: ${value}`;
+        value = textColors().find((entry) => rgbOf(entry.value) === color || entry.value.toLowerCase() === color)?.css || "#111";
       }
       return `${key}: ${value}`;
     }).filter(Boolean).join("; ");
@@ -567,7 +574,6 @@
       return walk(root).replace(/^<br>/, "");
     };
     const SIZES = [["", "크기"], ["0.85em", "작게"], ["1em", "기본"], ["1.2em", "크게"], ["1.5em", "아주 크게"]];
-    const COLORS = [["#BD005E", "키컬러"], ["#111111", "검정"], ["#ffffff", "흰색"]];
 
     // Applies a mark to the selection inside editor, or to the whole block when nothing is selected.
     let savedRange = null;
@@ -622,7 +628,7 @@
             if (size) formatText(editor, () => setSize(size), range);
           },
         }, SIZES.map(([value, label]) => h("option", { value }, label))),
-        ...COLORS.map(([color, label]) => tool(h("span", { style: `background: ${color}` }), `글씨 색: ${label}`, () => document.execCommand("foreColor", false, color), "swatch")),
+        ...textColors().map((color) => tool(h("span", { style: `background: ${color.value}` }), `글씨 색: ${color.name}`, () => document.execCommand("foreColor", false, color.value), "swatch")),
         h("span", { class: "tool-gap" }),
         tool(h("b", {}, "B"), "굵게", () => document.execCommand("bold")),
         tool(h("i", {}, "I"), "기울임", () => document.execCommand("italic")),
@@ -996,7 +1002,7 @@
         const [a, b, c, d] = ticks.map((value) => origin.x + value * unitsPerMeter);
         const top = origin.y - 10 / px;
         const bottom = origin.y;
-        const color = "#BD005E";
+        const color = getComputedStyle(document.documentElement).getPropertyValue("--filt-key").trim() || "#BD005E";
         overlay.replaceChildren(
           svg("polyline", { points: `${d} ${bottom} ${d} ${top} ${c} ${top} ${c} ${bottom} ${b} ${bottom} ${b} ${top} ${a} ${top} ${a} ${bottom}`, fill: "none", stroke: color, "stroke-width": 1.5 / px }),
           ...ticks.map((value, index) => svg("text", { x: origin.x + value * unitsPerMeter, y: bottom + 13 / px, "font-size": 11 / px, "text-anchor": "middle", fill: color }, `${Number(value.toFixed(2))}${index === 3 ? "m" : ""}`)),

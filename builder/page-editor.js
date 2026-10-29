@@ -7,7 +7,7 @@
   "use strict";
 
   const css = `
-    :root { --key: #BD005E; --line: #d9d9d9; --muted: #777; --bg: #f4f4f2; --danger: #c62828; --row-h: 32px; }
+    :root { --key: var(--filt-key, #BD005E); --line: #d9d9d9; --muted: #777; --bg: #f4f4f2; --danger: #c62828; --row-h: 32px; }
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
     body { display: grid; grid-template-rows: auto 1fr; font: 12px/1.4 "SUIT", system-ui, sans-serif; color: #111; background: var(--bg); }

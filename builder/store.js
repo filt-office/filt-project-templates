@@ -527,8 +527,22 @@
   // Kept apart from the page's save buttons so 게시 is never clicked by mistake for 게시용 저장.
   // Fills the header's action row (see header.js) as: account / draft / save / deploy.
   // The account goes before the page's own buttons, deploy after them.
+  // ---------------------------------------------------------------- design system
+  // runtime/pages/design.json: { colors: [{ id, name, value }] }. The first colour is the key colour;
+  // each colour becomes --filt-<id> on the page (the first also --filt-key).
+  const DEFAULT_DESIGN = { version: 1, colors: [{ id: "key", name: "키컬러", value: "#BD005E" }] };
+  const applyDesign = (design) => {
+    const colors = design?.colors?.length ? design.colors : DEFAULT_DESIGN.colors;
+    const root = document.documentElement.style;
+    root.setProperty("--filt-key", colors[0].value);
+    colors.forEach((color) => root.setProperty(`--filt-${color.id}`, color.value));
+    window.FiltDesign = { ...design, colors };
+    document.dispatchEvent(new CustomEvent("filt-design", { detail: window.FiltDesign }));
+  };
+
   const mountHeader = (container) => {
     injectCss();
+    backend.getPage("design").then(applyDesign, () => applyDesign(DEFAULT_DESIGN));
     const item = (tag, text, title, className = "") => {
       const el = document.createElement(tag);
       el.className = `fb-act${className ? ` ${className}` : ""}`;
@@ -596,6 +610,8 @@
     imageFormats: IMAGE_FORMATS,
     ...backend,
     userName,
+    applyDesign,
+    defaultDesign: () => JSON.parse(JSON.stringify(DEFAULT_DESIGN)),
     upload: async (projectId, device, file) => backend.upload(projectId, device, await prepareUpload(file)),
     getWorks: async () => {
       const data = await backend.getWorks();
