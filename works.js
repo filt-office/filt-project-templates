@@ -2,7 +2,7 @@
   const script = document.currentScript;
   if (!script) throw new Error("Works script element is unavailable.");
 
-  const view = script.dataset.view === "gallery" ? "gallery" : "list";
+  let view = script.dataset.view === "gallery" ? "gallery" : "list";
   const mount = document.querySelector("[data-filt-works]");
   if (!mount) {
     console.error("Works template requires a data-filt-works mount.");
@@ -10,14 +10,18 @@
   }
 
   const templateBase = new URL(".", script.src);
-  // Relative thumbnails are uploaded assets (assets/works/PC/...); mobile uses the MOB copy.
+  // Relative thumbnails are uploaded assets (assets/works/PC/...) served from the images repo;
+  // mobile uses the MOB copy.
+  const imagesBase = "https://filt-office.github.io/filt-website-images/";
   const resolveAsset = (src, device = "PC") => {
     if (!src) return "";
     const path = device === "MOB" ? src.replace(/^assets\/([^/]+)\/PC\//, "assets/$1/MOB/") : src;
-    return new URL(path, templateBase).href;
+    return new URL(path, /^assets\//.test(path) ? imagesBase : templateBase).href;
   };
   const listUrl = script.dataset.listUrl || "/works_list";
   const galleryUrl = script.dataset.galleryUrl || "/works_gallery";
+  // With data-project-page="/project", rows with a projectId open the shared detail page (/project?id=<projectId>).
+  const projectPage = script.dataset.projectPage || "";
 
   const addLink = (key, href) => {
     if (document.querySelector(`link[data-filt-template="${key}"]`)) return Promise.resolve();
@@ -32,7 +36,8 @@
     document.head.append(link);
     return loaded;
   };
-  const stylesReady = addLink("works", new URL("works.css", templateBase).href);
+  // The builder adds ?v=… to bust caches; pass it on to the stylesheet too.
+  const stylesReady = addLink("works", new URL(`works.css${new URL(script.src).search}`, templateBase).href);
   addLink("suit-font", "https://cdn.jsdelivr.net/npm/suit-font@1.0.0/dist/suit.min.css").catch(() => {});
   addLink("pretendard-font", "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css").catch(() => {});
 
@@ -44,6 +49,9 @@
     document.body.append(element);
   };
 
+  // Site colours (--filt-key, --filt-<id>) from pages/design.json.
+  loadScript(new URL("design.js", templateBase).href);
+
   const el = (tag, className, text) => {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -51,10 +59,11 @@
     return node;
   };
 
-  // Rows with a link open it; rows without one are still listed (as on the original pages).
+  // Rows open the shared detail page or their own link; rows with neither are still listed (as on the original pages).
   const linkTo = (node, work) => {
-    if (!work.link) return;
-    node.addEventListener("click", () => { location.href = work.link; });
+    const href = projectPage && work.projectId ? `${projectPage}?id=${encodeURIComponent(work.projectId)}` : work.link;
+    if (!href) return;
+    node.addEventListener("click", () => { location.href = href; });
   };
 
   const byGalleryOrder = (works) => works
@@ -74,6 +83,15 @@
       const anchor = el("a", `${name}-btn`);
       anchor.href = href;
       anchor.setAttribute("aria-label", label);
+      // "#" (the builder preview) switches the view in place instead of opening the other page.
+      if (href === "#") {
+        anchor.addEventListener("click", (event) => {
+          event.preventDefault();
+          if (view === name) return;
+          view = name;
+          render(currentData);
+        });
+      }
       anchor.innerHTML = icon[name];
       buttons.append(anchor);
     });
@@ -213,10 +231,12 @@
     else attach();
   };
 
+  let currentData = null;
   const render = (data) => {
     if (!data || !Array.isArray(data.works) || !Array.isArray(data.categories)) {
       throw new Error("Works JSON is missing works or categories.");
     }
+    currentData = data;
     mount.classList.add("filt-works");
     mount.dataset.view = view;
     mount.replaceChildren(

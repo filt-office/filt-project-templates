@@ -2,21 +2,23 @@
     📌1. 기본 설정
 ------------------------------ */
 .filt-project-mount {
-  --accent: #BD005E;
+  --accent: var(--filt-key, #BD005E);
   --bg-color: #fff;
-  --panel-width: clamp(300px, 28vw, 430px);
-  --panel-hide-width: 210px;
+  --panel-width: var(--filt-panel-width, clamp(300px, 28vw, 430px));
+  --panel-hide-width: var(--filt-menu-hide, 210px);
   --panel-padding: clamp(12px, 1vw, 18px);
-  --body-text-size: clamp(11px, 0.82vw, 12px);
-  --caption-size: clamp(8px, 0.6vw, 8px);
-  --overview-font-size: clamp(8px, 0.7vw, 10px);
-  --overview-title-font-size: clamp(9px, 0.7vw, 10px);
+  /* Type sizes come from the design system (--filt-size-<id>, design.js); each PC size shrinks with
+     the window down to the same distance below it as the original clamp(). */
+  --body-text-size: clamp(calc(var(--filt-size-body, 12px) - 1px), calc(var(--filt-size-body, 12px) - 12px + 0.82vw), var(--filt-size-body, 12px));
+  --caption-size: clamp(calc(var(--filt-size-caption, 9px) - 0.5px), calc(var(--filt-size-caption, 9px) - 9px + 0.62vw), var(--filt-size-caption, 9px));
+  --overview-font-size: clamp(calc(var(--filt-size-overview, 10px) - 2px), calc(var(--filt-size-overview, 10px) - 10px + 0.7vw), var(--filt-size-overview, 10px));
+  --overview-title-font-size: clamp(calc(var(--filt-size-overview-title, 12px) - 1px), calc(var(--filt-size-overview-title, 12px) - 12px + 0.84vw), var(--filt-size-overview-title, 12px));
   --overview-row-height: clamp(24px, 2.4vw, 35px);
 }
 
 .filt-project-mount {
-  font-family: "Suit","Pretendard Variable", "Noto Sans KR", sans-serif !important;
-  font-weight: 300 !important;
+  font-family: var(--filt-font-family, "Suit","Pretendard Variable", "Noto Sans KR", sans-serif) !important;
+  font-weight: var(--filt-font-weight, 300) !important;
   letter-spacing: 0.4px;
   color: #000;
   background: var(--bg-color);
@@ -118,6 +120,15 @@
 .filt-project-mount .img-section img[data-fit="cover"] {
   object-fit: cover !important;
 }
+
+/* 여백 (builder): contain with a margin of 7% / 15% of the frame's short side. */
+.filt-project-mount .img-section img[data-fit^="pad-"],
+.filt-project-mount .img-section.portrait-mode img[data-fit^="pad-"] {
+  object-fit: contain !important;
+  box-sizing: border-box !important;
+}
+.filt-project-mount .img-section img[data-fit="pad-s"] { padding: var(--filt-pad-s, 7vmin) !important; }
+.filt-project-mount .img-section img[data-fit="pad-l"] { padding: var(--filt-pad-l, 15vmin) !important; }
 
 .filt-project-mount .mobile-drawing-section {
   display: none;
@@ -241,17 +252,33 @@
 
 .filt-project-mount .side-section .text-content,
 .filt-project-mount .side-section .text-content * {
-  color: #000 !important;
   opacity: 1 !important;
   visibility: visible !important;
-  display: block !important;
+  line-height: var(--filt-line-body, 1.8) !important;
+}
+
+.filt-project-mount .side-section .text-content {
+  color: #000 !important;
   font-size: var(--body-text-size) !important;
-  line-height: 1.8 !important;
+}
+
+/* Builder rich text (b, i, u, s, span style="color / font-size / …") stays inline, and its inline
+   color and size win; everything else inherits the body text style whatever the host page sets. */
+.filt-project-mount .side-section .text-content *:not(b, strong, i, em, u, s, span, a) {
+  display: block !important;
+}
+
+.filt-project-mount .side-section .text-content *:not([style*="color"]) {
+  color: inherit !important;
+}
+
+.filt-project-mount .side-section .text-content *:not([style*="font-size"]) {
+  font-size: inherit !important;
 }
 
 .filt-project-mount .side-section .text-content p {
   margin: 0 !important;
-  font-weight: 500 !important;
+  font-weight: var(--filt-weight-body, 500) !important;
   font-size: inherit !important;
   line-height: inherit !important;
 }
@@ -281,6 +308,16 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* The ".text-content *" rules above force body size and full opacity on everything; keep captions
+   smaller and lighter like the original pages (caption 12px at 0.75 opacity next to 16px text). */
+.filt-project-mount .side-section .text-content .side-caption {
+  font-size: var(--caption-size) !important;
+  font-weight: var(--filt-weight-caption, 300) !important;
+  line-height: var(--filt-line-caption, 1.25) !important;
+  color: #888 !important;
+  opacity: 1 !important;
 }
 
 /* 3. 하단 표 영역 (프로젝트 개요): 화면 맨 바닥에 210px 높이로 고정 */
@@ -320,7 +357,7 @@
 }
 
 .filt-project-mount .fixed-table td {
-  font-weight: 400;
+  font-weight: var(--filt-weight-overview, 400);
   text-align: right;
   vertical-align: top;
   border-right: 0.5px solid #000 !important;
@@ -329,6 +366,11 @@
 .filt-project-mount .fixed-table tr:first-child th,
 .filt-project-mount .fixed-table tr:first-child td {
   border-top: 0 !important;
+}
+
+/* The last cell of a row meets the panel edge, so it draws no right border. */
+.filt-project-mount .fixed-table tr > td:last-child {
+  border-right: 0 !important;
 }
 
 /* 프로젝트 타이틀 셀 (2행 높이) */
@@ -341,13 +383,13 @@
 }
 
 .filt-project-mount .project-title-en {
-  font-weight: 700;
+  font-weight: var(--filt-weight-overview-title, 700);
   font-size: var(--overview-title-font-size);
-  line-height: 1.3;
+  line-height: var(--filt-line-overview-title, 1.3);
 }
 .filt-project-mount .project-subtitle {
   display: block;
-  font-weight: 400;
+  font-weight: var(--filt-weight-overview, 400);
   font-size: var(--overview-font-size);
   margin-top: 2px;
 }
@@ -369,7 +411,7 @@
 
 /* 공통 메뉴 유지 + 이전 모델의 "꽉 찬 느낌" 보강 */
 #filt-common-menu-v2 .side-panel {
-  left: -210px;
+  left: calc(var(--filt-menu-hide, 210px) * -1);
   width: 240px;
   background: transparent !important;
   border-right: 1px solid #000;
@@ -399,8 +441,8 @@
   left: 20px;
 }
 #filt-common-menu-v2 .panel-menu a {
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: var(--filt-size-menu, 12px);
+  line-height: var(--filt-line-menu, 1.6);
   letter-spacing: 0.3px;
 }
 #filt-common-menu-v2 .panel-footer {
@@ -456,10 +498,10 @@ body.filt-menu-open .filt-project-mount .img-section {
   .filt-project-mount {
     --panel-width: 100vw;
     --panel-padding: 12px;
-    --body-text-size: 13.5px;
-    --caption-size: clamp(9px, 2.4vw, 10px);
-    --overview-font-size: 10px;
-    --overview-title-font-size: 12px;
+    --body-text-size: var(--filt-size-body-mobile, 13.5px);
+    --caption-size: clamp(calc(var(--filt-size-caption-mobile, 10px) - 1px), calc(var(--filt-size-caption-mobile, 10px) - 10px + 2.4vw), var(--filt-size-caption-mobile, 10px));
+    --overview-font-size: var(--filt-size-overview-mobile, 10px);
+    --overview-title-font-size: var(--filt-size-overview-title-mobile, 12px);
     --overview-row-height: 35px;
     position: relative !important;
     /* Full-bleed: project-template.js measures the host page's side offset (e.g. Imweb widget padding). */
@@ -578,7 +620,7 @@ body.filt-menu-open .filt-project-mount .img-section {
     height: var(--overview-row-height) !important;
     padding: 3px 5px;
     font-size: var(--overview-font-size);
-    line-height: 1.6;
+    line-height: var(--filt-line-overview, 1.6);
     border: 0 !important;
     box-shadow: inset 0 -0.5px 0 #000;
     overflow-wrap: break-word;
@@ -621,7 +663,7 @@ body.filt-menu-open .filt-project-mount .img-section {
   }
 
   .filt-project-mount .project-title-en {
-    line-height: 1.4;
+    line-height: calc(var(--filt-line-overview-title, 1.3) * 1.0769);
     white-space: nowrap;
   }
 
@@ -638,13 +680,12 @@ body.filt-menu-open .filt-project-mount .img-section {
     padding: 12px 18px 18px !important;
     border-bottom: 0;
     font-size: var(--body-text-size) !important;
-    line-height: 1.5 !important;
+    line-height: calc(var(--filt-line-body, 1.8) * 0.8333) !important;
   }
 
   .filt-project-mount .side-section .text-content,
   .filt-project-mount .side-section .text-content * {
-    font-size: var(--body-text-size) !important;
-    line-height: 1.5 !important;
+    line-height: calc(var(--filt-line-body, 1.8) * 0.8333) !important;
   }
 
   .filt-project-mount .side-section .text-content br {
@@ -664,7 +705,7 @@ body.filt-menu-open .filt-project-mount .img-section {
   .filt-project-mount .side-section .side-caption {
     margin-top: 6px;
     font-size: var(--caption-size) !important;
-    line-height: 1.25 !important;
+    line-height: var(--filt-line-caption, 1.25) !important;
     white-space: normal;
   }
 
@@ -761,6 +802,20 @@ body.filt-menu-open .filt-project-mount .img-section {
     pointer-events: none;
   }
 
+  /* Generated north arrow / scale bar: 60% of the strip's height inside the fixed columns. */
+  /* Bottom-left, on the same 5px inset as the bottom-right drawing title. */
+  .filt-project-mount .mobile-drawing-info > div.is-generated {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+  }
+
+  .filt-project-mount .mobile-drawing-info > div.is-generated svg {
+    display: block;
+    flex: none;
+    pointer-events: none;
+  }
+
   .filt-project-mount .mobile-drawing-info-title {
     display: flex;
     align-items: flex-end;
@@ -774,3 +829,25 @@ body.filt-menu-open .filt-project-mount .img-section {
     line-height: 1;
   }
 }
+
+/* Paragraphs shifted sideways (builder 들여쓰기 / 내어쓰기) are clipped at the description area's edge. */
+.filt-project-mount .side-section .text-content {
+  overflow-x: hidden !important;
+}
+
+@media (max-width: 768px) {
+  .filt-project-mount .side-section .text-content {
+    overflow-x: clip !important;
+  }
+}
+
+/* Shared page with a missing or unknown ?id= */
+.filt-template-error {
+  margin: 0;
+  padding: 120px 30px;
+  font-family: "Pretendard Variable", "Pretendard", sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  color: #000;
+}
+.filt-template-error a { color: var(--filt-key, #BD005E); text-decoration: none; }

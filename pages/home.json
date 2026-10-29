@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "worksLink": "/works_list",
+  "slides": [
+    {
+      "src": "assets/pages/PC/2509_filt_healing-center_jpeg_fin-20.jpg",
+      "position": "center bottom",
+      "title": "Yaein Church Healing Center",
+      "titleKo": "예인교회 힐링센터",
+      "alt": "Yaein Church Healing Center"
+    },
+    {
+      "src": "assets/pages/PC/2509_filt_healing-center_jpeg_fin-18_8000px.jpg",
+      "position": "center center",
+      "title": "Yaein Church Healing Center",
+      "titleKo": "예인교회 힐링센터",
+      "alt": "Yaein Church Healing Center"
+    },
+    {
+      "src": "assets/pages/PC/05-1_.jpg",
+      "position": "center center",
+      "title": "Sejong-no Church Annex",
+      "titleKo": "세종로 성당 신관",
+      "alt": "Sejong-no Church Annex"
+    },
+    {
+      "src": "assets/pages/PC/06.jpg",
+      "position": "center center",
+      "title": "Sejong-no Church Annex",
+      "titleKo": "세종로 성당 신관",
+      "alt": "Sejong-no Church Annex"
+    },
+    {
+      "src": "assets/pages/PC/07-1.jpg",
+      "position": "center bottom",
+      "title": "Sejong-no Church Annex",
+      "titleKo": "세종로 성당 신관",
+      "alt": "Sejong-no Church Annex"
+    },
+    {
+      "src": "assets/pages/PC/251126--3.jpg",
+      "position": "center bottom",
+      "title": "Tempin Office",
+      "titleKo": "템프인 오피스",
+      "alt": "Tempin Project"
+    },
+    {
+      "src": "assets/pages/PC/251126--5.jpg",
+      "position": "center center",
+      "title": "Tempin Office",
+      "titleKo": "템프인 오피스",
+      "alt": "Tempin Project"
+    },
+    {
+      "src": "assets/pages/PC/251126--9.jpg",
+      "position": "center center",
+      "title": "Tempin Office",
+      "titleKo": "템프인 오피스",
+      "alt": "Tempin Project"
+    },
+    {
+      "src": "assets/pages/PC/251126--11.jpg",
+      "position": "center center",
+      "title": "Tempin Office",
+      "titleKo": "템프인 오피스",
+      "alt": "Tempin Project"
+    },
+    {
+      "src": "assets/pages/PC/img_1548_edit_low_color_fakixj.jpg",
+      "position": "center center",
+      "title": "Adamo Studio",
+      "titleKo": "아다모 스튜디오",
+      "alt": "Ovino Studio"
+    },
+    {
+      "src": "assets/pages/PC/9_a-2307-02_-_home.jpg",
+      "position": "center center",
+      "title": "Hajung-dong Office",
+      "titleKo": "하중동 사무소",
+      "alt": "Hajung-dong office"
+    }
+  ]
+}

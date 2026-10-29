@@ -79,21 +79,21 @@
 
     const css = [
       '#filt-common-menu-v2, #filt-common-menu-v2 * { box-sizing:border-box; }',
-      '#filt-common-menu-v2 { font-family:"Pretendard Variable","Pretendard","Noto Sans KR",sans-serif; color:#000; letter-spacing:.4px; }',
-      '#filt-common-menu-v2 .side-panel, #filt-common-menu-v2 .side-panel * { font-family:"Pretendard Variable","Pretendard","Noto Sans KR",sans-serif !important; letter-spacing:.4px; }',
-      '#filt-common-menu-v2 .side-panel { position:fixed; top:0; left:-210px; width:240px; height:100vh; height:100dvh; margin:0; padding:0; border-right:1px solid #000; background:rgba(255,255,255,0); z-index:999991; transition:left .35s ease; }',
+      '#filt-common-menu-v2 { font-family:var(--filt-font-family, "Suit","Pretendard Variable","Pretendard","Noto Sans KR",sans-serif); color:#000; letter-spacing:.4px; }',
+      '#filt-common-menu-v2 .side-panel, #filt-common-menu-v2 .side-panel * { font-family:var(--filt-font-family, "Suit","Pretendard Variable","Pretendard","Noto Sans KR",sans-serif) !important; letter-spacing:.4px; }',
+      '#filt-common-menu-v2 .side-panel { position:fixed; top:0; left:calc(var(--filt-menu-hide, 210px) * -1); width:240px; height:100vh; height:100dvh; margin:0; padding:0; border-right:1px solid #000; background:rgba(255,255,255,0); z-index:999991; transition:left var(--filt-motion-panel, .35s) ease; }',
       '#filt-common-menu-v2 .side-panel.open { left:0; }',
       '#filt-common-menu-v2 .vert { position:absolute; top:0; left:230px; z-index:10000; width:10px; height:410px; background:#000; cursor:pointer; }',
       '#filt-common-menu-v2 .divider-top { position:absolute; top:410px; left:0; z-index:20; width:240px; height:.5px; background:#000; }',
       '#filt-common-menu-v2 .logo-btn { position:absolute; top:0; left:0; z-index:11; width:240px; height:410px; cursor:pointer; background:none; }',
-      '#filt-common-menu-v2 .logo-btn svg { width:100%; height:100%; fill:none; stroke:#000; stroke-width:5; transition:transform .3s ease, opacity .3s ease; }',
+      '#filt-common-menu-v2 .logo-btn svg { width:100%; height:100%; fill:none; stroke:var(--filt-logo-color, #000); stroke-width:var(--filt-logo-stroke, 5); transition:transform .3s ease, opacity .3s ease; }',
       '#filt-common-menu-v2 .logo-btn:hover svg { opacity:.7; }',
       '#filt-common-menu-v2 .office-name { position:absolute; top:330px; left:20px; width:180px; color:#000; font-size:12px; font-weight:600; line-height:1; letter-spacing:0; }',
       '#filt-common-menu-v2 .office-name p { margin:0; }',
       '#filt-common-menu-v2 .panel-menu { position:absolute; top:420px; left:20px; z-index:20; }',
       '#filt-common-menu-v2 .panel-menu ul { margin:0; padding:0; list-style:none; }',
-      '#filt-common-menu-v2 .panel-menu a { display:block; color:#000; font-size:12px; font-weight:400; line-height:1.6; text-decoration:none !important; transition:all .2s ease; }',
-      '#filt-common-menu-v2 .panel-menu a:hover { color:#BD005E; font-weight:700; transform:translateX(3px); }',
+      '#filt-common-menu-v2 .panel-menu a { display:block; color:#000; font-size:var(--filt-size-menu, 12px); font-weight:var(--filt-weight-menu, 400); line-height:var(--filt-line-menu, 1.6); text-decoration:none !important; transition:all var(--filt-motion-hover, .2s) ease; }',
+      '#filt-common-menu-v2 .panel-menu a:hover { color:var(--filt-key, #BD005E); font-weight:700; transform:translateX(3px); }',
       '#filt-common-menu-v2 .panel-footer { position:absolute; bottom:0; left:0; width:100%; height:35px; padding:0; border-top:1px solid #000; background:transparent; }',
       '#filt-common-menu-v2 .panel-footer svg { display:block; width:100%; height:100%; }',
       '#filt-common-menu-v2 .header-menu-btn, #filt-common-menu-v2 .mobile-menu-panel, #filt-common-menu-v2 .menu-overlay { display:none; }',
@@ -101,16 +101,20 @@
       '  #filt-common-menu-v2 .side-panel { display:none; }',
       '  #filt-common-menu-v2 .header-menu-btn { position:fixed; top:0; right:0; z-index:999992; display:flex; width:40px; height:40px; margin:0; padding:0; align-items:center; justify-content:center; border:0; background:transparent; cursor:pointer; appearance:none; -webkit-appearance:none; }',
       '  #filt-common-menu-v2 .btn-dot { display:block; width:12px; height:12px; flex:0 0 12px; border-radius:50%; background:#000; }',
-      '  #filt-common-menu-v2 .mobile-menu-panel { position:fixed; top:0; right:-100%; z-index:999991; display:flex; width:45%; max-width:82vw; min-width:180px; height:100vh; height:100dvh; flex-direction:column; border-left:.5px solid #000; background:#fff; transition:right .35s ease; }',
+      '  #filt-common-menu-v2 .mobile-menu-panel { position:fixed; top:0; right:-100%; z-index:999991; display:flex; width:45%; max-width:82vw; min-width:180px; height:100vh; height:100dvh; flex-direction:column; border-left:.5px solid #000; background:#fff; transition:right var(--filt-motion-panel, .35s) ease; }',
       '  #filt-common-menu-v2 .mobile-menu-panel.open { right:0; }',
       '  #filt-common-menu-v2 .menu-overlay { position:fixed; inset:0; z-index:999990; display:none; background:rgba(0,0,0,.3); }',
       '  #filt-common-menu-v2 .menu-overlay.active { display:block; }',
       '  #filt-common-menu-v2 .menu-middle { flex:1 1 auto; display:flex; flex-direction:column; justify-content:flex-start; align-items:flex-start; margin-top:150px; padding:5px; border-top:.5px solid #000; border-bottom:.5px solid #000; text-align:left; }',
-      '  #filt-common-menu-v2 .menu-middle a { display:block; color:#000; font-size:1.2rem; font-weight:400; line-height:1.55; text-decoration:none; transition:color .35s ease; }',
-      '  #filt-common-menu-v2 .menu-middle a:hover { color:#BD005E; }',
+      '  #filt-common-menu-v2 .menu-middle a { display:block; color:#000; font-size:var(--filt-size-menu-mobile, 1.2rem); font-weight:var(--filt-weight-menu, 400); line-height:calc(var(--filt-line-menu, 1.6) * 0.96875); text-decoration:none; transition:color var(--filt-motion-panel, .35s) ease; }',
+      '  #filt-common-menu-v2 .menu-middle a:hover { color:var(--filt-key, #BD005E); }',
       '  #filt-common-menu-v2 .menu-bottom { flex:0 0 50px; display:flex; flex-direction:column; justify-content:flex-start; align-items:flex-end; padding:5px; background:#000; text-align:right; }',
       '  #filt-common-menu-v2 .menu-bottom a { color:#fff; font-size:1.2rem; font-weight:400; text-decoration:none; }',
       '}',
+      // HOME (window.FILT_MENU_MODE = 'home'): the panel stays open over the photos; no mobile menu.
+      '#filt-common-menu-v2.is-home .side-panel { transition:none; cursor:default; }',
+      '#filt-common-menu-v2.is-home .vert { pointer-events:none; }', /* as on the original HOME, the bar sits under the logo: a click morphs the logo */
+      '#filt-common-menu-v2.is-home .header-menu-btn, #filt-common-menu-v2.is-home .mobile-menu-panel, #filt-common-menu-v2.is-home .menu-overlay { display:none !important; }',
       '@media (prefers-reduced-motion:reduce) { #filt-common-menu-v2 *, #filt-common-menu-v2 *::before, #filt-common-menu-v2 *::after { transition-duration:.01ms !important; } }'
     ].join('\n');
 
@@ -145,7 +149,12 @@
     };
 
     let currentStage = 'panel';
-    let panelOpen = false;
+    const homeMode = window.FILT_MENU_MODE === 'home';
+    let panelOpen = homeMode;
+    if (homeMode) {
+      root.classList.add('is-home');
+      panel.classList.add('open');
+    }
     let morphPromise;
 
     function ensureMorphPlugin() {
@@ -171,7 +180,11 @@
 
     async function morphTo(targetStage) {
       if (!await ensureMorphPlugin()) return;
-      const timeline = window.gsap.timeline({ defaults: { duration:.8, ease:'power2.inOut' } });
+      // Morph timing from the design system (design.js sets --filt-logo-morph and --filt-logo-ease).
+      const designVars = getComputedStyle(document.documentElement);
+      const morphDuration = parseFloat(designVars.getPropertyValue('--filt-logo-morph')) || .8;
+      const morphEase = designVars.getPropertyValue('--filt-logo-ease').trim() || 'power2.inOut';
+      const timeline = window.gsap.timeline({ defaults: { duration:morphDuration, ease:morphEase } });
       const newPaths = shapes[targetStage];
       paths.forEach((path, index) => {
         timeline.to(path, { morphSVG:{ shape:newPaths[index], map:'position' } }, 0);
@@ -180,6 +193,7 @@
     }
 
     function toggleDesktopPanel() {
+      if (homeMode) return;
       panelOpen = !panelOpen;
       panel.classList.toggle('open', panelOpen);
       morphTo('panel');

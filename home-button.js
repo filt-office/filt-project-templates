@@ -10,7 +10,7 @@
     '#' + MENU_ROOT_ID + ' .filt-home-button { display:block; width:15px; height:15px; padding:0; border:0; border-radius:50%; background:#000; cursor:pointer; transition:opacity .3s ease, transform .2s ease; }',
     '#' + MENU_ROOT_ID + ' .filt-home-button:hover { opacity:.5; }',
     '#' + MENU_ROOT_ID + ' .filt-home-button:active { transform:scale(.9); background:#fff; }',
-    '#' + MENU_ROOT_ID + ' .filt-home-button:focus-visible { outline:2px solid #BD005E; outline-offset:4px; }',
+    '#' + MENU_ROOT_ID + ' .filt-home-button:focus-visible { outline:2px solid var(--filt-key, #BD005E); outline-offset:4px; }',
     '#' + MENU_ROOT_ID + ' .filt-home-button--desktop { position:absolute; top:20px; left:20px; z-index:15; }',
     '#' + MENU_ROOT_ID + ' .filt-home-button--mobile { display:none; position:fixed; top:20px; left:20px; z-index:999993; }',
     '@media (max-width:768px) {',

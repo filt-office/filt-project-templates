@@ -1,0 +1,539 @@
+{
+  "id": "yeonmujang-szf",
+  "title": "Yeonmujang SZF | PROJECT INFO",
+  "mobile": {
+    "images": [
+      {
+        "src": "assets/yeonmujang-szf/MOB/a411c4ae95d78.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF Exterior - Daytime View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/d0d6af8c88bec.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF Exterior - Daytime View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/398c7559b85ac.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF Exterior - Daytime View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/2cf0ebb7373b5.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF Exterior - Daytime View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/5d06eb467ac65.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Interior",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/625852e610b28.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Interior",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/9182eda7b9674.jpg",
+        "class": "portrait",
+        "alt": "Yeonmujang SZF - Interior",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/66e0dc5e0224e.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Interior",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/3e70af2679fe8.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Interior",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/6796b13d0f813.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Interior",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/c1b205bb349a3.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Interior",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/9b9959f273cc0.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Interior",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/17c3a26f68fd9.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Interior",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/380dc99f48a1b.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Interior",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/61df054a31d7b.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Night View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/8259ee42b3585.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Night View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/3de11d84869f5.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Night View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/efc23db98da03.jpg",
+        "class": "portrait",
+        "alt": "Yeonmujang SZF - Night View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/587ea966dc228.jpg",
+        "class": "portrait",
+        "alt": "Yeonmujang SZF - Night View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/63ceea6e82eaf.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Night View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/b867c7ace939d.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Night View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/bc11582fc274b.jpg",
+        "class": "landscape",
+        "alt": "Yeonmujang SZF - Night View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/416018b009ee6.jpg",
+        "class": "portrait",
+        "alt": "Yeonmujang SZF - Night View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/9bcd9e0b5e908.jpg",
+        "class": "portrait",
+        "alt": "Yeonmujang SZF - Night View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/695061a2d7ed4.jpg",
+        "class": "portrait",
+        "alt": "Yeonmujang SZF - Night View",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/mob_yeon_szf_loca.svg",
+        "class": "drawing",
+        "alt": "",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/mob_yeon_szf_1f.svg",
+        "class": "drawing",
+        "alt": "",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/mob_yeon_szf_2f.svg",
+        "class": "drawing",
+        "alt": "",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/mob_yeon_szf_3f.svg",
+        "class": "drawing",
+        "alt": "",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/mob_yeon_szf_rf.svg",
+        "class": "drawing",
+        "alt": "",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/mob_yeon_szf_sec1.svg",
+        "class": "drawing",
+        "alt": "",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/mob_yeon_szf_sec2.svg",
+        "class": "drawing",
+        "alt": "",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/y_szf_str_diag_1-02.svg",
+        "class": "drawing",
+        "alt": "",
+        "fit": "auto",
+        "rotation": 0
+      },
+      {
+        "src": "assets/yeonmujang-szf/MOB/y_szf_str_diag_2-02.svg",
+        "class": "drawing",
+        "alt": "",
+        "fit": "auto",
+        "rotation": 0
+      }
+    ]
+  },
+  "overview": {
+    "titleEn": "YEONMUJANG SZF",
+    "subtitle": "연무장 SZF",
+    "fields": [
+      {
+        "label": "STATUS",
+        "value": "BUILT"
+      },
+      {
+        "label": "YEAR",
+        "value": "2024"
+      },
+      {
+        "label": "LOCATION",
+        "value": "SEOUL,\nSOUTH KOREA"
+      },
+      {
+        "label": "PROGRAM",
+        "value": "COMMERCIAL"
+      },
+      {
+        "label": "FLOORS",
+        "value": "3F"
+      },
+      {
+        "label": "TYPE",
+        "value": "RENOVATION"
+      },
+      {
+        "label": "BUILDING AREA",
+        "value": "207.39㎡",
+        "areaM2": 207.39
+      },
+      {
+        "label": "TOTAL AREA",
+        "value": "613.05㎡",
+        "areaM2": 613.05
+      },
+      {
+        "label": "CLIENT",
+        "value": "PRIVATE"
+      },
+      {
+        "label": "CONSTRUCTION",
+        "value": "C&O CONSTRUCTION"
+      },
+      {
+        "label": "PHOTOGRAPHER",
+        "value": "YONG JOON CHOI"
+      }
+    ]
+  },
+  "images": [
+    {
+      "src": "assets/yeonmujang-szf/PC/a411c4ae95d78.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF Exterior - Daytime View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/d0d6af8c88bec.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF Exterior - Daytime View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/398c7559b85ac.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF Exterior - Daytime View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/2cf0ebb7373b5.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF Exterior - Daytime View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/5d06eb467ac65.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Interior",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/625852e610b28.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Interior",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/9182eda7b9674.jpg",
+      "class": "portrait",
+      "alt": "Yeonmujang SZF - Interior",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/66e0dc5e0224e.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Interior",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/3e70af2679fe8.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Interior",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/6796b13d0f813.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Interior",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/c1b205bb349a3.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Interior",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/9b9959f273cc0.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Interior",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/17c3a26f68fd9.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Interior",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/380dc99f48a1b.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Interior",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/61df054a31d7b.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Night View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/8259ee42b3585.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Night View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/3de11d84869f5.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Night View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/efc23db98da03.jpg",
+      "class": "portrait",
+      "alt": "Yeonmujang SZF - Night View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/587ea966dc228.jpg",
+      "class": "portrait",
+      "alt": "Yeonmujang SZF - Night View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/63ceea6e82eaf.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Night View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/b867c7ace939d.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Night View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/bc11582fc274b.jpg",
+      "class": "landscape",
+      "alt": "Yeonmujang SZF - Night View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/416018b009ee6.jpg",
+      "class": "portrait",
+      "alt": "Yeonmujang SZF - Night View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/9bcd9e0b5e908.jpg",
+      "class": "portrait",
+      "alt": "Yeonmujang SZF - Night View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/695061a2d7ed4.jpg",
+      "class": "portrait",
+      "alt": "Yeonmujang SZF - Night View",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/yeon_szf_loca.svg",
+      "class": "drawing",
+      "alt": "",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/yeon_szf_1f.svg",
+      "class": "drawing",
+      "alt": "",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/yeon_szf_2f.svg",
+      "class": "drawing",
+      "alt": "",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/yeon_szf_3f.svg",
+      "class": "drawing",
+      "alt": "",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/yeon_szf_rf.svg",
+      "class": "drawing",
+      "alt": "",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/yeon_szf_sec1.svg",
+      "class": "drawing",
+      "alt": "",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/yeon_szf_sec2.svg",
+      "class": "drawing",
+      "alt": "",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/y_szf_str_diag_1-01.svg",
+      "class": "drawing",
+      "alt": "",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/yeonmujang-szf/PC/y_szf_str_diag_2-01.svg",
+      "class": "drawing",
+      "alt": "",
+      "fit": "auto",
+      "rotation": 0
+    }
+  ],
+  "descriptionHtml": "<p class=\"project-title-kr\">연무장 SZF</p>\r\n\t  <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>"
+}

@@ -2,18 +2,22 @@
   const script = document.currentScript;
   if (!script) throw new Error("Project template script element is unavailable.");
 
-  const projectId = script.dataset.projectId;
-  const mount = projectId
-    ? document.querySelector(`[data-filt-project="${CSS.escape(projectId)}"]`)
-    : null;
-  if (!projectId || !mount) {
-    console.error("Project template requires a matching data-filt-project mount and data-project-id.");
-    return;
+  // A project page names its project in the snippet (data-project-id); the shared page
+  // (e.g. /project?id=tempin) leaves it out and reads ?id= from the address instead.
+  const requestedId = script.dataset.projectId || new URLSearchParams(location.search).get("id") || "";
+  const projectId = /^[a-z0-9-]+$/.test(requestedId) ? requestedId : "";
+  let mount = (projectId && document.querySelector(`[data-filt-project="${CSS.escape(projectId)}"]`))
+    || document.querySelector('[data-filt-project=""]');
+  if (!mount) {
+    mount = document.createElement("div");
+    mount.dataset.filtProject = projectId;
+    script.after(mount);
   }
 
   const templateBase = new URL(".", script.src);
-  // Uploaded assets are stored as paths relative to the template (e.g. assets/<id>/x.jpg).
-  const resolveAsset = (src) => (src ? new URL(src, templateBase).href : "");
+  // Uploaded assets are stored as relative paths (assets/<id>/PC/x.jpg) and served from the images repo.
+  const imagesBase = "https://filt-office.github.io/filt-website-images/";
+  const resolveAsset = (src) => (src ? new URL(src, /^assets\//.test(src) ? imagesBase : templateBase).href : "");
   const addLink = (key, href) => {
     const existing = document.querySelector(`link[data-filt-template="${key}"]`);
     if (existing) return existing.sheet ? Promise.resolve() : new Promise((resolve, reject) => {
@@ -32,7 +36,8 @@
     return loaded;
   };
 
-  const templateStylesReady = addLink("layout", new URL("project-template.css", templateBase).href);
+  // The builder adds ?v=… to bust caches; pass it on to the stylesheet too.
+  const templateStylesReady = addLink("layout", new URL(`project-template.css${new URL(script.src).search}`, templateBase).href);
   addLink("suit-font", "https://cdn.jsdelivr.net/npm/suit-font@1.0.0/dist/suit.min.css")
     .catch((error) => console.warn("SUIT font stylesheet could not be loaded.", error));
   addLink("pretendard-font", "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css")
@@ -45,6 +50,9 @@
     externalScript.async = false;
     document.body.append(externalScript);
   };
+
+  // Site colours (--filt-key, --filt-<id>) from pages/design.json.
+  loadScript(new URL("design.js", templateBase).href);
 
   const createFieldCell = (tagName, value, className) => {
     const cell = document.createElement(tagName);
@@ -88,8 +96,11 @@
       row.append(createFieldCell("th", field.label));
       const valueCell = createFieldCell("td", field.value);
       if (field.areaM2 !== undefined && Number.isFinite(Number(field.areaM2))) {
-        valueCell.dataset.areaM2 = String(Number(field.areaM2));
-        valueCell.dataset.areaUnit = "m2";
+        const area = Number(field.areaM2);
+        valueCell.dataset.areaM2 = String(area);
+        // The builder lets editors pick which unit shows first; a click still swaps ㎡ ↔ 평.
+        valueCell.dataset.areaUnit = field.areaUnit === "py" ? "py" : "m2";
+        if (field.areaUnit === "py") valueCell.textContent = `${Math.round(area / 3.305785)}py`;
         valueCell.addEventListener("click", toggleAreaUnits);
       }
       row.append(valueCell);
@@ -133,13 +144,74 @@
       img.src = resolveAsset(image.src);
       img.alt = image.alt || "";
       img.className = ["portrait", "landscape", "drawing"].includes(image.class) ? image.class : "landscape";
-      img.dataset.fit = ["auto", "contain", "cover"].includes(image.fit) ? image.fit : "auto";
+      img.dataset.fit = ["auto", "contain", "cover", "pad-s", "pad-l"].includes(image.fit) ? image.fit : "auto";
       img.dataset.rotation = [0, 90, 180, 270].includes(Number(image.rotation)) ? String(Number(image.rotation)) : "0";
       img.loading = "lazy";
       img.addEventListener("load", () => updateRotatedImageSize(section, img));
       section.append(img, document.createElement("hr"));
     });
     return section;
+  };
+
+  // Generated overlays are drawn in screen pixels at 60% of the info strip's height. The scale bar's
+  // length still follows the drawing: drawings are exported from Illustrator artboards in pt, so at
+  // 1:N one metre is 72 / 0.0254 / N viewBox units (1:50 → 56.7), times the drawing's display scale.
+  const UNITS_PER_METER = 72 / 0.0254;
+  const svgElement = (viewBox, width, height, body) => {
+    const template = document.createElement("template");
+    template.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="${width}" height="${height}" aria-hidden="true" fill="none" stroke="#000" stroke-width=".6">${body}</svg>`;
+    return template.content.firstElementChild;
+  };
+  const formatNumber = (value) => String(Number(value.toFixed(2)));
+
+  // N and the scale bar's numbers share one size: half the drawing title (10px bold → 5px, weight 500).
+  const LABEL_SIZE = 5;
+  const LABEL_WEIGHT = 500;
+
+  // Drawn in a 32-unit box: circle, a square-ended needle to the rim, and N beyond it, turned together.
+  const northArrow = (size, degrees) => {
+    const font = (LABEL_SIZE * 32) / size;
+    const radius = 15.5 - font;
+    return svgElement("-16 -16 32 32", size, size,
+      `<g transform="rotate(${degrees})"><circle r="${radius}"/><rect x="-.6" y="${-radius}" width="1.2" height="${radius}" fill="#000" stroke="none"/>`
+      + `<text y="${-radius - 1}" fill="#000" stroke="none" font-size="${font}" font-weight="${LABEL_WEIGHT}" text-anchor="middle">N</text></g>`);
+  };
+
+  // Same shape as the hand-made bars: an outline stepping between 0, 1/5, 2/5 and the full length,
+  // which is the longest round length that stays within 15% of the drawing's width (viewBox units,
+  // or pixels for JPG/PNG), so large raster drawings get a bar as long as SVG ones.
+  // The bar is 0.8 of the overlay height above its numbers; the SVG shrinks with it.
+  const scaleBar = (scale, pixelsPerUnit, overlayHeight, drawingWidth) => {
+    const unitsPerMeter = UNITS_PER_METER / scale;
+    const length = [200, 100, 50, 20, 10, 5, 2, 1].find((meters) => meters * unitsPerMeter <= drawingWidth * 0.15) || 1;
+    const pixelsPerMeter = unitsPerMeter * pixelsPerUnit;
+    const fontSize = LABEL_SIZE;
+    const start = fontSize * 0.4;
+    const ticks = [0, length / 5, (length * 2) / 5, length];
+    const [a, b, c, d] = ticks.map((meters) => start + meters * pixelsPerMeter);
+    const top = 0.5;
+    const bottom = top + (overlayHeight - fontSize - 2.5) * 0.8;
+    const height = bottom + fontSize + 2;
+    const width = d + fontSize * 1.3;
+    const labels = ticks.map((meters, index) => `<text x="${start + meters * pixelsPerMeter}" y="${height - 0.5}" fill="#000" stroke="none" font-size="${fontSize}" font-weight="${LABEL_WEIGHT}" text-anchor="middle">${formatNumber(meters)}${index === 3 ? "m" : ""}</text>`);
+    return svgElement(`0 0 ${width} ${height}`, width, height,
+      `<polyline points="${d} ${bottom} ${d} ${top} ${c} ${top} ${c} ${bottom} ${b} ${bottom} ${b} ${top} ${a} ${top} ${a} ${bottom}"/>${labels.join("")}`);
+  };
+
+  // An <img>'s natural size for a viewBox-only SVG is not the viewBox, so read it from the file.
+  const drawingSizes = new Map();
+  const drawingSize = (image) => {
+    const src = image.currentSrc || image.src;
+    if (!drawingSizes.has(src)) {
+      const isSvg = /\.svg([?#]|$)/i.test(src) || /^(blob:|data:image\/svg)/.test(src);
+      drawingSizes.set(src, (isSvg ? fetch(src).then((response) => (response.ok ? response.text() : "")) : Promise.resolve(""))
+        .then((text) => {
+          const box = text.match(/<svg\b[^>]*?\sviewBox\s*=\s*["']\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)/i);
+          return box ? { width: Number(box[1]), height: Number(box[2]) } : null;
+        })
+        .catch(() => null));
+    }
+    return drawingSizes.get(src).then((size) => size || { width: image.naturalWidth, height: image.naturalHeight });
   };
 
   const createMobileDrawingSection = (drawingData) => {
@@ -162,6 +234,12 @@
       image.alt = drawing.alt || drawing.title || "";
       image.dataset.title = drawing.title || "";
       image.dataset.coordinate = drawing.coordinate === false ? "off" : "on";
+      if (drawing.hideScale) image.dataset.scaleOff = "true";
+      const scale = Number(drawing.scale ?? drawingData.scale);
+      if (scale > 0) image.dataset.scale = String(scale);
+      // Each drawing has its own angle; older data had one project-wide angle.
+      const north = drawing.north ?? drawingData.north;
+      if (north !== "" && north != null && Number.isFinite(Number(north))) image.dataset.north = String(Number(north));
       image.loading = "lazy";
       image.draggable = false;
       slides.append(image);
@@ -226,23 +304,49 @@
     let touchStartX = null;
     const originalSlideCount = originalSlides.length;
 
-    const updateDrawingOverlays = () => {
+    // A drawing with its own angle / scale gets generated overlays; otherwise the uploaded
+    // coordinateSrc / scaleSrc images are used as before.
+    let overlayToken = 0;
+    const updateDrawingOverlays = async () => {
+      const token = ++overlayToken;
       const index = currentSlide - (originalSlideCount > 1 ? 1 : 0);
       const normalizedIndex = (index + originalSlideCount) % originalSlideCount;
       const currentImage = originalSlides[normalizedIndex];
       title.textContent = currentImage.dataset.title;
-      if (coordinateImage) {
-        coordinateImage.style.display = currentImage.dataset.coordinate === "off" ? "none" : "block";
-      }
+      const showCoordinate = currentImage.dataset.coordinate !== "off";
+      if (coordinateImage) coordinateImage.style.display = showCoordinate ? "block" : "none";
 
       const sliderRect = slider.getBoundingClientRect();
       const naturalWidth = currentImage.naturalWidth;
       const naturalHeight = currentImage.naturalHeight;
       if (!naturalWidth || !naturalHeight || !sliderRect.width || !sliderRect.height) return;
       const scale = Math.min(sliderRect.width / naturalWidth, sliderRect.height / naturalHeight);
-      [coordinateImage, scaleImage].filter(Boolean).forEach((image) => {
-        image.style.width = `${naturalWidth * scale}px`;
-        image.style.height = `${naturalHeight * scale}px`;
+
+      // Legacy overlay images are drawing-sized canvases with the mark in a corner, so they get the
+      // drawing's on-screen size; generated ones are compact and sit inside their cell.
+      const scaleOff = currentImage.dataset.scaleOff === "true";
+      const drawingScale = scaleOff ? 0 : Number(currentImage.dataset.scale);
+      const north = currentImage.dataset.north === undefined ? NaN : Number(currentImage.dataset.north);
+      const generatedNorth = Number.isFinite(north);
+      const generatedScale = drawingScale > 0;
+      const overlayHeight = Math.round(info.clientHeight * 0.6);
+      // The columns stay fixed (10% / 50% / 40%), so the arrow also shrinks to fit a narrow cell.
+      const northSize = Math.min(overlayHeight, Math.floor(coordinateInfo.clientWidth) - 10); // minus the cell's 5px padding
+      let coordinateOverlay = generatedNorth ? northArrow(northSize, north) : coordinateImage;
+      let scaleOverlay = scaleOff ? null : scaleImage;
+      if (generatedScale) {
+        const size = await drawingSize(currentImage);
+        if (token !== overlayToken) return;
+        scaleOverlay = scaleBar(drawingScale, (naturalWidth * scale) / size.width, overlayHeight, size.width);
+      }
+      coordinateInfo.replaceChildren(...(coordinateOverlay && showCoordinate ? [coordinateOverlay] : []));
+      scaleInfo.replaceChildren(...(scaleOverlay ? [scaleOverlay] : []));
+      coordinateInfo.classList.toggle("is-generated", generatedNorth);
+      scaleInfo.classList.toggle("is-generated", generatedScale);
+      [coordinateImage, scaleImage].filter((overlay) => overlay && overlay.isConnected).forEach((overlay) => {
+        overlay.style.display = "block";
+        overlay.style.width = `${naturalWidth * scale}px`;
+        overlay.style.height = `${naturalHeight * scale}px`;
       });
     };
 
@@ -455,20 +559,35 @@
     loadScript(new URL("home-button.js", templateBase).href);
   };
 
+  const notFound = new Error("not found");
+
   Promise.all([
     templateStylesReady,
     // data-project-src lets the builder preview unsaved data; production uses projects/<id>.json.
-    fetch(script.dataset.projectSrc || new URL(`projects/${encodeURIComponent(projectId)}.json`, templateBase)).then((response) => {
-      if (!response.ok) throw new Error(`Project data request failed (${response.status}).`);
-      return response.json();
-    })
+    script.dataset.projectSrc || projectId
+      ? fetch(script.dataset.projectSrc || new URL(`projects/${encodeURIComponent(projectId)}.json`, templateBase)).then((response) => {
+        if (response.status === 404) throw notFound;
+        if (!response.ok) throw new Error(`Project data request failed (${response.status}).`);
+        return response.json();
+      })
+      : Promise.reject(notFound)
   ])
     .then(([, project]) => render(project))
     .catch((error) => {
-      console.error("Project template could not render.", error);
+      console.error("Project template could not render.", requestedId, error);
       const message = document.createElement("p");
       message.className = "filt-template-error";
-      message.textContent = `프로젝트를 불러오지 못했습니다: ${error.message}`;
+      if (error === notFound) {
+        message.append("프로젝트를 찾을 수 없습니다. ");
+        const back = document.createElement("a");
+        back.href = "/works_list";
+        back.textContent = "WORKS 목록으로";
+        message.append(back);
+        document.title = "WORKS | FILT";
+      } else {
+        message.textContent = `프로젝트를 불러오지 못했습니다: ${error.message}`;
+      }
       mount.replaceChildren(message);
+      loadScript(new URL("common-menu-v2.js", templateBase).href);
     });
 })();

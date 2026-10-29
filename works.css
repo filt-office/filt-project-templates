@@ -4,15 +4,15 @@
     Everything is scoped under .filt-works so the Imweb page is untouched.
 ------------------------------ */
 .filt-works {
-  --accent: #BD005E;
+  --accent: var(--filt-key, #BD005E);
   --bg-color: #fff;
-  --panel-hide-width: 210px;
+  --panel-hide-width: var(--filt-menu-hide, 210px);
   --m-top: 65px;
   --m-gap: 25px;
   --m-ratio: 120%;
   --m-title-gap: 2px;
-  font-family: "Suit", "Pretendard Variable", "Noto Sans KR", sans-serif !important;
-  font-weight: 300 !important;
+  font-family: var(--filt-font-family, "Suit", "Pretendard Variable", "Noto Sans KR", sans-serif) !important;
+  font-weight: var(--filt-font-weight, 300) !important;
   letter-spacing: 0.4px;
   color: #000;
   -webkit-font-smoothing: antialiased;
@@ -113,12 +113,12 @@ body.menu-open .filt-works .left-container {
   column-gap: 15px;
   margin-left: 20px;
   padding: 0;
-  font-size: 12px;
-  font-weight: 300;
+  font-size: var(--filt-size-list, 12px);
+  font-weight: var(--filt-weight-list, 300);
   letter-spacing: 0.4px;
-  line-height: 1.6;
+  line-height: var(--filt-line-list, 1.6);
   cursor: pointer;
-  transition: color .2s ease;
+  transition: color var(--filt-motion-hover, .2s) ease;
 }
 .filt-works .item:hover { color: var(--accent); }
 
@@ -386,9 +386,9 @@ body.menu-open .filt-works .left {
     margin: var(--m-title-gap) 0 0;
     padding: 0;
     color: #000;
-    font-size: 1.2rem !important;
-    font-weight: 300;
+    font-size: var(--filt-size-list-mobile, 1.2rem) !important;
+    font-weight: var(--filt-weight-list, 300);
     letter-spacing: 0;
-    line-height: 1.4;
+    line-height: calc(var(--filt-line-list, 1.6) * 0.875);
   }
 }

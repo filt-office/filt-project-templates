@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "news": [
+    {
+      "title": "세종로성당 신관_와이드AR 7-8월호 게재",
+      "date": "2026/07/30",
+      "type": "Publication",
+      "author": "KY",
+      "image": "assets/pages/PC/fd9adb1cd0fad.png",
+      "text": "와이드AR 7-8월호에 ADSLAB, 우하건축사사무소와 협업한 세종로성당 신관 프로젝트가 게재되었습니다."
+    },
+    {
+      "title": "2026 이화여대 건축학과 건축재료 특강",
+      "date": "2026/05/27",
+      "type": "Lecture",
+      "author": "KY",
+      "image": "assets/pages/PC/caae8f317f266.png",
+      "text": "이화여자대학교 건축학과 건축재료 수업에서 「만드는 자의 입장」에 관한 주제로 온라인 특강을 진행했습니다."
+    },
+    {
+      "title": "세종로 성당 신관 준공식 참석",
+      "date": "2025/07/19",
+      "type": "Event",
+      "author": "KY",
+      "image": "assets/pages/PC/70e47bb32d676.jpg",
+      "text": "세종로성당 신관 준공 축복식에서 프로젝트에 대한 감사의 뜻을 담은 감사패를 전달받았습니다."
+    },
+    {
+      "title": "2025 이화여대 건축학과 건축재료 특강",
+      "date": "2025/05/28",
+      "type": "Lecture",
+      "author": "KY",
+      "image": "assets/pages/PC/3d7c91eec3bee.png",
+      "text": "이화여자대학교 건축학과 건축재료 수업에서 「재료는 어디에서 오는가?」를 주제로 온라인 특강을 진행했습니다."
+    },
+    {
+      "title": "2024 이화여대 건축학과 건축재료 특강",
+      "date": "2024/05/29",
+      "type": "Lecture",
+      "author": "KY",
+      "image": "assets/pages/PC/de02b71b09ec1.png",
+      "text": "이화여자대학교 건축학과 건축재료 수업에서 「재료 이전의 것들」을 주제로 온라인 특강을 진행했습니다."
+    },
+    {
+      "title": "시공세미나 with/경영위치건축사사무소",
+      "mobileTitle": "시공세미나 @경영위치",
+      "date": "2023/02/09",
+      "type": "Workshop",
+      "author": "KY",
+      "image": "assets/pages/PC/9a21d77cb5b0e.png",
+      "text": "경영위치건축사사무소에서 건축시공을 주제로 총 6회에 걸친 세미나를 진행했습니다."
+    }
+  ],
+  "recruit": [],
+  "recruitEmpty": "진행중인 채용 공고가 없습니다."
+}
