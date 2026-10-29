@@ -18,7 +18,7 @@
   const isId = (value) => /^[a-z0-9-]+$/i.test(value || "");
   const safeFamily = (value) => typeof value === "string" && /^[A-Za-z0-9 ._-]{1,90}$/.test(value) ? value.trim() : "";
   const extOf = (name) => (String(name || "").match(/\.[^./]+$/) || [""])[0].toLowerCase();
-  const fontStack = (family) => `'${family.replace(/'/g, "\\'")}', 'Noto Sans KR', sans-serif`;
+  const fontStack = (family) => `'${family.replace(/'/g, "\\'")}', 'Suit', 'Pretendard Variable', 'Noto Sans KR', sans-serif`;
   const storedFont = (value) => {
     if (!value || typeof value !== "object") return null;
     const src = typeof value.src === "string" ? value.src : "";
