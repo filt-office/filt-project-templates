@@ -3,7 +3,7 @@
 // render(ctx) returns the editor's elements and is called again on ctx.rerender(). The preview
 // draws the unsaved data, minus archived items, with the real runtime/pages.js.
 // Pages with other data pass load / save / previewBody(dataUrl, runtimeUrl) and assetKeys;
-// preview: false drops the preview.
+// preview: false drops the preview; previewTools adds controls to its bar.
 (() => {
   "use strict";
 
@@ -116,6 +116,7 @@
     previewBody = (dataUrl, runtimeUrl) => `<div data-filt-page></div><script src="${runtimeUrl("pages.js")}" data-page="${page}" data-page-src="${dataUrl}" data-works-url="#"><\/script>`,
     assetKeys = ["src", "image"], // fields that hold image paths
     preview = true, // false: the editor takes the whole width
+    previewTools = [], // extra controls for the preview bar
   }) => {
     const store = window.FiltStore;
     const $ = (selector) => document.querySelector(selector);
@@ -132,6 +133,7 @@
             h("button", { class: "active", dataset: { device: "desktop" } }, "PC"),
             h("button", { dataset: { device: "mobile" } }, "모바일"),
             h("span", { class: "muted", id: "peSize" }),
+            previewTools,
             h("span", { class: "spacer" }),
             h("span", { class: "muted" }, "저장 전 내용 기준")),
           h("div", { class: "pe-stage", id: "peStage" },
@@ -281,6 +283,7 @@
       rerender: () => $("#peEditor").replaceChildren(...[render(ctx)].flat(Infinity).filter(Boolean)),
       pickFiles,
       pickExisting,
+      refreshPreview: () => renderPreview(),
       upload,
 
       // A text input bound to obj[key]; empty strings are removed so the JSON stays as written by hand.

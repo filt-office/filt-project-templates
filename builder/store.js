@@ -532,7 +532,7 @@
   // designVars() turns it into the CSS variables pages use (runtime/design.js sets the same ones):
   //   colors[]   --filt-key (the first), --filt-<id>
   //   logo       --filt-logo-stroke (in the mark's 240×410 units), --filt-logo-color,
-  //              --filt-logo-morph (seconds) and logo.ease (a GSAP ease name, read by the menu script)
+  //              --filt-logo-morph (seconds), --filt-logo-ease (a GSAP ease name, read by the menu script)
   //   type       --filt-font-family, --filt-font-weight;
   //              per scale entry --filt-size-<id>, --filt-size-<id>-mobile, --filt-weight-<id>, --filt-line-<id>
   //   motion     --filt-motion-panel, --filt-motion-hover (seconds)
@@ -544,12 +544,13 @@
       family: "'Suit', 'Pretendard Variable', 'Noto Sans KR', sans-serif",
       weight: 300,
       scale: [
-        { id: "body", name: "본문", pc: 12, mobile: 13.5, weight: 300, line: 1.7 },
-        { id: "caption", name: "캡션", pc: 9, mobile: 10, weight: 300, line: 1.4 },
-        { id: "overview", name: "개요표", pc: 10, mobile: 10, weight: 400, line: 1.3 },
-        { id: "overview-title", name: "개요표 제목", pc: 10, mobile: 12, weight: 700, line: 1.3 },
+        // Measured on the live site (Imweb's root font size is 10px, so 1.2rem = 12px).
+        { id: "body", name: "본문", pc: 12, mobile: 13.5, weight: 500, line: 1.8 },
+        { id: "caption", name: "캡션", pc: 9, mobile: 10, weight: 300, line: 1.25 },
+        { id: "overview", name: "개요표", pc: 10, mobile: 10, weight: 400, line: 1.6 },
+        { id: "overview-title", name: "개요표 제목", pc: 12, mobile: 12, weight: 700, line: 1.3 },
         { id: "list", name: "목록", pc: 12, mobile: 12, weight: 300, line: 1.6 },
-        { id: "menu", name: "메뉴", pc: 12, mobile: 19.2, weight: 400, line: 1.6 },
+        { id: "menu", name: "메뉴", pc: 12, mobile: 12, weight: 400, line: 1.6 },
       ],
     },
     motion: { panel: 0.35, hover: 0.2 },
@@ -575,6 +576,7 @@
     vars["--filt-logo-stroke"] = String(design.logo.stroke);
     vars["--filt-logo-color"] = design.logo.color === "black" ? "#000" : `var(--filt-${design.logo.color}, #000)`;
     vars["--filt-logo-morph"] = `${design.logo.duration}s`;
+    vars["--filt-logo-ease"] = design.logo.ease;
     vars["--filt-font-family"] = design.type.family;
     vars["--filt-font-weight"] = String(design.type.weight);
     design.type.scale.forEach((entry) => {
