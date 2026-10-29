@@ -1706,11 +1706,12 @@
       if (token !== previewToken) return;
       const nextUrl = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: "application/json" }));
       const templateSrc = store.runtimeUrl("project-template.js");
-      frame.srcdoc = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0}</style></head><body><div data-filt-project="preview"></div><script src="${templateSrc}" data-project-id="preview" data-project-src="${nextUrl}"><\/script></body></html>`;
+      frame.srcdoc = `<!doctype html><html lang="ko"${FiltStore.designAttrs()}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0}</style></head><body><div data-filt-project="preview"></div><script src="${templateSrc}" data-project-id="preview" data-project-src="${nextUrl}"><\/script></body></html>`;
       if (previewUrl) setTimeout(URL.revokeObjectURL.bind(URL, previewUrl), 5000);
       previewUrl = nextUrl;
     };
 
+    document.addEventListener("filt-design", () => schedulePreview());
     const schedulePreview = (delay = 500) => {
       clearTimeout(previewTimer);
       previewTimer = setTimeout(renderPreview, delay);

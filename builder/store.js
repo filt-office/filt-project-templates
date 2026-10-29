@@ -611,6 +611,13 @@
     ...backend,
     userName,
     applyDesign,
+    // Attributes for a preview's <html>: the current (maybe unsaved) colours, and the flag that tells
+    // runtime/design.js not to load pages/design.json over them.
+    designAttrs: () => {
+      const colors = window.FiltDesign?.colors || DEFAULT_DESIGN.colors;
+      const vars = [`--filt-key: ${colors[0].value}`, ...colors.map((color) => `--filt-${color.id}: ${color.value}`)].join("; ");
+      return ` data-filt-design="builder" style="${vars}"`;
+    },
     defaultDesign: () => JSON.parse(JSON.stringify(DEFAULT_DESIGN)),
     upload: async (projectId, device, file) => backend.upload(projectId, device, await prepareUpload(file)),
     getWorks: async () => {
