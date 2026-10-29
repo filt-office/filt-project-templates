@@ -57,7 +57,9 @@
     .logo-box.intro > span, .logo-box.intro .copy { z-index: 2; background: #fff; }
     .logo-box.intro > span { padding: 2px 4px; }
     .logo-box.play:focus-visible { outline: 2px solid var(--filt-key, #BD005E); outline-offset: -2px; }
-    .chapter > header .copy-all { display: block; margin-top: 8px; }
+    /* Copies the whole design system, so it sits at the left end of the top bar, not in 01. */
+    button.copy-all { flex: none; padding: 4px 2px; border: 0; background: none; color: #111; font: 700 12px/1.4 "SUIT", system-ui, sans-serif; cursor: pointer; }
+    button.copy-all:hover, button.copy-all:focus-visible { background: none; color: var(--filt-key, #BD005E); }
     .color input.hex { cursor: copy; }
 
     /* 03 type family / 04 scale */
@@ -392,6 +394,8 @@
     }, PREVIEW_PAGES.map(([value, label]) => h("option", { value }, label)));
 
     const LOCKED_MESSAGE = "디자인 시스템은 소유자(kyong-FILT)와 관리자(filtehwa)만 수정할 수 있어요.";
+    let designData = null;
+    let designToast = null;
     editor = FiltPageEditor({
       page: "design",
       save: (data) => (FiltStore.canEditDesign() ? FiltStore.savePage("design", data) : Promise.reject(new Error(LOCKED_MESSAGE))),
@@ -401,6 +405,8 @@
       load: async () => FiltStore.fullDesign(await FiltStore.getPage("design")),
       render: (ctx) => {
         const { h, data } = ctx;
+        designData = data;
+        designToast = ctx.toast;
         const apply = () => FiltStore.applyDesign(data);
         const changed = () => { apply(); ctx.markDirty(); };
         apply();
@@ -601,7 +607,7 @@
 
         return alignFrameEdges(lock(h("div", { class: "guide" },
           chapter("01", "COLOR", "맨 앞 색이 키컬러(--filt-key)입니다. 메뉴 hover, 링크, 강조에 쓰입니다.",
-            [h("button", { class: "copy-all", title: "색·로고·글씨·움직임 값 전체를 CSS 변수로 복사", onclick: () => copyText(cssMarkup(data), "디자인 시스템 CSS", ctx.toast) }, "CSS 전체 복사")],
+            null,
             h("div", { class: "colors" }, colors.map(colorCard)),
             FiltAdd.line("색 추가", () => { colors.push({ id: nextId(colors), name: "", value: "#111111" }); ctx.rerender(); ctx.markDirty(); })),
 
@@ -660,6 +666,14 @@
     });
     // First preview after sign-in: the design is applied once the header is mounted.
     document.addEventListener("filt-design", () => showPage(previewPage), { once: true });
+    // Left end of the bar under the tabs (미리보기 sits at the right end). Copying stays open to every
+    // account, including the read-only ones.
+    document.querySelector(".fb-preview-tools")?.prepend(h("button", {
+      type: "button",
+      class: "copy-all",
+      title: "색 · 로고 · 글꼴 · 글씨 크기 · 움직임 · 레이아웃 값 전체를 CSS 변수로 복사",
+      onclick: () => { if (designData) copyText(cssMarkup(designData), "디자인 시스템 CSS", designToast); },
+    }, "CSS 전체 복사"));
   })();
   </script>
 </body>
