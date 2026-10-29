@@ -100,7 +100,6 @@
     td input[data-key="link"] { width: 230px; }
     td input[data-key="id"] { width: 190px; }
     td input:focus, td select:focus { outline: 2px solid #111; outline-offset: -2px; background: #fff; }
-    td.check { width: 46px; text-align: center; }
     td.mono input { font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
     td.thumb-cell { width: 64px; }
     /* Image cell: a faint X marks an empty placeholder; an image fills the cell (cover). */
@@ -115,11 +114,14 @@
     tr.dragging { opacity: .4; }
     tr.drop-before > td { box-shadow: inset 0 2px 0 #111; }
     tr.drop-after > td { box-shadow: inset 0 -2px 0 #111; }
-    td.detail { padding: 0 4px; }
-    .detail-box { display: flex; align-items: center; gap: 4px; }
-    .detail-box select { width: 120px; height: 26px; border: 1px solid var(--line); }
-    .tag { padding: 0 5px; border: 1px solid var(--line); color: var(--muted); font-size: 10px; }
-    .tag.on { border-color: #111; color: #111; }
+    /* 상세페이지: 게시 / 편집 / N장 fill the cell edge to edge. */
+    td.detail { min-width: 156px; }
+    .detail-box { display: flex; height: var(--row-h); }
+    .detail-box > * { display: grid; flex: 1; place-items: center; height: 100%; padding: 0 8px; border: 0; border-right: 1px solid var(--line); background: none; color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .detail-box > :last-child { border-right: 0; }
+    .detail-box .on { color: #111; font-weight: 700; }
+    .detail-box button { color: #111; }
+    .detail-box button:hover { background: #111; color: #fff; }
     td.note input { min-width: 260px; color: #8a6400; }
 
     .toast {
@@ -200,9 +202,6 @@
           <th>썸네일 (목록)</th>
           <th>썸네일 (카드)</th>
           <th>모바일 비율</th>
-          <th class="group">목록</th>
-          <th class="group">갤러리</th>
-          <th class="group">모바일</th>
           <th>갤러리 순서</th>
           <th>상세페이지</th>
           <th title="예: /tempin_office">링크 (아임웹 주소)</th>
@@ -240,7 +239,7 @@
     const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
     // Text columns in display order; used for keyboard moves and spreadsheet paste.
     const TEXT_COLUMNS = ["nameKo", "nameEn", "year", "program", "location", "status"];
-    const PASTE_COLUMNS = ["category", ...TEXT_COLUMNS, "thumb", "cardThumb", "mobileShape", null, null, null, "galleryOrder", null, "link", "id", "note"];
+    const PASTE_COLUMNS = ["category", ...TEXT_COLUMNS, "thumb", "cardThumb", "mobileShape", "galleryOrder", null, "link", "id", "note"];
     const DEFAULT_FIELDS = [
       "STATUS", "YEAR", "LOCATION", "PROGRAM", "NUMBER OF FLOORS", "PROJECT TYPE",
       "BUILDING AREA", "TOTAL FLOOR AREA", "CLIENT", "CONSTRUCTION", "PHOTOGRAPHER", "COWORK",
@@ -393,24 +392,14 @@
 
     const detailCell = (work) => {
       const info = projectInfo[work.projectId];
-      const select = h("select", {
-        onchange: (event) => { work.projectId = event.target.value; render(); markDirty(); },
-      },
-      h("option", { value: "" }, "— 없음 —"),
-      projects.map((entry) => h("option", { value: entry.id, selected: entry.id === work.projectId }, entry.id)),
-      work.projectId && !projects.some((entry) => entry.id === work.projectId)
-        ? h("option", { value: work.projectId, selected: true }, `${work.projectId} (없음)`)
-        : null);
-      return h("td", { class: "detail" }, h("div", { class: "detail-box" },
-        select,
-        work.projectId && info
-          ? [
-            h("span", { class: `tag${info.runtime ? " on" : ""}`, title: info.runtime ? "게시용 저장됨" : "임시저장만 있음" }, info.runtime ? "게시" : "임시"),
-            h("span", { class: "tag", title: "PC 이미지 수" }, `${info.images}장`),
-            h("button", { class: "small", onclick: () => openDetail(work.projectId) }, "편집"),
-          ]
-          : h("button", { class: "small", onclick: () => createDetail(work) }, "만들기"),
-      ));
+      if (!work.projectId || !info) {
+        return h("td", { class: "detail" }, h("div", { class: "detail-box" },
+          h("button", { title: work.projectId ? `"${work.projectId}" 상세페이지가 없습니다` : "상세페이지 만들기 (있는 ID를 넣으면 연결)", onclick: () => createDetail(work) }, "만들기")));
+      }
+      return h("td", { class: "detail" }, h("div", { class: "detail-box", title: work.projectId },
+        h("span", { class: info.runtime ? "on" : "", title: info.runtime ? "게시용 저장됨" : "임시저장만 있음" }, info.runtime ? "게시" : "임시"),
+        h("button", { onclick: () => openDetail(work.projectId) }, "편집"),
+        h("span", { title: "PC 이미지 수" }, `${info.images}장`)));
     };
 
     const openDetail = (id) => {
@@ -522,11 +511,6 @@
         h("td", {}, h("select", {
           onchange: (event) => { work.mobileShape = event.target.value; markDirty(); },
         }, [["tall", "세로"], ["square", "정사각"]].map(([value, label]) => h("option", { value, selected: value === work.mobileShape }, label)))),
-        ...["list", "gallery", "mobile"].map((key) => h("td", { class: "check" }, h("input", {
-          type: "checkbox",
-          checked: Boolean(work.show?.[key]),
-          onchange: (event) => { work.show = { ...work.show, [key]: event.target.checked }; markDirty(); },
-        }))),
         h("td", {}, h("input", {
           type: "number",
           min: 1,
@@ -546,7 +530,29 @@
           oninput: (event) => { work.note = event.target.value; tr.classList.toggle("has-note", Boolean(work.note)); markDirty(); },
         })),
       );
-      FiltRowMenu.attach(tr, { list: data.works, item: work, label: `"${work.nameKo || work.nameEn || "이 행"}"`, onChange: () => { render(); markDirty(); } });
+      // 보관 here hides the work from the list page only (show.list); the gallery has its own.
+      const label = `"${work.nameKo || work.nameEn || "이 행"}"`;
+      const listed = Boolean(work.show?.list);
+      const change = () => { render(); markDirty(); };
+      tr.classList.toggle("archived", !listed);
+      FiltRowMenu.attach(tr, {
+        label,
+        items: [
+          listed
+            ? { text: "보관", hint: "목록 페이지에서 빠집니다", run: () => { work.show = { ...work.show, list: false }; change(); } }
+            : { text: "보관 해제", hint: "목록 페이지에 다시 나옵니다", run: () => { work.show = { ...work.show, list: true }; change(); } },
+          {
+            text: "삭제",
+            hint: "목록·갤러리 모두에서 지웁니다",
+            danger: true,
+            run: () => {
+              if (!confirm(`${label}을(를) 삭제할까요?`)) return;
+              data.works.splice(data.works.indexOf(work), 1);
+              change();
+            },
+          },
+        ],
+      });
       return tr;
     };
 
@@ -554,7 +560,7 @@
       const visible = visibleWorks();
       $("#rows").replaceChildren(...visible.map((work, index) => rowFor(work, index, visible)));
       const notes = data.works.filter((work) => work.note).length;
-      const archived = data.works.filter((work) => work.archived).length;
+      const archived = data.works.filter((work) => !work.show?.list).length;
       $("#count").textContent = `${visible.length} / ${data.works.length}행${notes ? ` · 확인 필요 ${notes}` : ""}${archived ? ` · 보관 ${archived}` : ""}`;
     };
 

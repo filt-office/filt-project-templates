@@ -16,11 +16,7 @@
     .card-media.busy { opacity: .45; pointer-events: none; }
     .card-media.file-over { box-shadow: inset 0 0 0 3px var(--key); }
     .card-name { overflow: hidden; padding: 6px 8px; border-top: 1px solid #111; text-overflow: ellipsis; white-space: nowrap; }
-    /* Works not in the gallery: smaller, faded; a click puts them back at the end. */
-    .cards.out { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-    .cards.out .card { border-color: var(--line); opacity: .55; cursor: pointer; }
-    .cards.out .card:hover { border-color: #111; opacity: 1; }
-    .cards.out .card-media { cursor: pointer; }
+    .card-media .device { position: absolute; top: 0; right: 0; padding: 2px 7px; background: #fff; color: #111; font-size: 11px; }
   </style>
 </head>
 <body>
@@ -39,9 +35,10 @@
   (() => {
     "use strict";
 
-    // Same works.json as the WORKS sheet. The gallery shows works with show.gallery, ordered by
-    // galleryOrder (rows without one follow in sheet order), and the card picture is cardThumb,
-    // falling back to the list thumbnail, as in runtime/works.js.
+    // Same works.json as the WORKS sheet. Every work is a card in galleryOrder (rows without one
+    // follow in sheet order); the card picture is cardThumb, falling back to the list thumbnail,
+    // as in runtime/works.js. 보관 (show.gallery off) greys a card in place; show.mobile is the
+    // mobile gallery, toggled from the same menu.
     const byGalleryOrder = (works) => works
       .map((work, index) => ({ work, index }))
       .sort((a, b) => (a.work.galleryOrder ?? Infinity) - (b.work.galleryOrder ?? Infinity) || a.index - b.index)
@@ -58,25 +55,19 @@
       render: (ctx) => {
         const { h, data } = ctx;
         data.works = data.works || [];
-        const shown = byGalleryOrder(data.works.filter((work) => work.show?.gallery));
-        const hidden = data.works.filter((work) => !work.show?.gallery);
-        const setGallery = (work, on) => {
-          work.show = { ...work.show, gallery: on };
-          renumber(byGalleryOrder(data.works.filter((other) => other.show?.gallery && other !== work)).concat(on ? [work] : []));
-          if (!on) work.galleryOrder = null;
-          ctx.rerender();
-          ctx.markDirty();
-        };
-
-        const media = (work, index) => {
-          const src = work.cardThumb || work.thumb;
-          const el = h("div", { class: `card-media${src ? "" : " empty"}` }, index === null ? null : h("span", { class: "no" }, String(index + 1)));
-          if (src) FiltStore.assetUrl(src).then((url) => { if (url) el.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`; });
-          return el;
-        };
+        const works = byGalleryOrder(data.works);
+        const shown = works.filter((work) => work.show?.gallery);
+        const change = () => { ctx.rerender(); ctx.markDirty(); };
+        const toggle = (work, key) => { work.show = { ...work.show, [key]: !work.show?.[key] }; change(); };
 
         const card = (work, index) => {
-          const pic = media(work, index);
+          const src = work.cardThumb || work.thumb;
+          const inGallery = Boolean(work.show?.gallery);
+          const onMobile = Boolean(work.show?.mobile);
+          const pic = h("div", { class: `card-media${src ? "" : " empty"}` },
+            inGallery ? h("span", { class: "no" }, String(shown.indexOf(work) + 1)) : null,
+            inGallery !== onMobile ? h("span", { class: "device" }, inGallery ? "PC만" : "모바일만") : null);
+          if (src) FiltStore.assetUrl(src).then((url) => { if (url) pic.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`; });
           // Click (or drop a file on) the picture to replace the gallery card image.
           const replace = async (file) => {
             if (!file) return;
@@ -85,8 +76,7 @@
               ctx.toast("업로드 중…");
               // Works thumbnails go to both PC/ and MOB/, as in the WORKS sheet.
               work.cardThumb = (await FiltStore.upload("works", "both", file)).PC;
-              ctx.rerender();
-              ctx.markDirty();
+              change();
               ctx.toast("교체했습니다");
             } catch (error) {
               pic.classList.remove("busy");
@@ -94,7 +84,7 @@
             }
           };
           const isFile = (event) => event.dataTransfer?.types.includes("Files");
-          pic.title = "눌러서 카드 이미지 교체 · 끌어서 순서 변경 · 우클릭으로 빼기";
+          pic.title = "눌러서 카드 이미지 교체 · 끌어서 순서 변경 · 우클릭으로 보관/삭제";
           pic.addEventListener("click", async () => replace((await ctx.pickFiles())[0]));
           pic.addEventListener("dragover", (event) => { if (isFile(event)) { event.preventDefault(); pic.classList.add("file-over"); } });
           pic.addEventListener("dragleave", () => pic.classList.remove("file-over"));
@@ -105,25 +95,33 @@
             pic.classList.remove("file-over");
             replace(event.dataTransfer.files[0]);
           });
-          const el = h("div", { class: `card${work.archived ? " archived" : ""}` }, pic, h("div", { class: "card-name", title: nameOf(work) }, nameOf(work)));
+          const el = h("div", { class: `card${inGallery ? "" : " archived"}` }, pic, h("div", { class: "card-name", title: nameOf(work) }, nameOf(work)));
           FiltRowMenu.attach(el, {
             label: nameOf(work),
-            items: [{ text: "갤러리에서 빼기", hint: "WORKS 목록에는 그대로 남습니다", run: () => setGallery(work, false) }],
+            items: [
+              inGallery
+                ? { text: "보관", hint: "PC 갤러리에서 빠집니다", run: () => toggle(work, "gallery") }
+                : { text: "보관 해제", hint: "PC 갤러리에 다시 나옵니다", run: () => toggle(work, "gallery") },
+              onMobile
+                ? { text: "모바일에서 숨기기", hint: "모바일 갤러리에서 빠집니다", run: () => toggle(work, "mobile") }
+                : { text: "모바일에 보이기", hint: "모바일 갤러리에 나옵니다", run: () => toggle(work, "mobile") },
+              {
+                text: "삭제",
+                hint: "WORKS 목록에서도 지웁니다",
+                danger: true,
+                run: () => {
+                  if (!confirm(`${nameOf(work)}을(를) 삭제할까요? WORKS 목록에서도 지워집니다.`)) return;
+                  data.works.splice(data.works.indexOf(work), 1);
+                  change();
+                },
+              },
+            ],
           });
-          return ctx.draggable(el, { list: shown, index, handle: pic, axis: "x", onMove: renumber });
+          return ctx.draggable(el, { list: works, index, handle: pic, axis: "x", onMove: renumber });
         };
 
-        const outCard = (work) => h("div", {
-          class: `card${work.archived ? " archived" : ""}`,
-          title: "눌러서 갤러리 맨 뒤에 넣기",
-          onclick: () => setGallery(work, true),
-        }, media(work, null), h("div", { class: "card-name" }, nameOf(work)));
-
-        return [
-          ctx.section(`WORKS GALLERY (${shown.length})`, null,
-            shown.length ? h("div", { class: "cards" }, shown.map(card)) : h("p", { class: "muted" }, "갤러리에 나오는 작업이 없습니다.")),
-          hidden.length ? ctx.section(`갤러리에 없는 작업 (${hidden.length})`, null, h("div", { class: "cards out" }, hidden.map(outCard))) : null,
-        ];
+        return ctx.section(`WORKS GALLERY (${shown.length} / ${works.length})`, null,
+          works.length ? h("div", { class: "cards" }, works.map(card)) : h("p", { class: "muted" }, "작업이 없습니다."));
       },
     });
   })();
