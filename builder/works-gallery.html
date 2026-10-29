@@ -38,7 +38,7 @@
     // Same works.json as the WORKS sheet. Every work is a card in galleryOrder (rows without one
     // follow in sheet order); the card picture is cardThumb, falling back to the list thumbnail,
     // as in runtime/works.js. 보관 (show.gallery off) greys a card in place; show.mobile is the
-    // mobile gallery, toggled from the same menu.
+    // mobile gallery, toggled from the same menu, as is mobileShape (the mobile card's ratio).
     const byGalleryOrder = (works) => works
       .map((work, index) => ({ work, index }))
       .sort((a, b) => (a.work.galleryOrder ?? Infinity) - (b.work.galleryOrder ?? Infinity) || a.index - b.index)
@@ -105,6 +105,9 @@
               onMobile
                 ? { text: "모바일에서 숨기기", hint: "모바일 갤러리에서 빠집니다", run: () => toggle(work, "mobile") }
                 : { text: "모바일에 보이기", hint: "모바일 갤러리에 나옵니다", run: () => toggle(work, "mobile") },
+              work.mobileShape === "square"
+                ? { text: "모바일 비율: 정사각 → 세로", hint: "모바일 카드를 세로로 길게", run: () => { work.mobileShape = "tall"; change(); } }
+                : { text: "모바일 비율: 세로 → 정사각", hint: "모바일 카드를 정사각으로", run: () => { work.mobileShape = "square"; change(); } },
               {
                 text: "삭제",
                 hint: "WORKS 목록에서도 지웁니다",
