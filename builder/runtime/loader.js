@@ -1,4 +1,5 @@
 // Stable entry point for Imweb widgets. Paste once; it never needs to change.
+//   <script src=".../loader.js" data-template="project"></script>            (shared page: /project?id=tempin)
 //   <div data-filt-project="tempin"></div>
 //   <script src=".../loader.js" data-template="project" data-project-id="tempin"></script>
 //   <div data-filt-works></div>

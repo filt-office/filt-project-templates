@@ -2,13 +2,16 @@
   const script = document.currentScript;
   if (!script) throw new Error("Project template script element is unavailable.");
 
-  const projectId = script.dataset.projectId;
-  const mount = projectId
-    ? document.querySelector(`[data-filt-project="${CSS.escape(projectId)}"]`)
-    : null;
-  if (!projectId || !mount) {
-    console.error("Project template requires a matching data-filt-project mount and data-project-id.");
-    return;
+  // A project page names its project in the snippet (data-project-id); the shared page
+  // (e.g. /project?id=tempin) leaves it out and reads ?id= from the address instead.
+  const requestedId = script.dataset.projectId || new URLSearchParams(location.search).get("id") || "";
+  const projectId = /^[a-z0-9-]+$/.test(requestedId) ? requestedId : "";
+  let mount = (projectId && document.querySelector(`[data-filt-project="${CSS.escape(projectId)}"]`))
+    || document.querySelector('[data-filt-project=""]');
+  if (!mount) {
+    mount = document.createElement("div");
+    mount.dataset.filtProject = projectId;
+    script.after(mount);
   }
 
   const templateBase = new URL(".", script.src);
@@ -550,20 +553,35 @@
     loadScript(new URL("home-button.js", templateBase).href);
   };
 
+  const notFound = new Error("not found");
+
   Promise.all([
     templateStylesReady,
     // data-project-src lets the builder preview unsaved data; production uses projects/<id>.json.
-    fetch(script.dataset.projectSrc || new URL(`projects/${encodeURIComponent(projectId)}.json`, templateBase)).then((response) => {
-      if (!response.ok) throw new Error(`Project data request failed (${response.status}).`);
-      return response.json();
-    })
+    script.dataset.projectSrc || projectId
+      ? fetch(script.dataset.projectSrc || new URL(`projects/${encodeURIComponent(projectId)}.json`, templateBase)).then((response) => {
+        if (response.status === 404) throw notFound;
+        if (!response.ok) throw new Error(`Project data request failed (${response.status}).`);
+        return response.json();
+      })
+      : Promise.reject(notFound)
   ])
     .then(([, project]) => render(project))
     .catch((error) => {
-      console.error("Project template could not render.", error);
+      console.error("Project template could not render.", requestedId, error);
       const message = document.createElement("p");
       message.className = "filt-template-error";
-      message.textContent = `프로젝트를 불러오지 못했습니다: ${error.message}`;
+      if (error === notFound) {
+        message.append("프로젝트를 찾을 수 없습니다. ");
+        const back = document.createElement("a");
+        back.href = "/works_list";
+        back.textContent = "WORKS 목록으로";
+        message.append(back);
+        document.title = "WORKS | FILT";
+      } else {
+        message.textContent = `프로젝트를 불러오지 못했습니다: ${error.message}`;
+      }
       mount.replaceChildren(message);
+      loadScript(new URL("common-menu-v2.js", templateBase).href);
     });
 })();

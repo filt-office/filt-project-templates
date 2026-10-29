@@ -20,6 +20,8 @@
   };
   const listUrl = script.dataset.listUrl || "/works_list";
   const galleryUrl = script.dataset.galleryUrl || "/works_gallery";
+  // With data-project-page="/project", rows with a projectId open the shared detail page (/project?id=<projectId>).
+  const projectPage = script.dataset.projectPage || "";
 
   const addLink = (key, href) => {
     if (document.querySelector(`link[data-filt-template="${key}"]`)) return Promise.resolve();
@@ -54,10 +56,11 @@
     return node;
   };
 
-  // Rows with a link open it; rows without one are still listed (as on the original pages).
+  // Rows open the shared detail page or their own link; rows with neither are still listed (as on the original pages).
   const linkTo = (node, work) => {
-    if (!work.link) return;
-    node.addEventListener("click", () => { location.href = work.link; });
+    const href = projectPage && work.projectId ? `${projectPage}?id=${encodeURIComponent(work.projectId)}` : work.link;
+    if (!href) return;
+    node.addEventListener("click", () => { location.href = href; });
   };
 
   const byGalleryOrder = (works) => works
