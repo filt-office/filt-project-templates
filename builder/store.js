@@ -535,11 +535,14 @@
   //              --filt-logo-morph (seconds), --filt-logo-ease (a GSAP ease name, read by the menu script)
   //   type       --filt-font-family, --filt-font-weight;
   //              per scale entry --filt-size-<id>, --filt-size-<id>-mobile, --filt-weight-<id>, --filt-line-<id>
-  //   motion     --filt-motion-panel, --filt-motion-hover (seconds)
+  //   logo.intro --filt-intro-scale, --filt-intro-appear / -gather / -hold / -dock (seconds)
+  //   motion     --filt-motion-panel, --filt-motion-hover, --filt-motion-slide (seconds),
+  //              --filt-motion-slide-ease, --filt-slide-interval (seconds)
   const DEFAULT_DESIGN = {
     version: 2,
     colors: [{ id: "key", name: "키컬러", value: "#BD005E" }],
-    logo: { stroke: 5, color: "black", duration: 0.8, ease: "power2.inOut" },
+    // intro: the HOME entrance (lines gather into a large mark, hold, then dock on the menu logo).
+    logo: { stroke: 5, color: "black", duration: 0.8, ease: "power2.inOut", intro: { scale: 0.6, appear: 0.1, gather: 1.8, hold: 0.1, dock: 1 } },
     type: {
       family: "'Suit', 'Pretendard Variable', 'Noto Sans KR', sans-serif",
       weight: 300,
@@ -553,7 +556,7 @@
         { id: "menu", name: "메뉴", pc: 12, mobile: 12, weight: 400, line: 1.6 },
       ],
     },
-    motion: { panel: 0.35, hover: 0.2 },
+    motion: { panel: 0.35, hover: 0.2, slide: 1, slideInterval: 10, slideEase: "cubic-bezier(.45,0,.55,1)" },
   };
   // Saved files may predate a section; missing parts take the defaults.
   const fullDesign = (design) => {
@@ -564,7 +567,7 @@
       ...base,
       ...design,
       colors: design.colors?.length ? design.colors : base.colors,
-      logo: { ...base.logo, ...design.logo },
+      logo: { ...base.logo, ...design.logo, intro: { ...base.logo.intro, ...design.logo?.intro } },
       type: { ...base.type, ...design.type, scale },
       motion: { ...base.motion, ...design.motion },
     };
@@ -587,6 +590,12 @@
     });
     vars["--filt-motion-panel"] = `${design.motion.panel}s`;
     vars["--filt-motion-hover"] = `${design.motion.hover}s`;
+    vars["--filt-motion-slide"] = `${design.motion.slide}s`;
+    vars["--filt-motion-slide-ease"] = design.motion.slideEase;
+    vars["--filt-slide-interval"] = `${design.motion.slideInterval}s`;
+    const intro = design.logo.intro;
+    vars["--filt-intro-scale"] = String(intro.scale);
+    ["appear", "gather", "hold", "dock"].forEach((key) => { vars[`--filt-intro-${key}`] = `${intro[key]}s`; });
     return vars;
   };
   const applyDesign = (design) => {

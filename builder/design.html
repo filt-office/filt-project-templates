@@ -44,6 +44,11 @@
     .logo-box.mark svg { height: 72px; }
     .logo-box.play { cursor: pointer; }
     .logo-box.play:hover { border-color: var(--filt-key, #BD005E); }
+    .logo-box .copy { position: absolute; right: 6px; bottom: 6px; padding: 2px 7px; font-size: 11px; }
+    .logo-box.intro { grid-column: 1 / -1; height: 360px; overflow: hidden; }
+    .logo-box.intro svg { position: absolute; inset: 0; width: 100%; height: 100%; stroke-width: initial; }
+    .chapter > header .copy-all { display: block; margin-top: 8px; }
+    .color input.hex { cursor: copy; }
 
     /* 03 type family / 04 scale */
     .family-sample { margin: 0 0 14px; font-family: var(--filt-font-family); font-weight: var(--filt-font-weight); font-size: 44px; line-height: 1.15; letter-spacing: .01em; }
@@ -153,6 +158,54 @@
       };
       requestAnimationFrame(step);
     };
+
+    // HOME intro, from the principal's home widget: 12 lines start scattered (a 1200 × 2600 reference
+    // centred on the screen, scaled to its height × 1.1) and gather into the large mark (scaled by
+    // intro.scale), hold, then dock on the menu logo.
+    const INTRO_START = [
+      [237, 0, 237, 1613.63], [419.5, 1568.63, 614.5, 1568.63], [-240, 1706.13, 345, 1706.13], [214.5, 1768.63, 484.5, 1768.63],
+      [457, 1898.63, 594.5, 1898.63], [814.5, 1756.13, 1300, 1756.13], [564.5, 2038.63, 843, 2038.63], [457, 1831.13, 457, 2208.63],
+      [1039.5, 1756.13, 1039.5, 1953.63], [843, 2038.63, 3000, 2038.63], [334.5, 1553.63, 334.5, 1706.13], [739.51, 2556, 739.51, 2173.62],
+    ];
+    const INTRO_MARK = [
+      [494.5, 1163, 494.5, 1393], [482, 1175.5, 564.5, 1175.5], [452, 1265.5, 477, 1265.5], [512, 1265.5, 552, 1265.5],
+      [552, 1265.5, 592, 1265.5], [627, 1265.5, 667, 1265.5], [677, 1163, 677, 1248], [609.5, 1163, 609.5, 1393],
+      [677, 1283, 677, 1393], [667, 1265.5, 727, 1265.5], [552, 1283, 552, 1393], [659.5, 1380.5, 597, 1380.5],
+    ];
+    const playIntro = (box, svg, intro) => {
+      const w = box.clientWidth;
+      const hgt = box.clientHeight;
+      const s1 = (hgt / 2600) * 1.1;
+      const starts = INTRO_START.map((line) => line.map((v, i) => (i % 2 ? (v - 1300) * s1 + hgt / 2 : (v - 600) * s1 + w / 2)));
+      const s2 = (Math.min(150, Math.max(110, w * 0.09), hgt * 0.24) / 275) * intro.scale;
+      const marks = INTRO_MARK.map((line) => line.map((v, i) => (i % 2 ? (v - 1278) * s2 + hgt / 2 : (v - 589.5) * s2 + w / 2)));
+      svg.setAttribute("viewBox", `0 0 ${w} ${hgt}`);
+      svg.style.strokeWidth = 25 * s2;
+      const paths = [...svg.children];
+      const t0 = performance.now();
+      const step = (now) => {
+        const elapsed = (now - t0) / 1000;
+        svg.style.opacity = Math.min(1, elapsed / Math.max(intro.appear, 0.001));
+        const t = Math.min(1, Math.max(0, (elapsed - intro.appear) / intro.gather));
+        const k = ease("power2.inOut", t);
+        paths.forEach((path, i) => path.setAttribute("d", lineD(starts[i].map((v, j) => v + (marks[i][j] - v) * k))));
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    };
+
+    // Copy as SVG / CSS for use elsewhere.
+    const copyText = async (text, what, toast) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast(`${what}을(를) 복사했습니다`);
+      } catch {
+        prompt(`${what} — 아래 내용을 복사하세요`, text);
+      }
+    };
+    const strokeColor = (design) => (design.logo.color === "black" ? "#000000" : (design.colors.find((color) => color.id === design.logo.color)?.value || "#000000"));
+    const svgMarkup = (lines, viewBox, stroke, color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" fill="none" stroke="${color}" stroke-width="${stroke}">\n${lines.map((l) => `  <path d="M${l[0]},${l[1]}L${l[2]},${l[3]}"/>`).join("\n")}\n</svg>\n`;
+    const cssMarkup = (design) => `:root {\n${Object.entries(FiltStore.designVars(design)).map(([name, value]) => `  ${name}: ${value};`).join("\n")}\n}\n`;
 
     const nextId = (colors) => {
       let n = 2;
@@ -265,7 +318,7 @@
             hex.value = color.value;
             changed();
           };
-          const hex = h("input", { type: "text", class: "hex", size: 1, value: color.value, title: `--filt-${color.id}`, oninput: (event) => { if (HEX_RE.test(event.target.value.trim())) setColor(event.target.value.trim()); } });
+          const hex = h("input", { type: "text", class: "hex", size: 1, value: color.value, title: `--filt-${color.id} · 더블클릭하면 복사`, ondblclick: () => copyText(color.value, color.value, ctx.toast), oninput: (event) => { if (HEX_RE.test(event.target.value.trim())) setColor(event.target.value.trim()); } });
           const picker = h("input", { type: "color", value: color.value, title: "색 고르기", oninput: (event) => setColor(event.target.value) });
           swatch.append(picker);
           const el = h("div", { class: "color" }, swatch, ctx.input(color, "name", { placeholder: "이름", keepEmpty: true, size: 1 }), hex);
@@ -296,6 +349,14 @@
           morph(morphSvg, stage, next, data.logo.duration, data.logo.ease);
           stage = next;
         });
+        const copyButton = (label, what, make) => h("button", { class: "small copy", onclick: (event) => { event.stopPropagation(); copyText(make(), what, ctx.toast); } }, label);
+        // The HOME intro, played in the box: scattered lines gather into the large mark.
+        const introSvg = document.createElementNS(SVG_NS, "svg");
+        INTRO_START.forEach(() => introSvg.append(document.createElementNS(SVG_NS, "path")));
+        const introBox = h("div", { class: "logo-box intro play", title: "눌러서 인트로 재생" }, h("span", {}, "HOME 인트로 · 눌러서 재생"), introSvg,
+          copyButton("SVG 복사", "인트로 큰 마크 SVG", () => svgMarkup(INTRO_MARK, "437 1148 305 260", 25, strokeColor(data))));
+        introBox.addEventListener("click", () => playIntro(introBox, introSvg, data.logo.intro));
+        requestAnimationFrame(() => { if (introBox.isConnected) playIntro(introBox, introSvg, { ...data.logo.intro, appear: 0, gather: 0.001 }); });
         const logoColors = [["black", "검정"], ...colors.map((color) => [color.id, color.name || color.value])];
 
         // ---------- 04 type scale ----------
@@ -327,19 +388,28 @@
 
         return h("div", { class: "guide" },
           chapter("01", "COLOR", "맨 앞 색이 키컬러(--filt-key)입니다. 메뉴 hover, 링크, 강조에 쓰입니다.",
-            h("button", { onclick: () => { colors.push({ id: nextId(colors), name: "", value: "#111111" }); ctx.rerender(); ctx.markDirty(); } }, "+ 색 추가"),
+            [h("button", { onclick: () => { colors.push({ id: nextId(colors), name: "", value: "#111111" }); ctx.rerender(); ctx.markDirty(); } }, "+ 색 추가"),
+              h("button", { class: "copy-all", title: "색·로고·글씨·움직임 값 전체를 CSS 변수로 복사", onclick: () => copyText(cssMarkup(data), "디자인 시스템 CSS", ctx.toast) }, "CSS 전체 복사")],
             h("div", { class: "colors" }, colors.map(colorCard))),
 
           chapter("02", "LOGO", "FILT 마크는 선 12개로 그립니다. 메뉴 패널에서 접힌 마크와 펼쳐진 로고 사이를 오갑니다.", null,
             h("div", { class: "logo-stage" },
-              h("div", { class: "logo-box mark" }, h("span", {}, "접힌 마크"), markSvg("panel", "15 262 72 60")),
-              h("div", { class: "logo-box" }, h("span", {}, "로고"), markSvg("logo", "-10 -10 260 430")),
-              morphBox),
+              h("div", { class: "logo-box mark" }, h("span", {}, "접힌 마크"), markSvg("panel", "15 262 72 60"),
+                copyButton("SVG 복사", "접힌 마크 SVG", () => svgMarkup(SHAPES.panel.map(ends), "15 262 72 60", data.logo.stroke, strokeColor(data)))),
+              h("div", { class: "logo-box" }, h("span", {}, "로고"), markSvg("logo", "-10 -10 260 430"),
+                copyButton("SVG 복사", "로고 SVG", () => svgMarkup(SHAPES.logo.map(ends), "-10 -10 260 430", data.logo.stroke, strokeColor(data)))),
+              morphBox,
+              introBox),
             h("div", { class: "values" },
               value("선 두께", num(data.logo, "stroke", { step: 0.5, min: 0.5, max: 20 })),
               value("선 색", select(data.logo, "color", logoColors)),
               value("애니메이션 시간 (초)", num(data.logo, "duration", { step: 0.05, min: 0.1, max: 5 })),
-              value("가속", select(data.logo, "ease", EASES)))),
+              value("가속", select(data.logo, "ease", EASES)),
+              value("인트로: 큰 마크 크기", num(data.logo.intro, "scale", { step: 0.05, min: 0.1, max: 2 })),
+              value("인트로: 나타남 (초)", num(data.logo.intro, "appear", { step: 0.05, min: 0, max: 3 })),
+              value("인트로: 모임 (초)", num(data.logo.intro, "gather", { step: 0.1, min: 0.1, max: 6 })),
+              value("인트로: 멈춤 (초)", num(data.logo.intro, "hold", { step: 0.05, min: 0, max: 3 })),
+              value("인트로: 메뉴로 이동 (초)", num(data.logo.intro, "dock", { step: 0.1, min: 0.1, max: 4 })))),
 
           chapter("03", "TYPEFACE", "사이트 전체의 글꼴과 기본 굵기입니다.", null,
             h("p", { class: "family-sample" }, "FILT. Architects 건축사사무소", h("small", {}, "가나다라마바사 ABCDEFG abcdefg 0123456789")),
@@ -359,7 +429,9 @@
             h("div", { class: "motion-demo" }, panelBox, hoverBox),
             h("div", { class: "values" },
               value("패널 (초)", num(data.motion, "panel", { step: 0.05, min: 0, max: 3 })),
-              value("hover (초)", num(data.motion, "hover", { step: 0.05, min: 0, max: 3 })))),
+              value("hover (초)", num(data.motion, "hover", { step: 0.05, min: 0, max: 3 })),
+              value("HOME 슬라이드 넘김 (초)", num(data.motion, "slide", { step: 0.1, min: 0, max: 5 })),
+              value("HOME 슬라이드 간격 (초)", num(data.motion, "slideInterval", { step: 1, min: 2, max: 60 })))),
 
           chapter("06", "LAYOUT", "템플릿에 고정된 값입니다 (여기서는 바꾸지 않습니다).", null,
             h("ul", { class: "facts" },
