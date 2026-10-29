@@ -100,7 +100,6 @@
     td input[data-key="id"] { width: 190px; }
     td input:focus, td select:focus { outline: 2px solid #111; outline-offset: -2px; background: #fff; }
     td.edited { max-width: 260px; overflow: hidden; padding: 0 6px; color: var(--muted); font-size: 11px; text-overflow: ellipsis; }
-    td.shared-link { padding: 0 6px; color: var(--muted); font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
     td.mono input { font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
     td.thumb-cell { width: 64px; }
     /* Image cell: a faint X marks an empty placeholder; an image fills the cell (cover). */
@@ -202,7 +201,6 @@
           <th>상태</th>
           <th>썸네일 (목록)</th>
           <th>상세페이지</th>
-          <th title="상세페이지가 없는 작업만 입력 (예: 외부 링크). 게시된 상세페이지가 있으면 공용 페이지로 연결됩니다.">링크</th>
           <th>ID</th>
           <th title="저장할 때 자동으로 적힙니다: 누가 · 언제 · 바뀐 칸">최근 수정</th>
           <th>확인 필요 메모</th>
@@ -238,7 +236,7 @@
     const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
     // Text columns in display order; used for keyboard moves and spreadsheet paste.
     const TEXT_COLUMNS = ["nameKo", "nameEn", "year", "program", "location", "status"];
-    const PASTE_COLUMNS = ["category", ...TEXT_COLUMNS, "thumb", null, "link", "id", null, "note"];
+    const PASTE_COLUMNS = ["category", ...TEXT_COLUMNS, "thumb", null, "id", null, "note"];
     const DEFAULT_FIELDS = [
       "STATUS", "YEAR", "LOCATION", "PROGRAM", "NUMBER OF FLOORS", "PROJECT TYPE",
       "BUILDING AREA", "TOTAL FLOOR AREA", "CLIENT", "CONSTRUCTION", "PHOTOGRAPHER", "COWORK",
@@ -412,13 +410,8 @@
       title: edited ? `${edited.by ? `@${edited.by}` : ""} ${new Date(edited.at).toLocaleString("ko-KR")}\n${edited.what}` : "",
     }, edited ? `${edited.by ? `@${edited.by} ` : ""}${shortDate(edited.at)} · ${edited.what}` : "");
 
-    // Rows with a published detail page open the shared page (/project?id=…, runtime/works.js);
-    // the link column is only for the others. An old link stays in the data as a fallback.
-    const linkCell = (work) => {
-      const info = projectInfo[work.projectId];
-      if (!work.projectId || !info?.runtime) return h("td", { class: "mono" }, textInput(work, "link"));
-      return h("td", { class: "mono shared-link", title: work.link ? `공용 상세페이지로 연결 · 예전 링크: ${work.link}` : "공용 상세페이지로 연결" }, `/project?id=${work.projectId}`);
-    };
+    // There is no link column: rows with a detail page open /project?id=… (runtime/works.js); an old
+    // Imweb link stays in the data as the fallback until the site turns that on.
 
     const openDetail = async (id) => {
       if (!(await window.FiltHeader.leave())) return;
@@ -526,7 +519,6 @@
         ...TEXT_COLUMNS.map((key) => h("td", {}, textInput(work, key))),
         thumbCell(work, "thumb"),
         detailCell(work),
-        linkCell(work),
         h("td", { class: "mono" }, textInput(work, "id", {
           onblur: (event) => {
             if (!work.id && work.nameEn) { work.id = slug(work.nameEn); event.target.value = work.id; markDirty(); }
