@@ -483,7 +483,59 @@
     .fs-history .fs-grow { flex: 1; min-width: 0; }
     .fs-history .fs-tag { padding: 0 5px; border: 1px solid #111; font-size: 10px; }
     .fs-muted { color: #777; }
+    .fs-preview-note { position: fixed; left: 50%; bottom: 20px; z-index: 95; max-width: min(560px, calc(100vw - 32px)); padding: 10px 14px; background: #111; color: #fff; font: 12px/1.5 "SUIT", system-ui, sans-serif; transform: translateX(-50%); pointer-events: none; }
+    .fs-preview-note b { color: var(--filt-key, #BD005E); font-weight: 700; }
   `;
+  // ---------------------------------------------------------------- preview links
+  // Pages in a preview link to site paths (/office, /works_list, /project?id=…) that exist only on
+  // filt.kr. The preview frames run previewGuard first: it cancels navigations to other pages (link
+  // clicks and script redirects alike) and reports them here; in-page actions keep working.
+  const previewGuard = () => {
+    const tell = (url) => parent.postMessage({ filtPreviewNav: url }, "*");
+    if (window.navigation) {
+      navigation.addEventListener("navigate", (event) => {
+        if (event.hashChange || event.downloadRequest || !/^https?:/.test(event.destination.url)) return;
+        if (!event.cancelable) return;
+        event.preventDefault();
+        tell(event.destination.url);
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const link = event.target.closest && event.target.closest("a[href]");
+      const href = link && link.getAttribute("href");
+      if (!href || href.charAt(0) === "#" || event.defaultPrevented) return;
+      event.preventDefault();
+      tell(link.href);
+    });
+  };
+  let previewNote = null;
+  let previewNoteTimer = null;
+  window.addEventListener("message", (event) => {
+    const url = event.data && event.data.filtPreviewNav;
+    if (typeof url !== "string") return;
+    injectCss();
+    let where = url;
+    try {
+      const target = new URL(url);
+      // Same-host paths are site paths (the frame resolves them against the builder's address).
+      where = target.host === location.host ? `filt.kr${target.pathname}${target.search}` : target.href;
+    } catch { /* keep the raw value */ }
+    if (!previewNote) {
+      previewNote = document.createElement("div");
+      previewNote.className = "fs-preview-note";
+      previewNote.setAttribute("role", "status");
+      document.body.append(previewNote);
+    }
+    previewNote.textContent = "";
+    previewNote.append("미리보기에서는 다른 페이지로 이동하지 않아요 · 게시된 사이트에서는 ");
+    const b = document.createElement("b");
+    b.textContent = where;
+    previewNote.append(b, " 로 연결됩니다");
+    previewNote.hidden = false;
+    clearTimeout(previewNoteTimer);
+    previewNoteTimer = setTimeout(() => { previewNote.hidden = true; }, 3500);
+  });
+
   const injectCss = () => {
     if (document.getElementById("fs-style")) return;
     const style = document.createElement("style");
@@ -806,6 +858,8 @@
     // Attributes for a preview's <html>: the current (maybe unsaved) colours, and the flag that tells
     // runtime/design.js not to load pages/design.json over them. The font details let that early-return
     // route install a real FontFace inside the iframe instead of only inheriting a CSS declaration.
+    // <script> for a preview frame's <head>; see previewGuard.
+    previewHead: () => `<script>(${previewGuard})()<${"/"}script>`,
     designAttrs: () => {
       const design = fullDesign(window.FiltDesign);
       const vars = Object.entries(designVars(design)).map(([name, value]) => `${name}: ${value}`).join("; ");

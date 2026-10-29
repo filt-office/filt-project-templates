@@ -471,7 +471,7 @@
       const copy = await resolveAssets(window.FiltRowMenu.withoutArchived(ctx.data));
       if (token !== previewToken) return;
       const nextUrl = URL.createObjectURL(new Blob([JSON.stringify(copy)], { type: "application/json" }));
-      $("#peFrame").srcdoc = `<!doctype html><html lang="ko"${FiltStore.designAttrs()}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0}</style></head><body>${previewBody(nextUrl, store.runtimeUrl)}</body></html>`;
+      $("#peFrame").srcdoc = `<!doctype html><html lang="ko"${FiltStore.designAttrs()}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0}</style>${FiltStore.previewHead()}</head><body>${previewBody(nextUrl, store.runtimeUrl)}</body></html>`;
       if (previewUrl) setTimeout(URL.revokeObjectURL.bind(URL, previewUrl), 5000);
       previewUrl = nextUrl;
     };
