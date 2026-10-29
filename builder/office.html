@@ -10,7 +10,6 @@
     .pe-sheet tr.person + tr.person > td, .pe-sheet tr.add + tr.person > td { border-top: 1px solid #111; }
     .pe-sheet td.toggle { width: 52px; padding: 0 6px; text-align: center; }
     .pe-sheet td.toggle button { width: 22px; height: 22px; padding: 0; line-height: 1; }
-    .pe-sheet td.toggle .muted { margin-right: 4px; }
     .pe-sheet tr.sub-head > td { height: 24px; padding: 0 6px; background: #ecece9; color: var(--muted); font-size: 11px; }
     .pe-sheet tr.career > td { background: #fafaf8; }
     .pe-sheet tr.career.gap > td { background: repeating-linear-gradient(-45deg, #fff 0 6px, #f0f0f0 6px 7px); }
@@ -108,11 +107,10 @@
         const group = (principal) => {
           const scope = principal ? "principal" : "staff";
           const members = data.people.filter((person) => Boolean(person.principal) === principal);
-          const rows = members.map((person, position) => {
+          const rows = members.map((person) => {
             const index = data.people.indexOf(person);
             const isOpen = open.has(person);
             const toggle = h("td", { class: "toggle" },
-              principal ? null : h("span", { class: "muted" }, String(position + 1)),
               h("button", {
                 class: "small",
                 title: isOpen ? "경력 접기" : "경력 펼치기",
@@ -129,7 +127,7 @@
               h("td", { class: "actions" }, ctx.remove(data.people, index, person.nameKo || "이 사람"))), { list: data.people, index, scope, handle: toggle });
             return isOpen ? [tr, careerRows(person)] : tr;
           });
-          return ctx.section(principal ? "PEOPLE · 대표" : "PEOPLE · 스탭",
+          return ctx.section(principal ? "PEOPLE" : "PEOPLE · 스탭",
             h("button", {
               onclick: add(data.people, () => ({ ...(principal ? { principal: true } : {}), nameKo: "", roleKo: "", nameEn: "", roleEn: "", email: "", career: [] })),
             }, principal ? "+ 대표 추가" : "+ 스탭 추가"),
