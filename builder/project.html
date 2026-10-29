@@ -168,6 +168,14 @@
     .thumb-label { position: absolute; top: 2px; left: 2px; padding: 0 3px; background: rgba(255,255,255,.85); font-size: 9px; font-weight: 700; }
     .image-row .thumb { min-height: 64px; }
     .block-text { min-height: 64px; overflow: hidden; line-height: 1.7; }
+    div.block-text { padding: 5px 7px; background: #fff; white-space: normal; overflow-wrap: anywhere; cursor: text; }
+    div.block-text:focus { outline: 2px solid #111; outline-offset: -2px; }
+    div.block-text:empty::before { content: attr(data-placeholder); color: #aaa; }
+    .text-tools select.size-pick { width: auto; height: 20px; padding: 0 2px; border: 0; color: #555; font-size: 11px; }
+    button.text-tool.letter { width: auto; min-width: 20px; padding: 0 4px; color: #555; font: 13px/20px Georgia, serif; }
+    button.text-tool.swatch { padding: 4px; }
+    button.text-tool.swatch span { display: block; width: 100%; height: 100%; border: 1px solid #999; }
+    .sheet.file-over { box-shadow: inset 0 0 0 3px #BD005E; }
 
     .calibrator { grid-column: 1 / -1; padding: 8px; border-top: 1px solid var(--line); border-left: 0 !important; background: #fafafa; }
     .calibrate-stage { position: relative; border: 1px solid var(--line); background: #fff; }
@@ -202,6 +210,13 @@
     .card-corner button.icon-btn { background: rgba(255,255,255,.9); }
     button.icon-btn svg { display: block; width: 100%; height: 100%; overflow: visible; }
     button.icon-btn:hover { background: none; color: #BD005E; }
+    /* Fit picker: the four ways an image can sit in its frame. */
+    .fit-pick { position: relative; }
+    .fit-menu { position: absolute; top: 24px; left: -4px; z-index: 6; display: flex; gap: 2px; padding: 3px; border: 1px solid #111; background: #fff; }
+    .fit-menu button.icon-btn { width: 24px; height: 24px; padding: 2px; }
+    .fit-menu button.icon-btn.on { background: #111; color: #fff; }
+    .card-media img.pad-s { padding: 5%; box-sizing: border-box; }
+    .card-media img.pad-l { padding: 12%; box-sizing: border-box; }
     button.show-toggle { width: 18px; height: 18px; padding: 0; border: 1.5px solid #111; background: #fff; }
     button.show-toggle.on { background: #111; box-shadow: inset 0 0 0 2.5px #fff; }
     button.show-toggle:hover { border-color: #BD005E; }
@@ -491,6 +506,7 @@
           ...(slot.scale > 0 ? { scale: Number(slot.scale) } : {}),
           ...(slot.hideScale ? { hideScale: true } : {}),
         }));
+      out.title = [out.overview?.titleEn, out.overview?.subtitle].map((part) => (part || "").trim()).filter(Boolean).join(" | ") || out.title || "";
       out.descriptionHtml = descriptionHtml((out.description || []).filter((block) => !block.archived));
       return out;
     };
@@ -515,6 +531,106 @@
       ].filter(Boolean).join("; ");
     };
 
+    // ---------- rich text in description blocks ----------
+    // A text block keeps its formatted text as block.html (inline marks and <br> only); older blocks
+    // have plain block.text. The key colour is written as a CSS variable so a new key colour applies.
+    const KEY_COLOR = "var(--filt-key, #BD005E)";
+    const textToHtml = (text) => escapeHtml(text || "").replace(/\n/g, "<br>");
+    const blockHtml = (block) => (block.html != null ? block.html : textToHtml(block.text));
+    const STYLE_KEYS = ["color", "font-size", "font-weight", "font-style", "text-decoration-line"];
+    const cleanStyle = (el) => STYLE_KEYS.map((key) => {
+      let value = el.style.getPropertyValue(key);
+      if (!value) return "";
+      if (key === "color") {
+        const color = value.replace(/\s/g, "").toLowerCase();
+        value = /rgb\(189,0,94\)|#bd005e|--filt-key/.test(color) ? KEY_COLOR : /rgb\(255,255,255\)|#fff/.test(color) ? "#fff" : "#111";
+      }
+      return `${key}: ${value}`;
+    }).filter(Boolean).join("; ");
+    const INLINE = { B: "b", STRONG: "b", I: "i", EM: "i", U: "u", S: "s", STRIKE: "s", DEL: "s" };
+    const sanitizeRich = (root) => {
+      const walk = (node) => [...node.childNodes].map((child) => {
+        if (child.nodeType === Node.TEXT_NODE) return escapeHtml(child.textContent);
+        if (child.nodeType !== Node.ELEMENT_NODE) return "";
+        if (child.tagName === "BR") return "<br>";
+        const inner = walk(child);
+        if (child.tagName === "DIV" || child.tagName === "P") return `<br>${inner}`;
+        const tag = INLINE[child.tagName];
+        if (tag) return inner ? `<${tag}>${inner}</${tag}>` : "";
+        if (child.tagName === "FONT" && child.color) child.style.color = child.color;
+        if (child.tagName === "SPAN" || child.tagName === "FONT") {
+          const style = cleanStyle(child);
+          return style && inner ? `<span style="${style}">${inner}</span>` : inner;
+        }
+        return inner;
+      }).join("");
+      return walk(root).replace(/^<br>/, "");
+    };
+    const SIZES = [["", "크기"], ["0.85em", "작게"], ["1em", "기본"], ["1.2em", "크게"], ["1.5em", "아주 크게"]];
+    const COLORS = [["#BD005E", "키컬러"], ["#111111", "검정"], ["#ffffff", "흰색"]];
+
+    // Applies a mark to the selection inside editor, or to the whole block when nothing is selected.
+    let savedRange = null;
+    const formatText = (editor, apply, range = null) => {
+      const selection = getSelection();
+      if (range) { selection.removeAllRanges(); selection.addRange(range); }
+      const inside = selection.rangeCount && editor.contains(selection.anchorNode) && !selection.isCollapsed;
+      if (!inside) {
+        editor.focus();
+        const all = document.createRange();
+        all.selectNodeContents(editor);
+        selection.removeAllRanges();
+        selection.addRange(all);
+      }
+      document.execCommand("styleWithCSS", false, true);
+      apply();
+      if (!inside) selection.collapseToEnd();
+      editor.dispatchEvent(new Event("input"));
+    };
+    const setSize = (size) => {
+      document.execCommand("styleWithCSS", false, false);
+      document.execCommand("fontSize", false, "7");
+      document.querySelectorAll('div.block-text font[size="7"]').forEach((font) => {
+        const span = document.createElement("span");
+        if (size !== "1em") span.style.fontSize = size;
+        span.append(...font.childNodes);
+        font.replaceWith(span);
+      });
+    };
+    // Remember the last selection in a text block: the size picker takes focus away from it.
+    document.addEventListener("selectionchange", () => {
+      const selection = getSelection();
+      if (selection.rangeCount && selection.anchorNode?.parentElement?.closest("div.block-text")) savedRange = selection.getRangeAt(0).cloneRange();
+    });
+    const richTools = (editor) => {
+      const tool = (label, title, apply, className = "letter") => h("button", {
+        type: "button",
+        class: `text-tool ${className}`,
+        title,
+        onmousedown: (event) => event.preventDefault(), // keep the selection
+        onclick: () => formatText(editor, apply),
+      }, label);
+      return [
+        h("span", { class: "tool-gap" }),
+        h("select", {
+          class: "size-pick",
+          title: "글씨 크기 (선택한 글자, 없으면 단락 전체)",
+          onchange: (event) => {
+            const size = event.target.value;
+            event.target.value = "";
+            const range = savedRange && editor.contains(savedRange.startContainer) ? savedRange : null;
+            if (size) formatText(editor, () => setSize(size), range);
+          },
+        }, SIZES.map(([value, label]) => h("option", { value }, label))),
+        ...COLORS.map(([color, label]) => tool(h("span", { style: `background: ${color}` }), `글씨 색: ${label}`, () => document.execCommand("foreColor", false, color), "swatch")),
+        h("span", { class: "tool-gap" }),
+        tool(h("b", {}, "B"), "굵게", () => document.execCommand("bold")),
+        tool(h("i", {}, "I"), "기울임", () => document.execCommand("italic")),
+        tool(h("u", {}, "U"), "밑줄", () => document.execCommand("underline")),
+        tool(h("s", {}, "S"), "취소선", () => document.execCommand("strikeThrough")),
+      ];
+    };
+
     const descriptionHtml = (blocks) => {
       const parts = blocks.flatMap((block) => {
         if (block.type === "image") {
@@ -523,10 +639,11 @@
           const style = textStyle(block.captionAlign, block.captionIndent);
           return [`<figure class="side-figure">\n  <img class="side-single-img" src="${escapeHtml(block.src)}" alt="${escapeHtml(caption)}">\n${caption ? `  <figcaption class="side-caption"${style ? ` style="${style}"` : ""}>${escapeHtml(caption)}</figcaption>\n` : ""}</figure>`];
         }
-        const paragraphs = (block.text || "").split(/\n[ \t]*\n/)
-          .map((paragraph) => paragraph.split("\n").map((line) => line.trim()).join("\n").trim())
-          .filter(Boolean)
-          .map((paragraph) => `${escapeHtml(paragraph).replace(/\n/g, "<br>\n")}\n<br><br>`);
+        // A blank line (two <br>) starts a new paragraph, as in the hand-written pages.
+        const paragraphs = blockHtml(block).split(/(?:\s*<br>\s*){2,}/)
+          .map((paragraph) => paragraph.replace(/^(\s*<br>)+|(<br>\s*)+$/g, "").trim())
+          .filter((paragraph) => paragraph.replace(/<[^>]+>/g, "").trim())
+          .map((paragraph) => `${paragraph.replace(/<br>/g, "<br>\n")}\n<br><br>`);
         const style = textStyle(block.align, block.indent);
         return style ? paragraphs.map((paragraph) => `<div style="${style}">${paragraph}</div>`) : paragraphs;
       });
@@ -926,13 +1043,20 @@
 
     // ---------- sections ----------
 
-    const basicSection = () => section("기본 정보", null, sheet(
-      formRow("프로젝트 ID", h("input", { type: "text", class: "mono", value: project.id, readOnly: true, title: "아임웹 위젯의 data-project-id" })),
-      formRow("탭 제목", textInput(() => project.title, (value) => { project.title = value; }, {
-        placeholder: `${project.overview.titleEn || "PROJECT"} | PROJECT INFO`,
-      })),
-      worksField(),
-    ));
+    // The tab title is always "영문 제목 | 한글 제목" (see compile()); the ID is made from the English
+    // title when the project is created and then stays, since files, images and /project?id= use it.
+    const tabTitle = () => [project.overview.titleEn, project.overview.subtitle].map((part) => (part || "").trim()).filter(Boolean).join(" | ");
+    const basicSection = () => {
+      const tab = h("input", { type: "text", value: tabTitle(), readOnly: true, tabIndex: -1, title: "영문 제목 | 한글 제목 (자동)" });
+      const titleRow = (label, key) => formRow(label, textInput(() => project.overview[key], (value) => { project.overview[key] = value; tab.value = tabTitle(); }));
+      return section("기본 정보", null, sheet(
+        formRow("프로젝트 ID", h("input", { type: "text", class: "mono", value: project.id, readOnly: true, title: "처음 만들 때 영문 제목에서 정해집니다 · 공용 페이지 주소 /project?id=" + project.id })),
+        titleRow("영문 제목", "titleEn"),
+        titleRow("한글 제목", "subtitle"),
+        formRow("탭 제목", tab),
+        worksField(),
+      ));
+    };
 
     // ---------- WORKS link ----------
     // The category lives in works.json (one row per project, linked by projectId), not in the project JSON.
@@ -1068,10 +1192,6 @@
       render();
       sortable(list, fields, () => { render(); markDirty(); });
       return section("개요표", null, [
-        sheet(
-          formRow("영문 제목", textInput(() => project.overview.titleEn, (value) => { project.overview.titleEn = value; })),
-          formRow("부제", textInput(() => project.overview.subtitle, (value) => { project.overview.subtitle = value; })),
-        ),
         h("div", { class: "sheet" }, list, h("div", { class: "add-line" },
           addButton("+ 항목", () => { fields.push({ label: "", value: "" }); render(); markDirty(); }))),
       ]);
@@ -1092,15 +1212,42 @@
       rotate: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.25 10A8.25 8.25 0 1 1 10 1.75"/><path d="M7.4 -.6 10 1.75 7.4 4.1" transform="rotate(-2 10 1.75)"/></svg>',
       contain: '<svg viewBox="0 0 20 20"><rect x="1" y="3.5" width="18" height="13" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="1" y="6.5" width="18" height="7" fill="currentColor"/></svg>',
       cover: '<svg viewBox="0 0 20 20"><rect x="1" y="3.5" width="18" height="13" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="2.5" y="5" width="15" height="10" fill="currentColor"/></svg>',
+      "pad-s": '<svg viewBox="0 0 20 20"><rect x="1" y="3.5" width="18" height="13" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="4.5" y="6.5" width="11" height="7" fill="currentColor"/></svg>',
+      "pad-l": '<svg viewBox="0 0 20 20"><rect x="1" y="3.5" width="18" height="13" fill="none" stroke="currentColor" stroke-dasharray="2 1.5"/><rect x="6.5" y="8" width="7" height="4" fill="currentColor"/></svg>',
     };
+    // Small / large margin: the image is contained with 5% / 12% of the frame's short side around it
+    // (drawn by project-template.css as data-fit="pad-s" / "pad-l").
+    const FITS = [["cover", "COVER — 꽉 채우기"], ["contain", "CONTAIN — 잘리지 않게"], ["pad-s", "작은 여백 (5%)"], ["pad-l", "큰 여백 (12%)"]];
 
     // Fit per device. "auto" follows the template's default: on PC landscape photos fill (cover)
     // and portrait ones fit (contain); the mobile gallery is the other way round.
     const FIT_KEY = { [PC]: "fit", [MOB]: "fitMob" };
     const effectiveFit = (slot, device) => {
       const fit = slot[FIT_KEY[device]];
-      if (fit === "contain" || fit === "cover") return fit;
+      if (FITS.some(([value]) => value === fit)) return fit;
       return (slot.orientation === "portrait") === (device === PC) ? "contain" : "cover";
+    };
+
+    // The current fit's icon; clicking it opens the four choices.
+    const fitPicker = (slot, device, fit, rerender) => {
+      const wrap = h("div", { class: "fit-pick" });
+      const close = () => { wrap.querySelector(".fit-menu")?.remove(); document.removeEventListener("click", outside, true); };
+      const outside = (event) => { if (!wrap.contains(event.target)) close(); };
+      wrap.append(iconButton(ICONS[fit], `${FITS.find(([value]) => value === fit)[1]} · 눌러서 바꾸기`, () => {
+        if (wrap.querySelector(".fit-menu")) { close(); return; }
+        wrap.append(h("div", { class: "fit-menu" }, FITS.map(([value, label]) => {
+          const button = iconButton(ICONS[value], label, () => {
+            close();
+            slot[FIT_KEY[device]] = value;
+            rerender();
+            markDirty();
+          });
+          button.classList.toggle("on", value === fit);
+          return button;
+        })));
+        document.addEventListener("click", outside, true);
+      }));
+      return wrap;
     };
 
     const iconButton = (markup, title, onclick) => {
@@ -1168,17 +1315,14 @@
       const device = galleryTab.photo;
       const fit = effectiveFit(slot, device);
       const { media, img } = cardMedia(slot, device, rerender);
-      img.style.objectFit = fit;
+      img.style.objectFit = fit === "cover" ? "cover" : "contain";
+      img.classList.toggle(fit, fit.startsWith("pad-"));
       return rowMenu(h("div", { class: `card${slot[HIDE_KEY[device]] ? " off" : ""}`, dataset: { index } },
         media,
         h("div", { class: "card-tools" },
           showToggle(slot, device, rerender),
           iconButton(ICONS.rotate, `90° 회전 (지금 ${Number(slot.rotation) || 0}°)`, () => { slot.rotation = ((Number(slot.rotation) || 0) + 90) % 360; rerender(); markDirty(); }),
-          iconButton(ICONS[fit], fit === "contain" ? "CONTAIN — 잘리지 않게 (눌러서 COVER)" : "COVER — 꽉 채우기 (눌러서 CONTAIN)", () => {
-            slot[FIT_KEY[device]] = fit === "contain" ? "cover" : "contain";
-            rerender();
-            markDirty();
-          })),
+          fitPicker(slot, device, fit, rerender)),
         cardCorner(slot, device, rerender)), project.gallery, slot, rerender, "이미지");
     };
 
@@ -1401,16 +1545,26 @@
       const blocks = project.description;
       const list = h("div", { class: "sheet-list" });
       const textBlock = (block, index) => {
-        const area = h("textarea", {
-          class: "block-text",
-          value: block.text || "",
-          placeholder: "본문",
-          oninput: () => { block.text = area.value; autoGrow(area); markDirty(); },
+        const area = h("div", { class: "block-text", contentEditable: "true", "data-placeholder": "본문" });
+        area.innerHTML = blockHtml(block);
+        area.addEventListener("input", () => {
+          block.html = sanitizeRich(area);
+          delete block.text;
+          markDirty();
+        });
+        // Enter is a line break (a blank line starts a new paragraph); pasted text arrives plain.
+        area.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" && !event.isComposing) { event.preventDefault(); document.execCommand("insertLineBreak"); }
+        });
+        area.addEventListener("paste", (event) => {
+          event.preventDefault();
+          document.execCommand("insertText", false, event.clipboardData.getData("text/plain"));
         });
         previewStyle(area, block.align, block.indent);
-        requestAnimationFrame(() => autoGrow(area));
+        const tools = textTools(block, ["align", "indent"], render);
+        tools.append(...richTools(area));
         return rowMenu(h("div", { class: "sheet-row block-row", dataset: { index } },
-          dragHandle(), h("div", { class: "text-cell" }, textTools(block, ["align", "indent"], render), area)), blocks, block, render, "글");
+          dragHandle(), h("div", { class: "text-cell" }, tools, area)), blocks, block, render, "글");
       };
       const imageBlock = (block, index) => {
         const caption = textInput(() => block.caption, (value) => { block.caption = value; }, { placeholder: "캡션" });
@@ -1425,13 +1579,31 @@
         blocks.push(block);
         render();
         markDirty();
-        list.lastElementChild?.querySelector("textarea, input[type=text]")?.focus();
+        list.lastElementChild?.querySelector("div.block-text, input[type=text]")?.focus();
       };
       render();
       sortable(list, blocks, () => { render(); markDirty(); });
-      return section("설명", null, h("div", { class: "sheet" }, list, h("div", { class: "add-line" },
-        addButton("+ 글", () => add({ type: "text", text: "" })),
-        addButton("+ 이미지", () => uploadDescriptionImage((src) => add({ type: "image", src, caption: "" }))))));
+      // Image files dropped on the description become image blocks after the row they land on.
+      const sheetBox = h("div", { class: "sheet" }, list, h("div", { class: "add-line" },
+        addButton("+ 글", () => add({ type: "text", html: "" })),
+        addButton("+ 이미지", () => uploadDescriptionImage((src) => add({ type: "image", src, caption: "" })))));
+      const isFile = (event) => event.dataTransfer?.types.includes("Files");
+      sheetBox.addEventListener("dragover", (event) => { if (isFile(event)) { event.preventDefault(); sheetBox.classList.add("file-over"); } });
+      sheetBox.addEventListener("dragleave", (event) => { if (!sheetBox.contains(event.relatedTarget)) sheetBox.classList.remove("file-over"); });
+      sheetBox.addEventListener("drop", async (event) => {
+        if (!isFile(event)) return;
+        event.preventDefault();
+        sheetBox.classList.remove("file-over");
+        const row = event.target.closest?.("[data-index]");
+        let at = row ? Number(row.dataset.index) + 1 : blocks.length;
+        await uploadMany([...event.dataTransfer.files], PC, (_, src) => {
+          blocks.splice(at, 0, { type: "image", src: src[PC], caption: "" });
+          at += 1;
+          render();
+          markDirty();
+        }, DESCRIPTION_SHRINK);
+      });
+      return section("설명", null, sheetBox);
     };
 
     const jsonSection = () => {
@@ -1591,11 +1763,15 @@
     }));
     $("#newProject").addEventListener("click", guarded(async () => {
       if (!confirmDiscard()) return;
-      const id = (prompt("새 프로젝트 ID (영문 소문자, 숫자, 하이픈 — 예: seongsu-house)") || "").trim().toLowerCase();
-      if (!id) return;
-      if (!ID_RE.test(id) || id === "works") throw new Error("ID는 영문 소문자, 숫자, 하이픈만 쓸 수 있습니다. ('works'는 사용 불가)");
-      if (projects.some((entry) => entry.id === id)) throw new Error(`"${id}"는 이미 있습니다.`);
+      // The ID follows the English title: "Seongsu House" → seongsu-house (-2, -3 … if taken).
+      const titleEn = (prompt("새 프로젝트 영문 제목 (예: SEONGSU HOUSE)") || "").trim();
+      if (!titleEn) return;
+      const base = titleEn.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+      if (!base || base === "works") throw new Error("영문 제목에 영문이나 숫자가 있어야 합니다.");
+      let id = base;
+      for (let n = 2; projects.some((entry) => entry.id === id); n += 1) id = `${base}-${n}`;
       project = ensureShape(blankProject(id));
+      project.overview.titleEn = titleEn.toUpperCase();
       worksCategory = null;
       saved = { draft: false, runtime: false };
       await saveProject("draft", { quiet: true });
