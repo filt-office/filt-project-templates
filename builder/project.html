@@ -658,14 +658,17 @@
       ];
     };
 
-    // Space blocks: an empty gap of a set height (px) between description blocks.
-    const SPACE_DEFAULT = 24;
-    const SPACE_MAX = 10000;
-    const spaceHeight = (block) => Math.min(SPACE_MAX, Math.max(1, Math.round(Number(block.height) || SPACE_DEFAULT)));
+    // Space blocks: an empty gap between description blocks, in % of the screen height (vh), no upper limit.
+    // An early px value (height) still reads, at 1vh ≈ 8px.
+    const SPACE_DEFAULT = 3;
+    const spaceVh = (block) => {
+      const vh = Number(block.vh) > 0 ? Number(block.vh) : Number(block.height) > 0 ? Number(block.height) / 8 : SPACE_DEFAULT;
+      return Math.round(vh * 10) / 10;
+    };
 
     const descriptionHtml = (blocks) => {
       const parts = blocks.flatMap((block) => {
-        if (block.type === "space") return [`<div class="side-space" style="height: ${spaceHeight(block)}px" aria-hidden="true"></div>`];
+        if (block.type === "space") return [`<div class="side-space" style="height: ${spaceVh(block)}vh" aria-hidden="true"></div>`];
         if (block.type === "image") {
           if (!block.src) return [];
           const caption = (block.caption || "").trim();
@@ -702,7 +705,8 @@
         else if (node.nodeType !== Node.ELEMENT_NODE) return;
         else if (node.matches(".side-space")) {
           flush();
-          blocks.push({ type: "space", height: parseFloat(node.style.height) || SPACE_DEFAULT });
+          const height = parseFloat(node.style.height) || 0;
+          blocks.push(/vh$/.test(node.style.height) ? { type: "space", vh: height || SPACE_DEFAULT } : { type: "space", height: height || 24 });
         } else if (node.matches("img, figure") || node.querySelector("img")) {
           flush();
           const img = node.matches("img") ? node : node.querySelector("img");
@@ -1736,26 +1740,25 @@
           thumbButton(block.src, null, "이미지 교체", () => uploadDescriptionImage((src) => { block.src = src; render(); markDirty(); }), replace),
           h("div", { class: "text-cell" }, textTools(block, ["captionAlign", "captionIndent"], render), caption)), blocks, block, render, "이미지");
       };
-      // A gap of the typed height; the striped bar shows it at the same height (up to 120px here).
+      // A gap in % of the screen height; the striped bar hints at its size (capped at 120px here).
       const spaceBlock = (block, index) => {
         const bar = h("div", { class: "space-bar" });
-        const show = () => { bar.style.height = `${Math.min(120, spaceHeight(block))}px`; };
+        const show = () => { bar.style.height = `${Math.min(120, spaceVh(block) * 8)}px`; };
         const input = h("input", {
           type: "number",
-          min: "1",
-          max: String(SPACE_MAX),
-          step: "4",
-          value: spaceHeight(block),
-          title: "여백 높이 (px)",
+          min: "0.1",
+          step: "any",
+          value: spaceVh(block),
+          title: "여백 높이 (화면 높이의 %)",
           oninput: () => {
             const value = Number(input.value);
-            if (value > 0) { block.height = Math.min(SPACE_MAX, Math.round(value)); show(); markDirty(); }
+            if (value > 0) { block.vh = Math.round(value * 10) / 10; delete block.height; show(); markDirty(); }
           },
-          onchange: () => { input.value = spaceHeight(block); },
+          onchange: () => { input.value = spaceVh(block); },
         });
         show();
         return rowMenu(h("div", { class: "sheet-row space-row", dataset: { index } },
-          dragHandle(), h("div", { class: "space-cell" }, h("span", { class: "space-label" }, "여백"), input, h("span", { class: "space-label" }, "px"), bar)), blocks, block, render, "여백");
+          dragHandle(), h("div", { class: "space-cell" }, h("span", { class: "space-label" }, "여백"), input, h("span", { class: "space-label" }, "% (화면 높이)"), bar)), blocks, block, render, "여백");
       };
       const blockRow = (block, index) => {
         if (block.type === "image") return imageBlock(block, index);
@@ -1794,7 +1797,7 @@
           actions: [
             ["글 추가", () => add({ type: "text", html: "" })],
             ["이미지 추가", () => uploadDescriptionImage((src) => add({ type: "image", src, caption: "" }))],
-            ["여백 추가", () => add({ type: "space", height: SPACE_DEFAULT })],
+            ["여백 추가", () => add({ type: "space", vh: SPACE_DEFAULT })],
           ],
         }),
       ]);
