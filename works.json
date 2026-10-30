@@ -204,27 +204,6 @@
       "galleryOrder": 10
     },
     {
-      "id": "eh-test",
-      "category": "architecture",
-      "nameKo": "eh 테스트 페이지",
-      "nameEn": "EH test page",
-      "year": "2026",
-      "program": "test",
-      "location": "test",
-      "status": "test",
-      "thumb": "",
-      "cardThumb": "",
-      "mobileShape": "tall",
-      "link": "",
-      "show": {
-        "list": true,
-        "gallery": true,
-        "mobile": true
-      },
-      "galleryOrder": null,
-      "projectId": "eh-test"
-    },
-    {
       "id": "yaein-church-remodeling",
       "category": "interior",
       "nameKo": "예인교회 본당 리모델링",
