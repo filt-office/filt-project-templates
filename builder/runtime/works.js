@@ -59,10 +59,13 @@
     return node;
   };
 
-  // Rows open the shared detail page or their own link; rows with neither are still listed (as on the original pages).
+  // With a shared detail page, only rows whose project is published (release.sh keeps their projectId) open it;
+  // their old Imweb links are gone or redirect home, so the other rows are listed but not clickable.
+  // Without one (older widgets), rows still follow their own link.
   const linkTo = (node, work) => {
-    const href = projectPage && work.projectId ? `${projectPage}?id=${encodeURIComponent(work.projectId)}` : work.link;
+    const href = projectPage ? (work.projectId ? `${projectPage}?id=${encodeURIComponent(work.projectId)}` : "") : work.link;
     if (!href) return;
+    node.classList.add("is-linked");
     node.addEventListener("click", () => { location.href = href; });
   };
 
