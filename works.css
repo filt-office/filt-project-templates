@@ -3,6 +3,11 @@
     Ported from works-list-pc, works-gallery-pc and works-list-mobile.html.
     Everything is scoped under .filt-works so the Imweb page is untouched.
 ------------------------------ */
+
+/* Host pages may cap <main> (e.g. main { max-width: 1500px }); the templates span the full window. */
+.filt-works main {
+  max-width: none !important;
+}
 .filt-works {
   --accent: var(--filt-key, #BD005E);
   --bg-color: #fff;
