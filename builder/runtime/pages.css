@@ -3,6 +3,11 @@
     Ported from home-, office- and news-pc/mobile.html (filtehwa/filt_website).
     Everything is scoped under .filt-page so the Imweb page is untouched.
 ------------------------------ */
+
+/* Host pages may cap <main> (e.g. main { max-width: 1500px }); the templates span the full window. */
+.filt-page main {
+  max-width: none !important;
+}
 .filt-page {
   --accent: var(--filt-key, #BD005E);
   --bg-color: #fff;

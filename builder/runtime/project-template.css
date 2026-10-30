@@ -1,6 +1,12 @@
 /* ------------------------------
     📌1. 기본 설정
 ------------------------------ */
+/* Host pages may cap <main> (e.g. main { max-width: 1500px }); the templates span the full window. */
+.filt-project-mount,
+.filt-project-mount main {
+  max-width: none !important;
+}
+
 .filt-project-mount {
   --accent: var(--filt-key, #BD005E);
   --bg-color: #fff;
