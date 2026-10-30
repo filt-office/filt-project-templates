@@ -404,19 +404,27 @@ body.menu-open .filt-page .info-desktop .left {
   height: 60%;
 }
 
-/* NEWS hover preview */
+/* NEWS hover preview. Imweb's Bootstrap styles every .thumbnail (1px #ddd border, 4px padding, rounded,
+   20px bottom margin), which framed the photo and left a thin bar when there was none. */
 .filt-page .info-desktop .thumbnail {
   position: relative;
   top: 175px;
   display: flex;
   width: 80%;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
+  border: 0;
+  border-radius: 0;
   background-color: #fff;
+  box-shadow: none;
+  line-height: normal;
   pointer-events: none;
 }
 .filt-page .info-desktop .thumb {
   width: 100%;
   height: auto;
+  border: 0;
   opacity: 0;
   transition: opacity 0.4s ease;
 }

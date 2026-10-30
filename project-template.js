@@ -56,14 +56,15 @@
   // Site colours (--filt-key, --filt-<id>) from pages/design.json.
   loadScript(new URL("design.js", templateBase).href);
 
-  const createFieldCell = (tagName, value, className) => {
-    const cell = document.createElement(tagName);
-    if (className) cell.className = className;
+  // Text with the editor's Enter breaks kept as <br>.
+  const createLines = (tagName, value, className) => {
+    const node = document.createElement(tagName);
+    if (className) node.className = className;
     String(value ?? "").split("\n").forEach((line, index) => {
-      if (index) cell.append(document.createElement("br"));
-      cell.append(document.createTextNode(line));
+      if (index) node.append(document.createElement("br"));
+      node.append(document.createTextNode(line));
     });
-    return cell;
+    return node;
   };
 
   const createOverview = (overview) => {
@@ -84,28 +85,30 @@
     titleCell.rowSpan = 2;
     titleCell.colSpan = 2;
     titleCell.className = "project-title-cell";
-    const title = document.createElement("div");
-    title.className = "project-title-en";
-    title.textContent = overview.titleEn || "";
-    const subtitle = document.createElement("div");
-    subtitle.className = "project-subtitle";
-    subtitle.textContent = overview.subtitle || "";
-    titleCell.append(title, subtitle);
+    titleCell.append(createLines("div", overview.titleEn, "project-title-en"), createLines("div", overview.subtitle, "project-subtitle"));
     titleRow.append(titleCell);
 
+    // One cell per field across two columns: the label sits top left and the value bottom right, each free
+    // to use the whole cell width, so editors balance long labels and values with their own line breaks.
     const appendField = (row, field) => {
       if (!field) return;
-      row.append(createFieldCell("th", field.label));
-      const valueCell = createFieldCell("td", field.value);
+      const cell = document.createElement("td");
+      cell.colSpan = 2;
+      cell.className = "field";
+      const box = document.createElement("div");
+      box.className = "field-box";
+      const value = createLines("div", field.value, "field-value");
       if (field.areaM2 !== undefined && Number.isFinite(Number(field.areaM2))) {
         const area = Number(field.areaM2);
-        valueCell.dataset.areaM2 = String(area);
+        value.dataset.areaM2 = String(area);
         // The builder lets editors pick which unit shows first; a click still swaps ㎡ ↔ 평.
-        valueCell.dataset.areaUnit = field.areaUnit === "py" ? "py" : "m2";
-        if (field.areaUnit === "py") valueCell.textContent = `${Math.round(area / 3.305785)}py`;
-        valueCell.addEventListener("click", toggleAreaUnits);
+        value.dataset.areaUnit = field.areaUnit === "py" ? "py" : "m2";
+        if (field.areaUnit === "py") value.textContent = `${Math.round(area / 3.305785)}py`;
+        value.addEventListener("click", toggleAreaUnits);
       }
-      row.append(valueCell);
+      box.append(createLines("div", field.label, "field-label"), value);
+      cell.append(box);
+      row.append(cell);
     };
 
     appendField(titleRow, fields[0]);
@@ -531,7 +534,8 @@
     if (!project || !Array.isArray(project.images) || !project.overview) {
       throw new Error("Project JSON is missing images or overview data.");
     }
-    document.title = project.title || `${project.overview.titleEn || project.id} | PROJECT INFO`;
+    // The tab title is one line even when the page title has line breaks.
+    document.title = (project.title || `${project.overview.titleEn || project.id} | PROJECT INFO`).replace(/\s*\n\s*/g, " ");
     mount.classList.add("filt-project-mount");
     mount.replaceChildren();
 
