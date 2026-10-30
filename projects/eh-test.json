@@ -1,0 +1,135 @@
+{
+  "id": "eh-test",
+  "title": "EH TEST PAGE | eh 테스트 페이지",
+  "overview": {
+    "titleEn": "EH TEST PAGE",
+    "subtitle": "eh 테스트 페이지",
+    "fields": [
+      {
+        "label": "STATUS",
+        "value": "test"
+      },
+      {
+        "label": "YEAR",
+        "value": "2026"
+      },
+      {
+        "label": "LOCATION",
+        "value": "test"
+      },
+      {
+        "label": "PROGRAM",
+        "value": "test"
+      },
+      {
+        "label": "NUMBER OF FLOORS",
+        "value": ""
+      },
+      {
+        "label": "PROJECT TYPE",
+        "value": ""
+      },
+      {
+        "label": "BUILDING AREA",
+        "value": ""
+      },
+      {
+        "label": "TOTAL FLOOR AREA",
+        "value": ""
+      },
+      {
+        "label": "CLIENT",
+        "value": ""
+      },
+      {
+        "label": "CONSTRUCTION",
+        "value": ""
+      },
+      {
+        "label": "PHOTOGRAPHER",
+        "value": ""
+      },
+      {
+        "label": "COWORK",
+        "value": ""
+      }
+    ]
+  },
+  "descriptionHtml": "",
+  "gallery": [
+    {
+      "type": "photo",
+      "orientation": "landscape",
+      "alt": "01 EH TEST PAGE",
+      "fit": "auto",
+      "fitMob": "auto",
+      "rotation": 0,
+      "title": "",
+      "coordinate": true,
+      "north": null,
+      "hideScale": false,
+      "scale": null,
+      "pc": "assets/eh-test/PC/enscape_2026-03-06-13-42-56_103_1f_ev_.png",
+      "mob": "assets/eh-test/MOB/enscape_2026-03-06-13-42-56_103_1f_ev_.png",
+      "hidePc": false,
+      "hideMob": false
+    },
+    {
+      "type": "drawing",
+      "orientation": "landscape",
+      "alt": "",
+      "fit": "auto",
+      "fitMob": "auto",
+      "rotation": 0,
+      "title": "1_I-003_EH_260306_111",
+      "coordinate": true,
+      "north": 66,
+      "hideScale": false,
+      "scale": 99.2,
+      "pc": "assets/eh-test/PC/1_i-003_eh_260306_111.png",
+      "mob": "assets/eh-test/MOB/1_i-003_eh_260306_111.png",
+      "hidePc": false,
+      "hideMob": false
+    }
+  ],
+  "images": [
+    {
+      "src": "assets/eh-test/PC/enscape_2026-03-06-13-42-56_103_1f_ev_.png",
+      "class": "landscape",
+      "alt": "01 EH TEST PAGE",
+      "fit": "auto",
+      "rotation": 0
+    },
+    {
+      "src": "assets/eh-test/PC/1_i-003_eh_260306_111.png",
+      "class": "drawing",
+      "alt": "",
+      "fit": "auto",
+      "rotation": 0
+    }
+  ],
+  "mobile": {
+    "images": [
+      {
+        "src": "assets/eh-test/MOB/enscape_2026-03-06-13-42-56_103_1f_ev_.png",
+        "class": "landscape",
+        "alt": "01 EH TEST PAGE",
+        "fit": "auto",
+        "rotation": 0
+      }
+    ],
+    "drawings": {
+      "coordinateSrc": "",
+      "scaleSrc": "",
+      "images": [
+        {
+          "src": "assets/eh-test/MOB/1_i-003_eh_260306_111.png",
+          "title": "1_I-003_EH_260306_111",
+          "north": 66,
+          "scale": 99.2
+        }
+      ]
+    }
+  },
+  "description": []
+}

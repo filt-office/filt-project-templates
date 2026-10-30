@@ -122,10 +122,12 @@ body.menu-open .filt-works .left-container {
   font-weight: var(--filt-weight-list, 300);
   letter-spacing: 0.4px;
   line-height: var(--filt-line-list, 1.6);
-  cursor: pointer;
+  cursor: default;
   transition: color var(--filt-motion-hover, .2s) ease;
 }
-.filt-works .item:hover { color: var(--accent); }
+/* Only rows with a detail page (works.js adds .is-linked) look clickable. */
+.filt-works .item.is-linked { cursor: pointer; }
+.filt-works .item.is-linked:hover { color: var(--accent); }
 
 .filt-works .preview {
   position: relative;
@@ -258,9 +260,10 @@ body.menu-open .filt-works .left {
   align-items: flex-start;
   color: inherit;
   text-decoration: none;
-  cursor: pointer;
+  cursor: default;
   transition: transform .3s ease, opacity .3s ease;
 }
+.filt-works .gallery-item.is-linked { cursor: pointer; }
 
 .filt-works .gallery-item img {
   width: 100%;
@@ -268,7 +271,7 @@ body.menu-open .filt-works .left {
   object-fit: cover;
   transition: transform .3s ease;
 }
-.filt-works .gallery-item:hover img { opacity: 0.9; }
+.filt-works .gallery-item.is-linked:hover img { opacity: 0.9; }
 
 .filt-works .caption {
   width: 100%;
@@ -363,8 +366,9 @@ body.menu-open .filt-works .left {
     padding: 0;
     color: inherit;
     text-decoration: none;
-    cursor: pointer;
+    cursor: default;
   }
+  .filt-works .works-item.is-linked { cursor: pointer; }
   .filt-works .works-item[hidden] { display: none; }
 
   .filt-works .works-thumb {
