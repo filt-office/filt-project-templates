@@ -347,15 +347,14 @@
     saveWorks: async (data, removeProjects = []) => {
       const errors = validateWorks(data);
       if (errors.length) throw new Error(errors.join("\n"));
-      const gone = (await Promise.all(removeProjects.map(async (id) => {
-        const path = `runtime/projects/${id}.json`;
-        return (await readText(path)) === null ? null : path;
-      }))).filter(Boolean);
+      const gone = (await Promise.all(removeProjects.flatMap((id) => [`runtime/projects/${id}.json`, `drafts/${id}.json`])
+        .map(async (path) => ((await readText(path)) === null ? null : path)))).filter(Boolean);
+      const ids = [...new Set(gone.map((path) => path.split("/").pop().replace(/\.json$/, "")))];
       await commitFiles(
         [{ path: "runtime/works.json", content: toJson(data) }, ...gone.map((path) => ({ path, remove: true }))],
-        `builder: WORKS 목록 저장${gone.length ? ` (상세 페이지 삭제: ${gone.map((path) => path.split("/").pop().replace(/\.json$/, "")).join(", ")})` : ""}`,
+        `builder: WORKS 목록 저장${ids.length ? ` (상세 페이지 삭제: ${ids.join(", ")})` : ""}`,
       );
-      return { ok: true, path: "runtime/works.json", count: data.works.length, removedProjects: gone.length };
+      return { ok: true, path: "runtime/works.json", count: data.works.length, removedProjects: ids.length };
     },
     // Every uploaded image (PC copy), as "assets/<folder>/PC/<file>".
     listAssets: async () => {
@@ -932,8 +931,8 @@
         const what = old ? WORK_FIELDS.filter(([path]) => !same(valueAt(work, path), valueAt(old, path))).map(([, label]) => label) : ["새 행"];
         if (what.length) work.edited = stamp(what.join(", "));
       });
-      // A row deleted (right-click 삭제) takes its detail page with it: the 게시용 JSON goes in the same commit,
-      // and the next publish removes it from the public repo. Drafts and uploaded images stay.
+      // A row deleted (right-click 삭제) takes its detail page with it: the 게시용 and draft JSON go in the same
+      // commit, and the next publish removes it from the public repo. Uploaded images stay.
       const projectOf = (work) => work.projectId || work.id;
       const kept = new Set(data.works.map(projectOf));
       const removeProjects = [...new Set((loadedWorks?.works || []).map(projectOf))]

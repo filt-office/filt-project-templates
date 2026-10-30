@@ -113,7 +113,7 @@
                 hint: "WORKS 목록과 상세 페이지까지 지웁니다",
                 danger: true,
                 run: () => {
-                  if (!confirm(`${nameOf(work)}을(를) 삭제할까요?\n\nWORKS 목록에서도 지워지고, 저장하면 상세 페이지(게시용)도 함께 지워져 다음 deploy 때 공개 사이트에서 빠집니다.`)) return;
+                  if (!confirm(`${nameOf(work)}을(를) 삭제할까요?\n\nWORKS 목록에서도 지워지고, 저장하면 상세 페이지(게시용·임시저장)도 함께 지워져 다음 deploy 때 공개 사이트에서 빠집니다.`)) return;
                   data.works.splice(data.works.indexOf(work), 1);
                   change();
                 },
