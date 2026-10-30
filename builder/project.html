@@ -439,8 +439,12 @@
     // Builds slots from older JSON that only has images / mobile.* (e.g. Tempin).
     const deriveGallery = (data) => {
       const pcImages = Array.isArray(data.desktop?.images) ? data.desktop.images : (data.images || []);
-      const mobileImages = Array.isArray(data.mobile?.images) ? data.mobile.images : null;
-      const mobileDrawings = data.mobile?.drawings?.images || [];
+      const mobileList = Array.isArray(data.mobile?.images) ? data.mobile.images : null;
+      // Pages ported from Imweb (Yaein, Sejongno, Yeonmujang) keep their mobile drawings in mobile.images.
+      const mobileDrawings = data.mobile?.drawings?.images || (mobileList || []).filter((image) => image.class === "drawing");
+      const mobileImages = mobileList && mobileList.filter((image) => !mobileDrawings.includes(image));
+      // Imported files sit in assets/<id>/PC/ and assets/<id>/MOB/ under the same name.
+      const mobCounterpart = (src) => src.replace(/^(assets\/[^/]+\/)PC\//, "$1MOB/");
       const slots = [];
       const usedMobile = new Set();
       let drawingIndex = 0;
@@ -458,7 +462,7 @@
             scale: drawing?.scale ?? null,
           }));
         } else {
-          const match = mobileImages ? mobileImages.find((candidate) => candidate.src === image.src) : image;
+          const match = mobileImages ? mobileImages.find((candidate) => candidate.src === image.src || candidate.src === mobCounterpart(image.src)) : image;
           if (match && mobileImages) usedMobile.add(match);
           slots.push(newSlot({
             ...common,
