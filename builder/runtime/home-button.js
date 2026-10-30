@@ -2,6 +2,8 @@
   const MENU_ROOT_ID = 'filt-common-menu-v2';
   const DESKTOP_BUTTON_ID = 'filt-home-button-desktop';
   const MOBILE_BUTTON_ID = 'filt-home-button-mobile';
+  // The FILT mark, as in the old mobile header widget (viewBox 91.67 × 76.67).
+  const MOBILE_LOGO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 91.67 76.67'%3E%3Cg fill='none' stroke='%23000' stroke-width='8.33'%3E%3Cpath d='M14.17 0v76.67M10 4.17h27.5M0 34.17h8.33M20 34.17h13.33M33.33 34.17h13.33M58.33 34.17h13.33M71.67 34.17h20M52.5 0v76.67M75 40v36.67M75 0v28.33M33.33 40v36.67M69.17 72.5H48.34'/%3E%3C/g%3E%3C/svg%3E";
 
   if (window.__FILT_HOME_BUTTON_LOADED) return;
   window.__FILT_HOME_BUTTON_LOADED = true;
@@ -15,7 +17,13 @@
     '#' + MENU_ROOT_ID + ' .filt-home-button--mobile { display:none; position:fixed; top:20px; left:20px; z-index:999993; }',
     '@media (max-width:768px) {',
     '  #' + MENU_ROOT_ID + ' .filt-home-button--desktop { display:none; }',
-    '  #' + MENU_ROOT_ID + ' .filt-home-button--mobile { display:block; }',
+    // Mobile header on every page, as on the project page: the FILT mark at the left of the 40px bar
+    // (the menu dot sits at the right, from common-menu-v2.js).
+    '  #' + MENU_ROOT_ID + ' .filt-home-button--mobile { display:block !important; position:fixed !important; top:8px !important; left:14px !important; width:29px !important; height:24px !important; padding:0 !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; z-index:999993 !important;'
+      + ' background:url("' + MOBILE_LOGO + '") center / contain no-repeat !important; }',
+    // Old Imweb code widgets (e.g. #filt-mobile-dock on WORKS and HOME, the OFFICE/NEWS headers) still draw
+    // their own logo and menu dot in the same bar; keep their bar but hide those two so only ours show.
+    '  .mobile-header > .header-logo, .mobile-header > .header-menu-btn { display:none !important; }',
     '}'
   ].join('\n');
 
