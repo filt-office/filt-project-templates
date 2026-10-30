@@ -35,7 +35,8 @@
 .filt-project-mount {
   position: fixed !important;
   inset: 0 !important;
-  width: 100vw !important;
+  /* auto, not 100vw: Imweb keeps body { overflow-y: scroll }, and 100vw would run under that scrollbar. */
+  width: auto !important;
   height: 100vh !important;
   height: 100dvh !important;
   overflow: hidden !important;
@@ -365,7 +366,7 @@
 .filt-project-mount .fixed-table td {
   font-weight: var(--filt-weight-overview, 400);
   text-align: right;
-  vertical-align: top;
+  vertical-align: bottom;
   border-right: 0.5px solid #000 !important;
 }
 
@@ -377,6 +378,11 @@
 /* The last cell of a row meets the panel edge, so it draws no right border. */
 .filt-project-mount .fixed-table tr > td:last-child {
   border-right: 0 !important;
+}
+
+/* An odd last row ends in the middle column; the centre line still runs to the bottom. */
+.filt-project-mount .fixed-table tr:nth-child(n + 3):last-child > td:nth-child(2):last-child {
+  border-right: 0.5px solid #000 !important;
 }
 
 /* 프로젝트 타이틀 셀 (2행 높이) */
