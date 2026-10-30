@@ -13,6 +13,8 @@
     mount.dataset.filtProject = projectId;
     script.after(mount);
   }
+  // Keep viewport-level positioning outside Imweb's width-constrained section wrappers.
+  if (mount.parentElement !== document.body) document.body.append(mount);
 
   const templateBase = new URL(".", script.src);
   // Uploaded assets are stored as relative paths (assets/<id>/PC/x.jpg) and served from the images repo.
