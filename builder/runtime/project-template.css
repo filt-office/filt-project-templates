@@ -649,6 +649,23 @@ body.filt-menu-open .filt-project-mount .img-section {
     min-height: calc(var(--overview-row-height) - 6px);
   }
 
+  /* An odd last row: the centre line is already the table's ::after, so no extra right border; the
+     bottom line runs on under the empty half to the table's edge. */
+  .filt-project-mount .fixed-table tr:nth-child(n + 3):last-child > td.field:only-child {
+    position: relative;
+    border-right: 0 !important;
+  }
+
+  .filt-project-mount .fixed-table tr:nth-child(n + 3):last-child > td.field:only-child::after {
+    position: absolute;
+    bottom: 0;
+    left: 100%;
+    width: 100%;
+    border-bottom: 0.5px solid #000;
+    content: "";
+    pointer-events: none;
+  }
+
   .filt-project-mount .fixed-table .project-title-cell {
     height: calc(var(--overview-row-height) * 2) !important;
     padding-top: 3px;
