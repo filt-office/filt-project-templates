@@ -185,7 +185,7 @@
       body: JSON.stringify(project),
     }),
     getWorks: () => localApi("/api/works"),
-    saveWorks: (data) => localApi("/api/works", {
+    saveWorks: (data, removeProjects = []) => localApi(`/api/works${removeProjects.length ? `?removeProjects=${removeProjects.map(encodeURIComponent).join(",")}` : ""}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -280,13 +280,13 @@
     body: JSON.stringify({ content: await toBase64(content), encoding: "base64" }),
   })).sha;
 
-  // One commit for any number of files: [{ path, content }] or [{ path, sha }] (existing blob).
+  // One commit for any number of files: [{ path, content }], [{ path, sha }] (existing blob) or [{ path, remove: true }].
   const commitFiles = async (files, message) => {
     const entries = await Promise.all(files.map(async (file) => ({
       path: file.path,
       mode: "100644",
       type: "blob",
-      sha: file.sha || await createBlob(file.content),
+      sha: file.remove ? null : file.sha || await createBlob(file.content),
     })));
     for (let attempt = 1; ; attempt += 1) {
       const head = (await gh(`${repoApi}/git/ref/heads/${BRANCH}`)).object.sha;
@@ -344,11 +344,18 @@
       const text = await readText("runtime/works.json");
       return text ? JSON.parse(text) : { version: 1, categories: [], works: [] };
     },
-    saveWorks: async (data) => {
+    saveWorks: async (data, removeProjects = []) => {
       const errors = validateWorks(data);
       if (errors.length) throw new Error(errors.join("\n"));
-      await commitFiles([{ path: "runtime/works.json", content: toJson(data) }], "builder: WORKS 목록 저장");
-      return { ok: true, path: "runtime/works.json", count: data.works.length };
+      const gone = (await Promise.all(removeProjects.map(async (id) => {
+        const path = `runtime/projects/${id}.json`;
+        return (await readText(path)) === null ? null : path;
+      }))).filter(Boolean);
+      await commitFiles(
+        [{ path: "runtime/works.json", content: toJson(data) }, ...gone.map((path) => ({ path, remove: true }))],
+        `builder: WORKS 목록 저장${gone.length ? ` (상세 페이지 삭제: ${gone.map((path) => path.split("/").pop().replace(/\.json$/, "")).join(", ")})` : ""}`,
+      );
+      return { ok: true, path: "runtime/works.json", count: data.works.length, removedProjects: gone.length };
     },
     // Every uploaded image (PC copy), as "assets/<folder>/PC/<file>".
     listAssets: async () => {
@@ -925,7 +932,13 @@
         const what = old ? WORK_FIELDS.filter(([path]) => !same(valueAt(work, path), valueAt(old, path))).map(([, label]) => label) : ["새 행"];
         if (what.length) work.edited = stamp(what.join(", "));
       });
-      const result = await backend.saveWorks(data);
+      // A row deleted (right-click 삭제) takes its detail page with it: the 게시용 JSON goes in the same commit,
+      // and the next publish removes it from the public repo. Drafts and uploaded images stay.
+      const projectOf = (work) => work.projectId || work.id;
+      const kept = new Set(data.works.map(projectOf));
+      const removeProjects = [...new Set((loadedWorks?.works || []).map(projectOf))]
+        .filter((id) => id && ID_RE.test(id) && !kept.has(id) && id !== "works" && id !== "pages");
+      const result = await backend.saveWorks(data, removeProjects);
       loadedWorks = copy(data);
       return result;
     },
